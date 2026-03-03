@@ -1,0 +1,82 @@
+<!DOCTYPE HTML>
+<html xmlns:layout="http://www.ultraq.net.nz/thymeleaf/layout" xmlns:th="http://www.thymeleaf.org"
+	layout:decorate="~{common/layout.html}">
+<head>
+  <meta charset="UTF-8">
+  <title>DmLogicCreate</title>
+  <meta name="description" content="DmLogicCreate">
+
+<script type="text/javascript">
+	$(document).ready(function() {
+		$('#srcValue').scroll(function() {
+			$('#destValue').scrollTop($(this).scrollTop());
+			$('#destValue').scrollLeft($(this).scrollLeft());
+		});
+		$('#destValue').scroll(function() {
+			$('#srcValue').scrollTop($(this).scrollTop());
+			$('#srcValue').scrollLeft($(this).scrollLeft());
+		});
+	});
+
+	function doConvert() {
+		$("#destValue").val("");
+		var txtTableId = $('#txtTableId').val();
+		var txtTableName = $('#txtTableName').val();
+		ajaxRequest("/dmLogic/convert", {
+			tableName : txtTableName,
+			srcValue : $("#srcValue").val()
+		}, function(data) {
+			console.log(data);
+			$("#destValue").val(data);
+		}, function(data) {
+			console.log(data);
+			$("#destValue").val(data.responseText);
+		});
+	}
+</script>
+<style>
+</style>
+</head>
+<body>
+  <th:block layout:fragment="windowTitle">
+    DM操作ロジック作成
+  </th:block>
+	<div layout:fragment="content" class="container-fluid">
+
+		<form method="POST" action="/">
+			<div id="headerArea">
+				<table>
+					<tr>
+						<td>表论理名:</td>
+						<td><input type="text" id="txtTableName" style="width: 300px" th:placeholder="${tableNamePlace}"
+							class="form-control form-control-sm" /></td>
+					</tr>
+				</table>
+			</div>
+			<div id="divConvert" class="form-group">
+				<table>
+					<thead>
+						<tr>
+							<th>输入</th>
+							<th></th>
+							<th>输出</th>
+						</tr>
+					</thead>
+					<tbody>
+						<tr>
+							<td><textarea class="form-control" id="srcValue" rows="30"
+									style="word-wrap: normal; width: 600px; overflow: auto;"
+									th:placeholder="${inputPlace}"></textarea></td>
+							<td><input type="button" value="->" onclick='doConvert()'
+								class="btn btn-primary" /></td>
+							<td><textarea class="form-control" id="destValue" rows="30"
+									style="word-wrap: normal; width: 800px; overflow: auto;"
+									placeholder="输出"></textarea></td>
+						</tr>
+					</tbody>
+				</table>
+			</div>
+		</form>
+	</div>
+</body>
+</html>

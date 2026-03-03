@@ -1,0 +1,11 @@
+#Type entity
+type_1=entity
+entity_path=entity
+
+#Type mapper
+type_2=mapper
+mapper_path=mapper
+
+#Type ddl
+type_3=ddl
+ddl_path=ddl

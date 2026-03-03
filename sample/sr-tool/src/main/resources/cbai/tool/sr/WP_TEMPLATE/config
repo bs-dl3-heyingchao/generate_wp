@@ -1,0 +1,8 @@
+#Type entity
+type_1=io
+io_path=io/$parentDir$
+
+#Type dm
+type_2=dm
+dm_path=dm/QY
+

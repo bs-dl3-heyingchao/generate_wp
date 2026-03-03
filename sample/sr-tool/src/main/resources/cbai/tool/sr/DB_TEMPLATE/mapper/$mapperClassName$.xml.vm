@@ -1,0 +1,158 @@
+<?xml version="1.0" encoding="UTF-8" ?>
+<!DOCTYPE mapper PUBLIC "-//mybatis.org//DTD Mapper 3.0//EN" "http://mybatis.org/dtd/mybatis-3-mapper.dtd">
+<mapper namespace="$mapperPkg$.$mapperClassName$">
+
+    <sql id="tableColumns"> 
+#foreach (${item} in ${propertyList})
+        ${item.prefix}${item.fieldName.toUpperCase()}    /* ${item.fieldFullName} */
+#end
+    </sql>
+
+#if(${pkList.size()} > 0)
+
+    <!-- $tableFullName$情報取得処理 -->
+    <select id="selectByPk"
+        parameterType="$entityPkg$.$entityClassName$"
+        resultType="$entityPkg$.$entityClassName$">
+        SELECT
+            <include refid="tableColumns"/>
+          FROM
+            $tableName$
+          <trim prefix="WHERE" prefixOverrides="AND |OR ">
+#foreach (${item} in ${pkList})
+            AND ${item.fieldName.toUpperCase()} = #{${item.javaName}}    /* ${item.fieldFullName} */
+#end
+#foreach (${item} in ${propertyList})
+#if(${item.fieldName.toUpperCase().endsWith("LOGI_DEL_FLG")})
+          <if test="${item.javaName} != null">
+            AND ${item.fieldName.toUpperCase()} = #{${item.javaName}}    /* ${item.fieldFullName} */
+          </if>
+#end
+#end
+        </trim>
+    </select>
+
+    <!-- $tableFullName$情報取得処理(ロック) -->
+    <select id="selectForUpdateByPk"
+        parameterType="$entityPkg$.$entityClassName$"
+        resultType="$entityPkg$.$entityClassName$">
+        SELECT
+            <include refid="tableColumns"/>
+          FROM
+            $tableName$
+          <trim prefix="WHERE" prefixOverrides="AND |OR ">
+#foreach (${item} in ${pkList})
+            AND ${item.fieldName.toUpperCase()} = #{${item.javaName}}    /* ${item.fieldFullName} */
+#end
+#foreach (${item} in ${propertyList})
+#if(${item.fieldName.toUpperCase().endsWith("LOGI_DEL_FLG")})
+          <if test="${item.javaName} != null">
+            AND ${item.fieldName.toUpperCase()} = #{${item.javaName}}    /* ${item.fieldFullName} */
+          </if>
+#end
+#end
+        </trim>
+        FOR UPDATE NOWAIT
+    </select>
+#end
+
+    <!-- $tableFullName$全件情報取得 -->
+    <select id="selectAll" resultType="$entityPkg$.$entityClassName$">
+        SELECT
+            <include refid="tableColumns"/>
+          FROM
+            $tableName$
+    </select>
+#if(${pkList.size()} > 0)
+
+    <!-- $tableFullName$情報削除処理 -->
+    <delete id="deleteByPk" parameterType="$entityPkg$.$entityClassName$">
+        DELETE FROM $tableName$
+          <trim prefix="WHERE" prefixOverrides="AND |OR ">
+#foreach (${item} in ${pkList})
+            AND ${item.fieldName.toUpperCase()} = #{${item.javaName}}    /* ${item.fieldFullName} */
+#end
+        </trim>
+    </delete>
+#end
+
+    <!-- $tableFullName$全件情報削除処理 -->
+    <delete id="deleteAll">
+        DELETE FROM $tableName$
+    </delete>
+
+    <!-- $tableFullName$登録処理 -->
+    <insert id="insert" parameterType="$entityPkg$.$entityClassName$">
+        INSERT
+          INTO
+            $tableName$ (
+              <include refid="tableColumns"/>
+            )
+          VALUES
+            (
+#foreach (${item} in ${propertyList})
+              ${item.prefix}#{${item.javaName}, jdbcType=${item.jdbcType}}    /* ${item.fieldFullName} */
+#end
+            )
+    </insert>
+
+    <!-- $tableFullName$登録（NULL除く）処理 -->
+    <insert id="insertNotNull" parameterType="$entityPkg$.$entityClassName$">
+        INSERT
+          INTO
+            $tableName$
+        <trim prefix="(" suffix=")" prefixOverrides=",">
+#foreach (${item} in ${propertyList})
+          <if test="${item.javaName} != null">
+            , ${item.fieldName.toUpperCase()}    /* ${item.fieldFullName} */
+          </if>
+#end
+        </trim>
+          VALUES
+        <trim prefix="(" suffix=")" prefixOverrides=",">
+#foreach (${item} in ${propertyList})
+          <if test="${item.javaName} != null">
+            , #{${item.javaName}, jdbcType=${item.jdbcType}}    /* ${item.fieldFullName} */
+          </if>
+#end
+        </trim>
+    </insert>
+#if(${pkList.size()} > 0)
+
+    <!-- $tableFullName$更新処理 -->
+    <update id="updateByPk" parameterType="$entityPkg$.$entityClassName$">
+        UPDATE $tableName$ 
+          <trim prefix="SET" prefixOverrides=",">
+#foreach (${item} in ${propertyList})
+#if(!${pkList.contains(${item})})
+            , ${item.fieldName.toUpperCase()} = #{${item.javaName}, jdbcType=${item.jdbcType}}     /* ${item.fieldFullName} */
+#end
+#end
+          </trim>
+          <trim prefix="WHERE" prefixOverrides="AND |OR ">
+#foreach (${item} in ${pkList})
+            AND ${item.fieldName.toUpperCase()} = #{${item.javaName}}    /* ${item.fieldFullName} */
+#end
+          </trim>
+    </update>
+
+    <!-- $tableFullName$更新（NULL除く）処理 -->
+    <update id="updateNotNullByPk" parameterType="$entityPkg$.$entityClassName$">
+        UPDATE $tableName$ 
+          <trim prefix="SET" prefixOverrides=",">
+#foreach (${item} in ${propertyList})
+#if(!${pkList.contains(${item})})
+            <if test="${item.javaName} != null">
+              , ${item.fieldName.toUpperCase()} = #{${item.javaName}, jdbcType=${item.jdbcType}}     /* ${item.fieldFullName} */
+            </if>
+#end
+#end
+          </trim>
+          <trim prefix="WHERE" prefixOverrides="AND |OR ">
+#foreach (${item} in ${pkList})
+            AND ${item.fieldName.toUpperCase()} = #{${item.javaName}}    /* ${item.fieldFullName} */
+#end
+          </trim>
+    </update>
+#end
+</mapper>

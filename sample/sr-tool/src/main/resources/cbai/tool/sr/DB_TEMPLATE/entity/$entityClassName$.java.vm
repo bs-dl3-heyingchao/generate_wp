@@ -1,0 +1,35 @@
+/*
+ * Copyright 2023, Yokogawa Rental and Lease Corporation. All rights reserved.
+ */
+
+package $entityPkg$;
+
+import java.io.Serializable;
+import lombok.Data;
+#foreach (${item} in ${importList})
+import ${item};
+#end
+
+/**
+ * $tableFullName$の内容を格納するクラス.<br>
+ * <dl>
+ * <b>概要：</b>
+ * <dd>$tableFullName$の内容を格納する
+ * </dl>
+ *
+ * @author Neusoft
+ * @version 1.0
+ * @since 新規作成
+*/
+@Data
+public class $entityClassName$ implements Serializable {
+
+    /** serialVersionUID. */
+    private static final long serialVersionUID = 1L;
+#foreach (${item} in ${propertyList})
+
+    /** ${item.fieldFullName}. */
+    private ${item.javaType} ${item.javaName} = null;
+#end
+
+}

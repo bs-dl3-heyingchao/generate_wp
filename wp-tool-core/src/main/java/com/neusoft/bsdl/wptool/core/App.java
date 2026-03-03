@@ -1,12 +1,13 @@
 package com.neusoft.bsdl.wptool.core;
 
+import com.neusoft.bsdl.wptool.core.io.FileSource;
+import com.neusoft.bsdl.wptool.core.io.LocalFileSource;
+import com.neusoft.bsdl.wptool.core.service.ParseExcelUtils;
+
 public class App {
 
-    public static void main(String[] args) {
-        System.out.println("Hello from wp-tool-core (JDK 17)");
-    }
-
-    public String getGreeting() {
-        return "Hello from wp-tool-core";
+	public static void main(String[] args) throws Exception {
+        FileSource source = new LocalFileSource("D:\\128SYIS25142\\test\\（内部設計書サンプル）MTI340S01B01_画面設計書_汎用テーブル一覧.xlsx");
+        ParseExcelUtils.parseExcel(source);
     }
 }

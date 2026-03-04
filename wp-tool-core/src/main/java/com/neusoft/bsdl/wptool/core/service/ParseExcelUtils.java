@@ -1,6 +1,9 @@
 package com.neusoft.bsdl.wptool.core.service;
 
+import java.io.InputStream;
 import java.util.List;
+
+import org.apache.poi.ss.usermodel.Workbook;
 
 import com.neusoft.bsdl.wptool.core.ScreenSheetNameEnum;
 import com.neusoft.bsdl.wptool.core.io.FileSource;
@@ -18,7 +21,7 @@ public class ParseExcelUtils {
 	public static ParseExcelContent parseExcel(FileSource source) throws Exception {
 		ParseExcelContent parseExcelContent = new ParseExcelContent();
 		ScreenItemDescriptionParseExcel service = new ScreenItemDescriptionParseExcel();
-
+		
         List<ScreenItemDescription> fields = service.parseSpecSheet(source, ScreenSheetNameEnum.SCREEN_FIELD.getSheetName());
          System.out.println("excel.size:"+fields.size()); 
         for (ScreenItemDescription field : fields) {
@@ -33,7 +36,8 @@ public class ParseExcelUtils {
         for (ScreenFuncSpecification field : fields1) {
             System.out.println(field.getItemNo() + " | " + field.getFunctionName());
         }
-        parseExcelContent.setScreenItemDesList(fields);
         return parseExcelContent;
 	}
+	
+	
 }

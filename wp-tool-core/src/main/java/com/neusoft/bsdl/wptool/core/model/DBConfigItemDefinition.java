@@ -6,7 +6,7 @@ import java.util.List;
 import lombok.Data;
 
 /**
- * CSVレイアウトのコラム定義
+ * DB設定項目定義のコラム定義
  */
 @Data
 public class DBConfigItemDefinition {

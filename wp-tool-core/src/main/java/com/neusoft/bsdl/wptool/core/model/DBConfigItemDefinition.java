@@ -1,7 +1,8 @@
 package com.neusoft.bsdl.wptool.core.model;
 
-import java.util.ArrayList;
 import java.util.List;
+
+import org.apache.commons.compress.utils.Lists;
 
 import lombok.Data;
 
@@ -19,5 +20,5 @@ public class DBConfigItemDefinition {
     // 名前
     private String name; 
     //一覧表示
-    private List<DBConfigSubItemDefinition> items = new ArrayList<>();
+    private List<DBConfigSubItemDefinition> items = Lists.newArrayList();
 }

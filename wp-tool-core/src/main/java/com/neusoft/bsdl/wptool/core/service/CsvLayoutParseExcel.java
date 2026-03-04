@@ -11,7 +11,6 @@ import com.alibaba.excel.util.StringUtils;
 import com.neusoft.bsdl.wptool.core.CommonConstant;
 import com.neusoft.bsdl.wptool.core.io.FileSource;
 import com.neusoft.bsdl.wptool.core.model.CsvLayout;
-import com.neusoft.bsdl.wptool.core.model.ScreenItemDescription;
 
 import lombok.extern.slf4j.Slf4j;
 
@@ -38,6 +37,7 @@ public class CsvLayoutParseExcel {
 
 				@Override
 				public void doAfterAllAnalysed(AnalysisContext context) {
+				
 				}
 			};
 			

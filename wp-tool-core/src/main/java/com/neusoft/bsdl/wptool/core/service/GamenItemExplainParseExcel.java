@@ -1,15 +1,15 @@
 package com.neusoft.bsdl.wptool.core.service;
 
 import java.io.InputStream;
-import java.util.ArrayList;
 import java.util.List;
+
+import org.apache.commons.compress.utils.Lists;
 
 import com.alibaba.excel.EasyExcel;
 import com.alibaba.excel.context.AnalysisContext;
 import com.alibaba.excel.event.AnalysisEventListener;
 import com.alibaba.excel.util.StringUtils;
 import com.neusoft.bsdl.wptool.core.CommonConstant;
-import com.neusoft.bsdl.wptool.core.io.FileSource;
 import com.neusoft.bsdl.wptool.core.model.ScreenItemDescription;
 
 import lombok.extern.slf4j.Slf4j;
@@ -20,9 +20,8 @@ import lombok.extern.slf4j.Slf4j;
 @Slf4j
 public class GamenItemExplainParseExcel {
 
-	public List<ScreenItemDescription> parseSpecSheet(FileSource source, String sheetName) throws Exception {
-		try (InputStream inputStream = source.getInputStream()) {
-			List<ScreenItemDescription> result = new ArrayList<>();
+	public List<ScreenItemDescription> parseSpecSheet(InputStream inputStream, String sheetName) throws Exception {
+			List<ScreenItemDescription> result = Lists.newArrayList();
 
 			AnalysisEventListener<ScreenItemDescription> listener = new AnalysisEventListener<ScreenItemDescription>() {
 				@Override
@@ -44,6 +43,5 @@ public class GamenItemExplainParseExcel {
 					.doRead();
 
 			return result;
-		}
 	}
 }

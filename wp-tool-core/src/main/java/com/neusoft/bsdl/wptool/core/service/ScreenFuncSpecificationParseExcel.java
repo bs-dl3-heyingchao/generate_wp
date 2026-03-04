@@ -1,8 +1,9 @@
 package com.neusoft.bsdl.wptool.core.service;
 
 import java.io.InputStream;
-import java.util.ArrayList;
 import java.util.List;
+
+import org.apache.commons.compress.utils.Lists;
 
 import com.alibaba.excel.EasyExcel;
 import com.alibaba.excel.context.AnalysisContext;
@@ -12,22 +13,18 @@ import com.neusoft.bsdl.wptool.core.CommonConstant;
 import com.neusoft.bsdl.wptool.core.io.FileSource;
 import com.neusoft.bsdl.wptool.core.model.ScreenFuncSpecification;
 
-import lombok.extern.slf4j.Slf4j;
-
 /**
- * 画面項目説明書のコンテンツの解析ツール
+ * 画面機能定義書のコンテンツの解析ツール
  */
-@Slf4j
 public class ScreenFuncSpecificationParseExcel {
 
 	public List<ScreenFuncSpecification> parseSpecSheet(FileSource source, String sheetName) throws Exception {
 		try (InputStream inputStream = source.getInputStream()) {
-			List<ScreenFuncSpecification> result = new ArrayList<>();
+			List<ScreenFuncSpecification> result = Lists.newArrayList();
 
 			AnalysisEventListener<ScreenFuncSpecification> listener = new AnalysisEventListener<ScreenFuncSpecification>() {
 				@Override
 				public void invoke(ScreenFuncSpecification row, AnalysisContext context) {
-					log.info("row:" + row.toString());
 					// 項番は空白でない場合、該当行が有効とする(項番タイトル行をスキップする)
 					if (row != null && !StringUtils.isEmpty(row.getItemNo())
 							&& !CommonConstant.SKIP_HEADER.equals(row.getItemNo())) {

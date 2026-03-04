@@ -1,0 +1,27 @@
+# Build outputs
+**/target/
+**/out/
+
+# Logs
+*.log
+logs/
+
+# Eclipse
+**/.project
+**/.classpath
+**/.settings/
+
+# IntelliJ IDEA
+**/.idea/
+**/*.iml
+
+# VS Code
+**/.vscode/
+
+# OS files
+.DS_Store
+Thumbs.db
+
+# Temp files
+*.tmp
+*.swp

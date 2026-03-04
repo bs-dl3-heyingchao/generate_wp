@@ -67,7 +67,4 @@ public class ScreenItemDescription{
 
     @ExcelProperty(value = "項目名 (WP項目名)", index = 128)
     private String wpItemName;
-    
-    //グループ
-    private String group;
 }

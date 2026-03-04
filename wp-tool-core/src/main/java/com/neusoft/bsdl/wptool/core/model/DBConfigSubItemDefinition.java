@@ -1,5 +1,7 @@
 package com.neusoft.bsdl.wptool.core.model;
 
+import com.alibaba.excel.annotation.ExcelProperty;
+
 import lombok.Data;
 
 /**
@@ -7,10 +9,10 @@ import lombok.Data;
  */
 @Data
 public class DBConfigSubItemDefinition {
-	// 項目
+	@ExcelProperty(value = "項目", index = 0)
 	private String item;
-	// 設定内容
+	@ExcelProperty(value = "設定内容", index = 0)
 	private String configValue;
-	// 備考
+	@ExcelProperty(value = "備考", index = 0)
 	private String remarks;
 }

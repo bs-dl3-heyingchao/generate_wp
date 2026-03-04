@@ -57,7 +57,7 @@ public class CsvLayoutParseExcel {
 
 		// ✅ 正确用法：传入新的 ByteArrayInputStream
 		try (InputStream bis = new ByteArrayInputStream(excelBytes)) {
-			EasyExcel.read(bis, CsvSubLayout.class, listener).sheet(sheetName).headRowNumber(8).doRead();
+			EasyExcel.read(bis, CsvSubLayout.class, listener).sheet(sheetName).headRowNumber(9).doRead();
 		}
 
 		// Step 4: 组装结果
@@ -87,18 +87,23 @@ public class CsvLayoutParseExcel {
 		// 第6行：ファイル名規則 | 文字コード | 改行コード
 		Row row1 = sheet.getRow(CommonConstant.START_POS_INDEX + 1);
 		if (row1 != null) {
-			layout.setFileFormat(getCellValue(row0.getCell(6)));
-			layout.setCharacterEncoding(getCellValue(row0.getCell(46)));
-			layout.setLineEncoding(getCellValue(row0.getCell(57)));
+			layout.setFileNamingRule(getCellValue(row1.getCell(6)));
+			layout.setCharacterEncoding(getCellValue(row1.getCell(46)));
+			layout.setLineEncoding(getCellValue(row1.getCell(57)));
 		}
 		//特記事項
 		Row row2 = sheet.getRow(CommonConstant.START_POS_INDEX + 2);
 		if (row2 != null) {
-			layout.setSpecialNotes(getCellValue(row0.getCell(6)));
+			layout.setSpecialNotes(getCellValue(row2.getCell(6)));
 		}
 		return layout;
 	}
-
+	
+	/**
+	 * セール値取得
+	 * @param cell
+	 * @return
+	 */
 	private String getCellValue(Cell cell) {
 		if (cell == null)
 			return "";

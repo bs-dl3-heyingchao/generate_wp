@@ -15,7 +15,7 @@ public class DBConfigItemDefinition {
 	private String dataModel; 
 	// 操作
     private String operation;   
-    // 操作コード
+    // 処理内容
     private String processCode; 
     // 名前
     private String name; 

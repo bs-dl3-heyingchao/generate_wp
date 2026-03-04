@@ -4,7 +4,7 @@ import com.alibaba.excel.annotation.ExcelProperty;
 import lombok.Data;
 
 /**
- * 画面機能定義書のコラム定義
+ * 画面チェック仕様書のコラム定義
  */
 @Data
 public class ScreenValidation {
@@ -23,27 +23,36 @@ public class ScreenValidation {
 	@ExcelProperty(value = "チェック仕様", index = 22)
 	private String validationRule;
 	
-	@ExcelProperty(value = "F5 修正", index = 50)
-	private String f5Modify;
+	@ExcelProperty(value = "チェックアクション", index = 50)
+	private String validationAction;
 	
-	@ExcelProperty(value = "F4 照会", index = 52)
-	private String f4Search;
+	@ExcelProperty(value = "メッセージID", index = 74)
+	private String massageId;
 	
-	@ExcelProperty(value = "", index = 54)
-	private String validationFuctionSpace1;
+	@ExcelProperty(value = "メッセージ内容", index = 79)
+	private String messageContent;
 	
-	@ExcelProperty(value = "", index = 56)
-	private String validationFuctionSpace2;
+	@ExcelProperty(value = "{1}", index = 105)
+	private String parameter1;
 	
-	@ExcelProperty(value = "", index = 58)
-	private String validationFuctionSpace3;
+	@ExcelProperty(value = "{2}", index = 111)
+	private String parameter2;
 	
-	@ExcelProperty(value = "", index = 60)
-	private String validationFuctionSpace4;
+	@ExcelProperty(value = "{3}", index = 117)
+	private String parameter3;
 	
-	@ExcelProperty(value = "", index = 62)
-	private String validationFuctionSpace5;
+	@ExcelProperty(value = "{4}", index = 123)
+	private String parameter4;
+
+	@ExcelProperty(value = "{5}", index = 129)
+	private String parameter5;
 	
-	@ExcelProperty(value = "メッセージID", index = 62)
-	private String messageId;
+	@ExcelProperty(value = "備考", index = 135)
+	private String remarks;
+	
+	@ExcelProperty(value = "IO,BP,ワーニング", index = 171)
+	private String bizWarining;
+	
+	@ExcelProperty(value = "実装メモ", index = 172)
+	private String codingMemo;
 }

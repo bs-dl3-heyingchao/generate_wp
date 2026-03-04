@@ -32,6 +32,12 @@
             <groupId>com.neusoft.bsdl</groupId>
             <artifactId>wp-tool-core</artifactId>
             <version>1.0.0-SNAPSHOT</version>
+            <exclusions>
+                <exclusion>
+                    <groupId>org.slf4j</groupId>
+                    <artifactId>slf4j-simple</artifactId>
+                </exclusion>
+            </exclusions>
         </dependency>
 
         <dependency>

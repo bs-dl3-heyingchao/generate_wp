@@ -13,7 +13,7 @@ import com.neusoft.bsdl.wptool.core.ScreenSheetNameEnum;
 import com.neusoft.bsdl.wptool.core.io.FileSource;
 import com.neusoft.bsdl.wptool.core.model.CsvLayout;
 import com.neusoft.bsdl.wptool.core.model.DBConfigItemDefinition;
-import com.neusoft.bsdl.wptool.core.model.ParseScreenExcelContent;
+import com.neusoft.bsdl.wptool.core.model.ScreenExcelContent;
 import com.neusoft.bsdl.wptool.core.model.ScreenFuncSpecification;
 import com.neusoft.bsdl.wptool.core.model.ScreenItemDescriptionResult;
 
@@ -28,7 +28,7 @@ public class ParseExcelUtils {
 	 * @return
 	 * @throws Exception
 	 */
-	public static ParseScreenExcelContent parseExcel(FileSource source) throws Exception {
+	public static ScreenExcelContent parseScreenExcel(FileSource source) throws Exception {
 		List<String> sheetLists = getSheetNames(source.getInputStream());
 		log.info("sheetLists:{}",sheetLists.toString());
 		if (sheetLists.isEmpty()) {
@@ -36,7 +36,7 @@ public class ParseExcelUtils {
 		}
 		
 		//すべてのシートを解析して結果をParseExcelContent
-		ParseScreenExcelContent parseExcelContent = new ParseScreenExcelContent();
+		ScreenExcelContent parseExcelContent = new ScreenExcelContent();
 		 Map<String,List<ScreenItemDescriptionResult>> screenItemDesMaps =Maps.newHashMap();
 		 Map<String,List<DBConfigItemDefinition>> dbConfigItemDefinitionMaps =Maps.newHashMap();
 		for (String sheetName : sheetLists) {

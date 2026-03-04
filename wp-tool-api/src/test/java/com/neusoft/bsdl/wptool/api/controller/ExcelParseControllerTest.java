@@ -13,22 +13,22 @@ import static org.junit.jupiter.api.Assertions.assertEquals;
 import static org.junit.jupiter.api.Assertions.assertTrue;
 
 @SpringBootTest(webEnvironment = SpringBootTest.WebEnvironment.RANDOM_PORT)
-class GreetingControllerTest {
+class ExcelParseControllerTest {
 
     @Value("${local.server.port}")
     private int port;
 
     @Test
-    void greetingShouldReturnCoreMessage() throws Exception {
+    void parseExcelShouldReturnBadRequestWhenFileParameterIsMissing() throws Exception {
         HttpClient client = HttpClient.newHttpClient();
         HttpRequest request = HttpRequest.newBuilder()
-                .uri(URI.create("http://localhost:" + port + "/api/v1/greeting"))
-                .GET()
+                .uri(URI.create("http://localhost:" + port + "/api/v1/excel/parse"))
+                .POST(HttpRequest.BodyPublishers.noBody())
                 .build();
         HttpResponse<String> response = client.send(request, HttpResponse.BodyHandlers.ofString());
 
-        assertEquals(200, response.statusCode());
-        assertTrue(response.body().contains("\"app\":\"wp-tool-api\""));
-        assertTrue(response.body().contains("\"message\":\"Hello from wp-tool-core\""));
+        assertEquals(400, response.statusCode());
+        assertTrue(response.body().contains("\"code\":400"));
+        assertTrue(response.body().contains("\"message\":"));
     }
 }

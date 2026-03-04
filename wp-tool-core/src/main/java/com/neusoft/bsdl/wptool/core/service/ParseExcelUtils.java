@@ -11,6 +11,7 @@ import org.apache.poi.ss.usermodel.WorkbookFactory;
 import com.google.common.collect.Maps;
 import com.neusoft.bsdl.wptool.core.ScreenSheetNameEnum;
 import com.neusoft.bsdl.wptool.core.io.FileSource;
+import com.neusoft.bsdl.wptool.core.model.CsvLayout;
 import com.neusoft.bsdl.wptool.core.model.DBConfigItemDefinition;
 import com.neusoft.bsdl.wptool.core.model.ParseScreenExcelContent;
 import com.neusoft.bsdl.wptool.core.model.ScreenFuncSpecification;
@@ -49,13 +50,17 @@ public class ParseExcelUtils {
 				//画面機能定義書
 				ScreenFuncSpecificationParseExcel parseExcel = new ScreenFuncSpecificationParseExcel();
 				List<ScreenFuncSpecification> contents  = parseExcel.parseSpecSheet(source, sheetName);
+				log.info(contents.toString());
 				parseExcelContent.setScreenFuncSpecification(contents); 
 			}else if(sheetName.indexOf(ScreenSheetNameEnum.SCREEN_VALIDATION.getSheetName()) !=-1) {
 				//画面チェック仕様書
 				
 			}else if(sheetName.indexOf(ScreenSheetNameEnum.CSV_LAYOUT.getSheetName()) !=-1) {
 				//CSVレイアウト
-				
+				CsvLayoutParseExcel parseExcel = new CsvLayoutParseExcel();
+				CsvLayout contents = parseExcel.parseSpecSheet(source, sheetName);
+				log.info(contents.toString());
+				parseExcelContent.setCsvLayout(contents);
 			}else if(sheetName.indexOf(ScreenSheetNameEnum.DB_CONFIG.getSheetName()) !=-1) {
 				//DB設定項目定義
 			}

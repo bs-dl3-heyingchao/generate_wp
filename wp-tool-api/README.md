@@ -36,3 +36,19 @@ mvn clean install
 mvn clean test
 mvn spring-boot:run
 ```
+
+## Docker 镜像打包
+
+已提供 `wp-tool-api/Dockerfile`（多阶段构建，会先构建 `wp-tool-core`，再打包 `wp-tool-api`）。
+
+在 `wp-tools` 根目录执行：
+
+```bash
+docker build -f wp-tool-api/Dockerfile -t wp-tool-api:latest .
+```
+
+运行容器：
+
+```bash
+docker run --rm -p 8080:8080 wp-tool-api:latest
+```

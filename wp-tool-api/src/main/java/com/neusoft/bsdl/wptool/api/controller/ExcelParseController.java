@@ -11,8 +11,14 @@ import org.springframework.web.server.ResponseStatusException;
 
 import com.neusoft.bsdl.wptool.api.dto.ApiResponse;
 import com.neusoft.bsdl.wptool.core.io.FileSource;
+import com.neusoft.bsdl.wptool.core.model.ScreenExcelContent;
 import com.neusoft.bsdl.wptool.core.service.ParseExcelUtils;
 
+import io.swagger.v3.oas.annotations.Operation;
+import io.swagger.v3.oas.annotations.Parameter;
+import io.swagger.v3.oas.annotations.media.Content;
+import io.swagger.v3.oas.annotations.media.Schema;
+import io.swagger.v3.oas.annotations.tags.Tag;
 import tools.jackson.databind.JsonNode;
 import tools.jackson.databind.ObjectMapper;
 import tools.jackson.databind.node.ArrayNode;
@@ -20,27 +26,38 @@ import tools.jackson.databind.node.ObjectNode;
 
 @RestController
 @RequestMapping("/api/v1")
+@Tag(name = "Excel Parse", description = "Excelファイル解析API")
 public class ExcelParseController {
 
     private static final ObjectMapper OBJECT_MAPPER = new ObjectMapper();
 
     @PostMapping("/excel/parse-screen")
-    public ResponseEntity<ApiResponse<Object>> parseScreenExcel(@RequestParam("file") MultipartFile file) {
+    @Operation(
+            summary = "画面設計書Excel解析",
+            description = "アップロードされた画面設計書Excelを解析し、sheetList内のcontentをJSON文字列として返します。"
+        )
+    public ResponseEntity<ApiResponse<ScreenExcelContent>> parseScreenExcel(
+            @Parameter(
+                description = "解析対象のExcelファイル",
+                required = true,
+                content = @Content(schema = @Schema(type = "string", format = "binary", example = "screen-design.xlsx"))
+            )
+            @RequestParam("file") MultipartFile file) {
         if (file.isEmpty()) {
             throw new ResponseStatusException(HttpStatus.BAD_REQUEST, "Uploaded file is empty");
         }
 
         FileSource fileSource = file::getInputStream;
         try {
-            Object parseExcelContent = ParseExcelUtils.parseScreenExcel(fileSource);
-            Object convertedContent = serializeSheetContentAsJsonString(parseExcelContent);
+            ScreenExcelContent parseExcelContent = ParseExcelUtils.parseScreenExcel(fileSource);
+            ScreenExcelContent convertedContent = serializeSheetContentAsJsonString(parseExcelContent);
             return ResponseEntity.ok(ApiResponse.success(convertedContent));
         } catch (Exception exception) {
             throw new ResponseStatusException(HttpStatus.BAD_REQUEST, "Failed to parse excel file", exception);
         }
     }
 
-    private Object serializeSheetContentAsJsonString(Object parseExcelContent) {
+    private ScreenExcelContent serializeSheetContentAsJsonString(ScreenExcelContent parseExcelContent) {
         JsonNode rootNode = OBJECT_MAPPER.valueToTree(parseExcelContent);
         if (!(rootNode instanceof ObjectNode rootObject)) {
             return parseExcelContent;
@@ -54,6 +71,6 @@ public class ExcelParseController {
                 }
             }
         }
-        return rootObject;
+        return OBJECT_MAPPER.convertValue(rootObject, ScreenExcelContent.class);
     }
 }

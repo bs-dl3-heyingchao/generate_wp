@@ -46,33 +46,27 @@ public class ParseExcelUtils {
 				// 画面項目説明書シート(複数シートが存在する可能)
 				ScreenItemDescriptionParseExcel parseExcel = new ScreenItemDescriptionParseExcel();
 				List<ScreenItemDescriptionResult> contents = parseExcel.parseSpecSheet(source, sheetName);
-				String json = JSON.toJSONString(contents);
-				screenParseResult.put(sheetName, json);
+				screenParseResult.put(sheetName, JSON.toJSONString(contents));
 			} else if (sheetName.equals(ScreenSheetNameEnum.SCREEN_FUNCTION.getSheetName())) {
 				// 画面機能定義書
 				ScreenFuncSpecificationParseExcel parseExcel = new ScreenFuncSpecificationParseExcel();
 				List<ScreenFuncSpecification> contents = parseExcel.parseSpecSheet(source, sheetName);
-				String json = JSON.toJSONString(contents);
-				screenParseResult.put(sheetName, json);
+				screenParseResult.put(sheetName, JSON.toJSONString(contents));
 			} else if (sheetName.equals(ScreenSheetNameEnum.SCREEN_VALIDATION.getSheetName())) {
 				// 画面チェック仕様書
 				ScreenValidationParseExcel parseExcel = new ScreenValidationParseExcel();
 				List<ScreenValidation> contents = parseExcel.parseSpecSheet(source, sheetName);
-				String json = JSON.toJSONString(contents);
-				screenParseResult.put(sheetName, json);
+				screenParseResult.put(sheetName, JSON.toJSONString(contents));
 			} else if (sheetName.equals(ScreenSheetNameEnum.CSV_LAYOUT.getSheetName())) {
 				// CSVレイアウト
 				CsvLayoutParseExcel parseExcel = new CsvLayoutParseExcel();
 				CsvLayout contents = parseExcel.parseSpecSheet(source, sheetName);
-				String json = JSON.toJSONString(contents);
-				screenParseResult.put(sheetName, json);
+				screenParseResult.put(sheetName, JSON.toJSONString(contents));
 			} else if (sheetName.indexOf(ScreenSheetNameEnum.DB_CONFIG.getSheetName()) != -1) {
 				// DB設定項目定義(複数シートが存在する可能)
 				DbConfigItemDefinitionParseExcel parseExcel = new DbConfigItemDefinitionParseExcel();
 				DBConfigItemDefinition contents = parseExcel.parseSpecSheet(source, sheetName);
-				String json = JSON.toJSONString(contents);
-				log.info("json:{}",json);
-				screenParseResult.put(sheetName, json);
+				screenParseResult.put(sheetName, JSON.toJSONString(contents));
 			}
 		}
 		parseExcelContent.setScreenParseResult(screenParseResult);

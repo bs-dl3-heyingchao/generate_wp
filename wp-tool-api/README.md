@@ -36,3 +36,20 @@ mvn clean install
 mvn clean test
 mvn spring-boot:run
 ```
+
+## Docker 镜像打包
+
+已提供 `Dockerfile`（本地先打包 Jar，再拷贝进镜像）。
+
+在 `wp-tool-api` 目录执行：
+
+```bash
+mvn clean package -DskipTests
+docker build -t wp-tool-api:latest .
+```
+
+运行容器：
+
+```bash
+docker run --rm -p 8080:8080 wp-tool-api:latest
+```

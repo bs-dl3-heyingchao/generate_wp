@@ -3,12 +3,13 @@ package com.neusoft.bsdl.wptool.core.service;
 import java.io.InputStream;
 import java.util.List;
 
-import org.apache.commons.compress.utils.Lists;
 import org.apache.commons.beanutils.BeanUtils;
+import org.apache.commons.compress.utils.Lists;
 import org.apache.poi.ss.usermodel.Workbook;
 import org.apache.poi.ss.usermodel.WorkbookFactory;
 
 import com.neusoft.bsdl.wptool.core.ScreenSheetNameEnum;
+import com.neusoft.bsdl.wptool.core.exception.WPParseException;
 import com.neusoft.bsdl.wptool.core.io.FileSource;
 import com.neusoft.bsdl.wptool.core.model.CsvLayout;
 import com.neusoft.bsdl.wptool.core.model.DBConfigItemDefinition;
@@ -34,7 +35,7 @@ public class ParseExcelUtils {
 		List<String> sheetNames = getSheetNames(source.getInputStream());
 		log.info("sheetLists:{}", sheetNames.toString());
 		if (sheetNames.isEmpty()) {
-			throw new Exception("シートがないため、無効の仕様書です。。。。。。。");
+			throw new WPParseException("シートがないため、無効の仕様書です。。。。。。。");
 		}
 		ScreenExcelContent parseExcelContent = new ScreenExcelContent();
 		// ヘッダ情報の解析

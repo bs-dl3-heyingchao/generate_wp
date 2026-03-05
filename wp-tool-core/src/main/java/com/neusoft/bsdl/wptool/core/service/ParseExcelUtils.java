@@ -14,9 +14,11 @@ import com.neusoft.bsdl.wptool.core.ScreenSheetNameEnum;
 import com.neusoft.bsdl.wptool.core.io.FileSource;
 import com.neusoft.bsdl.wptool.core.model.CsvLayout;
 import com.neusoft.bsdl.wptool.core.model.DBConfigItemDefinition;
+import com.neusoft.bsdl.wptool.core.model.ExcelSheetContent;
 import com.neusoft.bsdl.wptool.core.model.ScreenExcelContent;
 import com.neusoft.bsdl.wptool.core.model.ScreenFuncSpecification;
 import com.neusoft.bsdl.wptool.core.model.ScreenItemDescriptionResult;
+import com.neusoft.bsdl.wptool.core.model.ScreenMetadata;
 import com.neusoft.bsdl.wptool.core.model.ScreenValidation;
 
 import lombok.extern.slf4j.Slf4j;
@@ -31,45 +33,63 @@ public class ParseExcelUtils {
 	 * @throws Exception
 	 */
 	public static ScreenExcelContent parseScreenExcel(FileSource source) throws Exception {
-		List<String> sheetLists = getSheetNames(source.getInputStream());
-		log.info("sheetLists:{}", sheetLists.toString());
-		if (sheetLists.isEmpty()) {
+		List<String> sheetNames = getSheetNames(source.getInputStream());
+		log.info("sheetLists:{}", sheetNames.toString());
+		if (sheetNames.isEmpty()) {
 			throw new Exception("シートがないため、無効の仕様書です。。。。。。。");
 		}
-
-		// すべてのシートを解析して結果をParseExcelContent
 		ScreenExcelContent parseExcelContent = new ScreenExcelContent();
-		Map<String, String> screenParseResult = Maps.newHashMap();
-
-		for (String sheetName : sheetLists) {
+		// ヘッダ情報の解析
+		ScreenMetadata screenMetadata = ScreenMetadataParser.readHeaderMetadata(source, ScreenSheetNameEnum.MODIFY_HISTORY.getSheetName());
+		parseExcelContent = JSON.parseObject(JSON.toJSONString(screenMetadata), ScreenExcelContent.class);
+		log.info("parseExcelContent:{}",parseExcelContent);
+		// シートコンテンツの解析
+		List<ExcelSheetContent<?>> sheetList = Lists.newArrayList();
+		for (String sheetName : sheetNames) {
 			if (sheetName.indexOf(ScreenSheetNameEnum.SCREEN_FIELD.getSheetName()) != -1) {
 				// 画面項目説明書シート(複数シートが存在する可能)
 				ScreenItemDescriptionParseExcel parseExcel = new ScreenItemDescriptionParseExcel();
 				List<ScreenItemDescriptionResult> contents = parseExcel.parseSpecSheet(source, sheetName);
-				screenParseResult.put(sheetName, JSON.toJSONString(contents));
+				ExcelSheetContent<List<ScreenItemDescriptionResult>> excelSheetContent = new ExcelSheetContent<>();
+				excelSheetContent.setSheetName(sheetName);
+				excelSheetContent.setContent(contents);
+				sheetList.add(excelSheetContent);
 			} else if (sheetName.equals(ScreenSheetNameEnum.SCREEN_FUNCTION.getSheetName())) {
 				// 画面機能定義書
 				ScreenFuncSpecificationParseExcel parseExcel = new ScreenFuncSpecificationParseExcel();
 				List<ScreenFuncSpecification> contents = parseExcel.parseSpecSheet(source, sheetName);
-				screenParseResult.put(sheetName, JSON.toJSONString(contents));
+				ExcelSheetContent<List<ScreenFuncSpecification>> excelSheetContent = new ExcelSheetContent<>();
+				excelSheetContent.setSheetName(sheetName);
+				excelSheetContent.setContent(contents);
+				sheetList.add(excelSheetContent);
 			} else if (sheetName.equals(ScreenSheetNameEnum.SCREEN_VALIDATION.getSheetName())) {
 				// 画面チェック仕様書
 				ScreenValidationParseExcel parseExcel = new ScreenValidationParseExcel();
 				List<ScreenValidation> contents = parseExcel.parseSpecSheet(source, sheetName);
-				screenParseResult.put(sheetName, JSON.toJSONString(contents));
+				ExcelSheetContent<List<ScreenValidation>> excelSheetContent = new ExcelSheetContent<>();
+				excelSheetContent.setSheetName(sheetName);
+				excelSheetContent.setContent(contents);
+				sheetList.add(excelSheetContent);
 			} else if (sheetName.equals(ScreenSheetNameEnum.CSV_LAYOUT.getSheetName())) {
 				// CSVレイアウト
 				CsvLayoutParseExcel parseExcel = new CsvLayoutParseExcel();
 				CsvLayout contents = parseExcel.parseSpecSheet(source, sheetName);
-				screenParseResult.put(sheetName, JSON.toJSONString(contents));
+				ExcelSheetContent<CsvLayout> excelSheetContent = new ExcelSheetContent<>();
+				excelSheetContent.setSheetName(sheetName);
+				excelSheetContent.setContent(contents);
+				sheetList.add(excelSheetContent);
 			} else if (sheetName.indexOf(ScreenSheetNameEnum.DB_CONFIG.getSheetName()) != -1) {
 				// DB設定項目定義(複数シートが存在する可能)
 				DbConfigItemDefinitionParseExcel parseExcel = new DbConfigItemDefinitionParseExcel();
 				DBConfigItemDefinition contents = parseExcel.parseSpecSheet(source, sheetName);
-				screenParseResult.put(sheetName, JSON.toJSONString(contents));
+				ExcelSheetContent<DBConfigItemDefinition> excelSheetContent = new ExcelSheetContent<>();
+				excelSheetContent.setSheetName(sheetName);
+				excelSheetContent.setContent(contents);
+				sheetList.add(excelSheetContent);
 			}
+			
 		}
-		parseExcelContent.setScreenParseResult(screenParseResult);
+		parseExcelContent.setSheetList(sheetList);
 		return parseExcelContent;
 	}
 

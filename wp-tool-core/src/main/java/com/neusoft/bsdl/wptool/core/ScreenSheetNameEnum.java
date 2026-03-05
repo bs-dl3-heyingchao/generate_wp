@@ -3,8 +3,9 @@ package com.neusoft.bsdl.wptool.core;
 /**
  * 仕様書のシート名称
  */
-
 public enum ScreenSheetNameEnum {
+	// 改版履歴
+	MODIFY_HISTORY("改版履歴"),
 	// 画面項目説明書
 	SCREEN_FIELD("画面項目説明書"),
 	// 画面機能定義書

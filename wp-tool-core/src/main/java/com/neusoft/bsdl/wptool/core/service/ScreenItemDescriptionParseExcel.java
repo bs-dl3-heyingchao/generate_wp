@@ -16,6 +16,9 @@ import com.neusoft.bsdl.wptool.core.model.ScreenItemDescriptionResult;
 
 import lombok.extern.slf4j.Slf4j;
 
+/**
+ * 画面項目説明書のコンテンツの解析ツール
+ */
 @Slf4j
 public class ScreenItemDescriptionParseExcel {
 	/**
@@ -52,7 +55,7 @@ public class ScreenItemDescriptionParseExcel {
 			// 項番
 			String itemNo = Objects.toString(row.getItemNo(), "").trim();
 			// 項目名
-			String fieldName = Objects.toString(row.getFieldName(), "").trim();
+			String fieldName = Objects.toString(row.getItemName(), "").trim();
 
 			log.info("Processing row: itemNo='{}', fieldName='{}'", itemNo, fieldName);
 

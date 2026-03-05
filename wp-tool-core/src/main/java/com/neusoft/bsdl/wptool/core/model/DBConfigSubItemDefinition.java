@@ -11,8 +11,8 @@ import lombok.Data;
 public class DBConfigSubItemDefinition {
 	@ExcelProperty(value = "項目", index = 0)
 	private String item;
-	@ExcelProperty(value = "設定内容", index = 0)
-	private String configValue;
-	@ExcelProperty(value = "備考", index = 0)
+	@ExcelProperty(value = "設定内容", index = 13)
+	private String configContent;
+	@ExcelProperty(value = "備考", index = 44)
 	private String remarks;
 }

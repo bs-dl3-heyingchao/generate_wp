@@ -16,18 +16,17 @@ import com.alibaba.excel.context.AnalysisContext;
 import com.alibaba.excel.event.AnalysisEventListener;
 import com.neusoft.bsdl.wptool.core.CommonConstant;
 import com.neusoft.bsdl.wptool.core.io.FileSource;
-import com.neusoft.bsdl.wptool.core.model.CsvLayout;
-import com.neusoft.bsdl.wptool.core.model.CsvSubLayout;
+import com.neusoft.bsdl.wptool.core.model.DBConfigItemDefinition;
+import com.neusoft.bsdl.wptool.core.model.DBConfigSubItemDefinition;
 
 import lombok.extern.slf4j.Slf4j;
-
 /**
- * CSVレイアウトのコンテンツの解析ツール
+ * DB設定項目定義のコンテンツの解析ツール
  */
 @Slf4j
-public class CsvLayoutParseExcel {
+public class DbConfigItemDefinitionParseExcel {
 
-	public CsvLayout parseSpecSheet(FileSource source, String sheetName) throws Exception {
+	public DBConfigItemDefinition parseSpecSheet(FileSource source, String sheetName) throws Exception {
 		// Step 1: 将 InputStream 转为 byte[]，避免流被消费后无法复用
 		byte[] excelBytes;
 		try (InputStream is = source.getInputStream()) {
@@ -35,19 +34,19 @@ public class CsvLayoutParseExcel {
 		}
 
 		// Step 2: 用 POI 读取上部元数据（前4行）
-		CsvLayout result;
+		DBConfigItemDefinition result;
 		try (Workbook workbook = WorkbookFactory.create(new ByteArrayInputStream(excelBytes))) {
 			Sheet sheet = workbook.getSheet(sheetName);
 			result = readHeaderMetadata(sheet);
 		}
 
 		// Step 3: 用 EasyExcel 读取下部字段列表（CsvSubLayout）
-		List<CsvSubLayout> subLayouts = new ArrayList<>();
-		AnalysisEventListener<CsvSubLayout> listener = new AnalysisEventListener<CsvSubLayout>() {
+		List<DBConfigSubItemDefinition> subLayouts = new ArrayList<>();
+		AnalysisEventListener<DBConfigSubItemDefinition> listener = new AnalysisEventListener<DBConfigSubItemDefinition>() {
 			@Override
-			public void invoke(CsvSubLayout row, AnalysisContext context) {
-				if (row != null && !CommonConstant.SKIP_HEADER.equals(row.getItemNo())) {
-					log.debug("Parsed field: itemNo={}, fieldName={}", row.getItemNo(), row.getFiledName());
+			public void invoke(DBConfigSubItemDefinition row, AnalysisContext context) {
+				if (row != null && !"項目".equals(row.getItem())) {
+					log.debug("Parsed field: item={}, configContent={}", row.getItem(), row.getConfigContent());
 					subLayouts.add(row);
 				}
 			}
@@ -60,11 +59,11 @@ public class CsvLayoutParseExcel {
 
 		// ✅ 正确用法：传入新的 ByteArrayInputStream
 		try (InputStream bis = new ByteArrayInputStream(excelBytes)) {
-			EasyExcel.read(bis, CsvSubLayout.class, listener).sheet(sheetName).headRowNumber(9).doRead();
+			EasyExcel.read(bis, DBConfigSubItemDefinition.class, listener).sheet(sheetName).headRowNumber(9).doRead();
 		}
 
 		// Step 4: 组装结果
-		result.setCsvSubLayouts(subLayouts);
+		result.setDetails(subLayouts);
 		return result;
 	}
 
@@ -74,30 +73,19 @@ public class CsvLayoutParseExcel {
 	 * @param sheet
 	 * @return
 	 */
-	private CsvLayout readHeaderMetadata(Sheet sheet) {
-		CsvLayout layout = new CsvLayout();
-
-		// 第5行：機能名称 | ファイルID | ファイル名 | 入出力種別 | ファイル形式
-		Row row0 = sheet.getRow(CommonConstant.START_POS_INDEX);
+	private DBConfigItemDefinition readHeaderMetadata(Sheet sheet) {
+		DBConfigItemDefinition layout = new DBConfigItemDefinition();
+		// 第6行：データモデル | 操作
+		Row row0 = sheet.getRow(CommonConstant.START_POS_INDEX+1);
 		if (row0 != null) {
-			layout.setFunctionName(getCellValue(row0.getCell(6)));
-			layout.setFileId(getCellValue(row0.getCell(20)));
-			layout.setFileName(getCellValue(row0.getCell(34)));
-			layout.setInputOutputType(getCellValue(row0.getCell(46)));
-			layout.setFileFormat(getCellValue(row0.getCell(57)));
+			layout.setDataModel(getCellValue(row0.getCell(6)));
+			layout.setOperation(getCellValue(row0.getCell(37)));
 		}
 
-		// 第6行：ファイル名規則 | 文字コード | 改行コード
-		Row row1 = sheet.getRow(CommonConstant.START_POS_INDEX + 1);
+		// 第7行：ファイル名規則 | 文字コード | 改行コード
+		Row row1 = sheet.getRow(CommonConstant.START_POS_INDEX + 2);
 		if (row1 != null) {
-			layout.setFileNamingRule(getCellValue(row1.getCell(6)));
-			layout.setCharacterEncoding(getCellValue(row1.getCell(46)));
-			layout.setLineEncoding(getCellValue(row1.getCell(57)));
-		}
-		//特記事項
-		Row row2 = sheet.getRow(CommonConstant.START_POS_INDEX + 2);
-		if (row2 != null) {
-			layout.setSpecialNotes(getCellValue(row2.getCell(6)));
+			layout.setProcessContent(getCellValue(row1.getCell(6)));
 		}
 		return layout;
 	}

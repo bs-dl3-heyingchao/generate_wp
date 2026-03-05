@@ -12,7 +12,7 @@ public class ScreenItemDescription{
     private String itemNo;
 	
     @ExcelProperty(value = "項目名", index = 1)
-    private String fieldName;
+    private String itemName;
 
     @ExcelProperty(value = "I/O", index = 10)
     private String io;
@@ -42,7 +42,7 @@ public class ScreenItemDescription{
     private String modelName;
     
     @ExcelProperty(value = "項目名", index = 38)
-    private String itemName;
+    private String modelItemName;
 
     @ExcelProperty(value = "フォーマット", index = 46)
     private String format;

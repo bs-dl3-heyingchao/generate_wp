@@ -55,7 +55,7 @@ public class ScreenItemDescriptionParseExcel {
 			// 項番
 			String itemNo = Objects.toString(row.getItemNo(), "").trim();
 			// 項目名
-			String fieldName = Objects.toString(row.getFieldName(), "").trim();
+			String fieldName = Objects.toString(row.getItemName(), "").trim();
 
 			log.info("Processing row: itemNo='{}', fieldName='{}'", itemNo, fieldName);
 

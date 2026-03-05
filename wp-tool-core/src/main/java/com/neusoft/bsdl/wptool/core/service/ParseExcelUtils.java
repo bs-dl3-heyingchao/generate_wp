@@ -2,14 +2,12 @@ package com.neusoft.bsdl.wptool.core.service;
 
 import java.io.InputStream;
 import java.util.List;
-import java.util.Map;
 
 import org.apache.commons.compress.utils.Lists;
+import org.apache.commons.beanutils.BeanUtils;
 import org.apache.poi.ss.usermodel.Workbook;
 import org.apache.poi.ss.usermodel.WorkbookFactory;
 
-import com.alibaba.fastjson2.JSON;
-import com.google.common.collect.Maps;
 import com.neusoft.bsdl.wptool.core.ScreenSheetNameEnum;
 import com.neusoft.bsdl.wptool.core.io.FileSource;
 import com.neusoft.bsdl.wptool.core.model.CsvLayout;
@@ -41,8 +39,7 @@ public class ParseExcelUtils {
 		ScreenExcelContent parseExcelContent = new ScreenExcelContent();
 		// ヘッダ情報の解析
 		ScreenMetadata screenMetadata = ScreenMetadataParser.readHeaderMetadata(source, ScreenSheetNameEnum.MODIFY_HISTORY.getSheetName());
-		parseExcelContent = JSON.parseObject(JSON.toJSONString(screenMetadata), ScreenExcelContent.class);
-		log.info("parseExcelContent:{}",parseExcelContent);
+		BeanUtils.copyProperties(parseExcelContent, screenMetadata);
 		// シートコンテンツの解析
 		List<ExcelSheetContent<?>> sheetList = Lists.newArrayList();
 		for (String sheetName : sheetNames) {

@@ -16,9 +16,7 @@ public class DBConfigItemDefinition {
 	// 操作
     private String operation;   
     // 処理内容
-    private String processCode; 
-    // 名前
-    private String name; 
+    private String processContent; 
     //一覧表示
-    private List<DBConfigSubItemDefinition> items = Lists.newArrayList();
+    private List<DBConfigSubItemDefinition> details = Lists.newArrayList();
 }

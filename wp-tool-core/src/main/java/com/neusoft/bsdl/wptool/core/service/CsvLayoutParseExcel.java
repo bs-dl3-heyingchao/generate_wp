@@ -21,6 +21,9 @@ import com.neusoft.bsdl.wptool.core.model.CsvSubLayout;
 
 import lombok.extern.slf4j.Slf4j;
 
+/**
+ * CSVレイアウトのコンテンツの解析ツール
+ */
 @Slf4j
 public class CsvLayoutParseExcel {
 

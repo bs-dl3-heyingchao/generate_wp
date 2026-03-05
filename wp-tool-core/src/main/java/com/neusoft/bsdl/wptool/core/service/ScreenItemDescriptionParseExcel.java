@@ -16,6 +16,9 @@ import com.neusoft.bsdl.wptool.core.model.ScreenItemDescriptionResult;
 
 import lombok.extern.slf4j.Slf4j;
 
+/**
+ * 画面項目説明書のコンテンツの解析ツール
+ */
 @Slf4j
 public class ScreenItemDescriptionParseExcel {
 	/**

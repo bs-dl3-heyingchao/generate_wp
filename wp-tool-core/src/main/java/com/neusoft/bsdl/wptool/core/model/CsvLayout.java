@@ -5,7 +5,7 @@ import java.util.List;
 import lombok.Data;
 
 /**
- * CSVレイアウトのコラム定義
+ * CSVレイアウトの解析内容
  */
 @Data
 public class CsvLayout {

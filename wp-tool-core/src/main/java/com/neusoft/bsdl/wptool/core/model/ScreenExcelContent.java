@@ -1,23 +1,30 @@
 package com.neusoft.bsdl.wptool.core.model;
 
 import java.util.List;
-import java.util.Map;
 
 import lombok.Data;
 
 /**
- * 画面設計書定義
+ * 解析仕様書のコンテンツ
  */
 @Data
-public class ScreenExcelContent {
-    /** 画面項目説明書 */
-    private Map<String, List<ScreenItemDescriptionResult>> screenItemDesMaps;
-    /** 画面機能定義書 */
-    private List<ScreenFuncSpecification> screenFuncSpecification;
-    /** 画面チェック仕様書 */
-    private ScreenValidation screenValidation;
-    /** CSVレイアウト */
-    private CsvLayout csvLayout;
-    /** DB設定項目定義 */
-    private Map<String, List<DBConfigItemDefinition>> dbConfigItemDefinitionMaps;
+public class ScreenExcelContent{
+	//システム
+	private String system;
+	//サブシステム
+	private String subSystem;
+	//フェーズ
+	private String phase;
+	//ドキュメント名
+	private String documentName;
+	//機能分類
+	private String functionType;
+	//機能ID
+	private String functionId;
+	//画面ID
+	private String screenId;
+	//画面名
+	private String screenName;
+	//解析結果シートコンテンツ
+    private List<ExcelSheetContent<?>> sheetList;
 }

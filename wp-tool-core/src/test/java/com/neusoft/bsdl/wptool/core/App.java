@@ -10,7 +10,7 @@ import tools.jackson.databind.ObjectMapper;
 public class App {
 
     public static void main(String[] args) throws Exception {
-        FileSource source = new LocalFileSource("D:\\128SYIS25142\\test\\（内部設計書サンプル）MTI340S01B01_画面設計書_汎用テーブル一覧.xlsx");
+        FileSource source = new LocalFileSource("C:\\Users\\heyingchao.DL\\Desktop\\workspace\\（内部設計書サンプル）MTI340S01B01_画面設計書_汎用テーブル一覧_error.xlsx");
         ScreenExcelContent screenExcelContent = ParseExcelUtils.parseScreenExcel(source);
         ObjectMapper objectMapper = new ObjectMapper();
         String prettyJson = objectMapper.writerWithDefaultPrettyPrinter().writeValueAsString(screenExcelContent);

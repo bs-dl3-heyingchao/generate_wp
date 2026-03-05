@@ -7,7 +7,7 @@ import org.apache.commons.compress.utils.Lists;
 import lombok.Data;
 
 /**
- * DB設定項目定義のコラム定義
+ * DB設定項目定義の解析内容
  */
 @Data
 public class DBConfigItemDefinition {
@@ -15,10 +15,10 @@ public class DBConfigItemDefinition {
 	private String dataModel; 
 	// 操作
     private String operation;   
-    // 処理内容
-    private String processCode; 
+    // 操作コード
+    private String operationCode;
     // 名前
-    private String name; 
+    private String tableName; 
     //一覧表示
-    private List<DBConfigSubItemDefinition> items = Lists.newArrayList();
+    private List<DBConfigSubItemDefinition> details = Lists.newArrayList();
 }

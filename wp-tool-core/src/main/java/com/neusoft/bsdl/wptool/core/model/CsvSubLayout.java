@@ -4,7 +4,7 @@ import com.alibaba.excel.annotation.ExcelProperty;
 import lombok.Data;
 
 /**
- * CSVレイアウトのコラム定義
+ * CSVレイアウトの一覧の解析内容
  */
 @Data
 public class CsvSubLayout {

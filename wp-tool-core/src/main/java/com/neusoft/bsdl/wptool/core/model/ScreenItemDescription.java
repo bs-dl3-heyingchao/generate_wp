@@ -12,7 +12,7 @@ public class ScreenItemDescription{
     private String itemNo;
 	
     @ExcelProperty(value = "項目名", index = 1)
-    private String fieldName;
+    private String itemName;
 
     @ExcelProperty(value = "I/O", index = 10)
     private String io;
@@ -35,14 +35,14 @@ public class ScreenItemDescription{
     @ExcelProperty(value = "桁数", index = 25)
     private String length;
 
-    @ExcelProperty(value = "ソート順数", index = 28)
+    @ExcelProperty(value = "ソート順", index = 28)
     private String sorted;
     
     @ExcelProperty(value = "データモデル名", index = 30)
     private String modelName;
     
     @ExcelProperty(value = "項目名", index = 38)
-    private String itemName;
+    private String modelItemName;
 
     @ExcelProperty(value = "フォーマット", index = 46)
     private String format;
@@ -65,6 +65,6 @@ public class ScreenItemDescription{
     @ExcelProperty(value = "備考", index = 117)
     private String remarks;
 
-    @ExcelProperty(value = "項目名 (WP項目名)", index = 128)
+    @ExcelProperty(value = "WP項目名", index = 128)
     private String wpItemName;
 }

@@ -26,39 +26,37 @@ public class ScreenValidation {
 
 	@ExcelProperty(value = "チェック仕様", index = 22)
 	private String validationRule;
-	
-	/*@ExcelProperty(value = "チェックアクション", index = 50)
-	private String validationAction;*/
-	//チェックアクションエリア
-	private List<ScreenValidationAction> validationActions =Lists.newArrayList();
-	
-	@ExcelProperty(value = "メッセージID", index = 74)
+
+	// チェックアクションエリア
+	private List<ScreenValidationAction> validationActions = Lists.newArrayList();
+
+	@ExcelProperty(value = "メッセージID", index = 80)
 	private String massageId;
-	
-	@ExcelProperty(value = "メッセージ内容", index = 79)
+
+	@ExcelProperty(value = "メッセージ内容", index = 85)
 	private String messageContent;
-	
-	@ExcelProperty(value = "{1}", index = 105)
+
+	@ExcelProperty(value = "{1}", index = 111)
 	private String parameter1;
-	
-	@ExcelProperty(value = "{2}", index = 111)
+
+	@ExcelProperty(value = "{2}", index = 117)
 	private String parameter2;
-	
-	@ExcelProperty(value = "{3}", index = 117)
+
+	@ExcelProperty(value = "{3}", index = 123)
 	private String parameter3;
-	
-	@ExcelProperty(value = "{4}", index = 123)
+
+	@ExcelProperty(value = "{4}", index = 129)
 	private String parameter4;
 
-	@ExcelProperty(value = "{5}", index = 129)
+	@ExcelProperty(value = "{5}", index = 135)
 	private String parameter5;
-	
-	@ExcelProperty(value = "備考", index = 135)
+
+	@ExcelProperty(value = "備考", index = 141)
 	private String remarks;
-	
-	@ExcelProperty(value = "IO,BP,ワーニング", index = 171)
+
+	@ExcelProperty(value = "IO,BP,ワーニング", index = 177)
 	private String bizWarining;
-	
-	@ExcelProperty(value = "実装メモ", index = 172)
+
+	@ExcelProperty(value = "実装メモ", index = 178)
 	private String codingMemo;
 }

@@ -6,6 +6,7 @@ import java.util.ArrayList;
 import java.util.List;
 import java.util.Map;
 
+import org.apache.commons.collections.CollectionUtils;
 import org.apache.poi.ss.usermodel.Cell;
 import org.apache.poi.ss.usermodel.Row;
 import org.apache.poi.ss.usermodel.Sheet;
@@ -16,8 +17,9 @@ import com.alibaba.excel.EasyExcel;
 import com.alibaba.excel.context.AnalysisContext;
 import com.alibaba.excel.event.AnalysisEventListener;
 import com.alibaba.excel.util.StringUtils;
-import com.google.common.collect.Lists;
-import com.neusoft.bsdl.wptool.core.CommonConstant;
+import com.neusoft.bsdl.wptool.core.CommonConstant.SCREEN_VALIDATION_SHEET;
+import com.neusoft.bsdl.wptool.core.enums.ScreenValidationHeaderEnum;
+import com.neusoft.bsdl.wptool.core.exception.WPParseException.ExcelParseError;
 import com.neusoft.bsdl.wptool.core.io.FileSource;
 import com.neusoft.bsdl.wptool.core.model.ScreenValidation;
 import com.neusoft.bsdl.wptool.core.model.ScreenValidationAction;
@@ -28,145 +30,153 @@ import lombok.extern.slf4j.Slf4j;
  * 画面チェック仕様書のExcelを解析するサービス
  */
 @Slf4j
-public class ScreenValidationParseExcel {
+public class ScreenValidationParseExcel extends AbstractParseTool {
 
-	// チェックアクションエリアのスタートインデックス
-	private static final int ACTION_START_INDEX = 50;
-	// チェックアクションエリアの最大の列数
-	private static final int ACTION_COLUMN_COUNT = 12;
-	
-    /**
-     * 解析チェック仕様シート
-     */
-    public List<ScreenValidation> parseSpecSheet(FileSource source, String sheetName) throws Exception {
-        // Step 1: 读取整个文件到内存
-        byte[] excelBytes;
-        try (InputStream is = source.getInputStream()) {
-            excelBytes = is.readAllBytes();
-        }
-
-        // Step 2: 用 POI 读取表头（第4行），获取チェックアクション列名
-        List<String> actionColumnNames = readActionColumnNames(excelBytes, sheetName);
-        log.info("actionColumnNames:{}", actionColumnNames);
-        
-        // Step 3: 用 EasyExcel 读取数据行（Map<Integer, String>）
-        List<ScreenValidation> result = new ArrayList<>();
-
-        try (InputStream bis = new ByteArrayInputStream(excelBytes)) {
-            EasyExcel.read(bis, new AnalysisEventListener<Map<Integer, String>>() {
-                @Override
-                public void invoke(Map<Integer, String> rowMap, AnalysisContext context) {
-                    String itemNo = rowMap.get(0);
-                    if (!isValidItemNo(itemNo)) {
-                        return;
-                    }
-
-                    ScreenValidation v = buildScreenValidation(rowMap, actionColumnNames);
-                    result.add(v);
-                    log.debug("Parsed: itemNo={}, validationName={}", v.getItemNo(), v.getValidationName());
-                }
-
-                @Override
-                public void doAfterAllAnalysed(AnalysisContext context) {
-                    log.info("画面チェック仕様解析完了: {}件", result.size());
-                }
-            })
-            .sheet(sheetName)
-            .headRowNumber(CommonConstant.START_POS_INDEX+1)
-            .doRead();
-        }
-
-        return result;
-    }
-
-    /**
-     * 用 POI 读取第4行（HEADER_ROW_INDEX）中 index=50~61 的列名
-     */
-    private List<String> readActionColumnNames(byte[] excelBytes, String sheetName) throws Exception {
-        List<String> names = new ArrayList<>();
-        try (Workbook workbook = WorkbookFactory.create(new ByteArrayInputStream(excelBytes))) {
-            Sheet sheet = workbook.getSheet(sheetName);
-            Row headerRow = sheet.getRow(CommonConstant.START_POS_INDEX+1); 
-            int columnIndex = ACTION_START_INDEX;
-			for (int i = 0; i < ACTION_COLUMN_COUNT; i++) {
-				Cell cell = headerRow.getCell(columnIndex);
-				if (cell != null) {
-					names.add(cell.toString().trim());
-				}
-				columnIndex = columnIndex + 2;
-			}
-        }
-        return names;
-    }
-
-    /**
-     * 从 rowMap 构建 ScreenValidation 对象
-     */
-    private ScreenValidation buildScreenValidation(Map<Integer, String> rowMap, List<String> actionNames) {
-    	ScreenValidation screenValidation = new ScreenValidation();
-		// 項番
-		screenValidation.setItemNo(rowMap.get(0));
-		// 項目名
-		screenValidation.setItemName(rowMap.get(1));
-		// チェック名
-		screenValidation.setValidationName(rowMap.get(7));
-		// 種別
-		screenValidation.setType(rowMap.get(18));
-		// チェック仕様
-		screenValidation.setValidationRule(rowMap.get(22));
-		// メッセージID
-		screenValidation.setMassageId(rowMap.get(74));
-		// メッセージ内容
-		screenValidation.setMessageContent(rowMap.get(79));
-		// パラメータ: {1}
-		screenValidation.setParameter1(rowMap.get(105));
-		// パラメータ: {2}
-		screenValidation.setParameter2(rowMap.get(111));
-		// パラメータ: {3}
-		screenValidation.setParameter3(rowMap.get(117));
-		// パラメータ: {4}
-		screenValidation.setParameter4(rowMap.get(123));
-		// パラメータ: {5}
-		screenValidation.setParameter5(rowMap.get(129));
-		// 備考
-		screenValidation.setRemarks(rowMap.get(135));
-		// IO,BP,ワーニング
-		screenValidation.setBizWarining(rowMap.get(171));
-		// 実装メモ
-		screenValidation.setCodingMemo(rowMap.get(172));
-
-		// ✅ 构建 validationActions
-		List<ScreenValidationAction> actions = Lists.newArrayList();
-		int columnIndex = ACTION_START_INDEX;
-		for (int i = 0; i < ACTION_COLUMN_COUNT; i++) {
-			//タイトルは空白の場合、処理終了
-			if(StringUtils.isEmpty(actionNames.get(i))) {
-				break;
-			}
-			String cellValue = rowMap.get(columnIndex);
-			ScreenValidationAction flag = new ScreenValidationAction();
-			flag.setActionName(actionNames.get(i));
-			flag.setHasChecked("〇".equals(cellValue));
-			actions.add(flag);
-			columnIndex = columnIndex +2;
+	public List<ScreenValidation> parseSpecSheet(FileSource source, String sheetName, List<ExcelParseError> errors)
+			throws Exception {
+		// エクセルファイルを読込む
+		byte[] excelBytes;
+		try (InputStream is = source.getInputStream()) {
+			excelBytes = is.readAllBytes(); 
 		}
-		screenValidation.setValidationActions(actions);
 
-		return screenValidation;
-    }
+		// バリデーションチェックを実施する
+		try (Workbook workbook = WorkbookFactory.create(new ByteArrayInputStream(excelBytes))) {
+			Sheet sheet = workbook.getSheet(sheetName);
+			validateHeaders(sheet, errors);
+			if (!CollectionUtils.isEmpty(errors)) {
+				return null;
+			}
+		}
 
-    /**
-     * 判断是否为有效项番（非空且可转为数字）
-     */
-    private boolean isValidItemNo(String itemNo) {
-        if (itemNo == null || itemNo.trim().isEmpty()) {
-            return false;
-        }
-        try {
-            Integer.parseInt(itemNo.trim());
-            return true;
-        } catch (NumberFormatException e) {
-            return false;
-        }
-    }
+		// 读取チェックアクション列名（第4行，index=50~78，间隔2列）
+		List<String> actionColumnNames = readActionColumnNames(excelBytes, sheetName);
+
+		// 明細情報を解析する
+		List<ScreenValidation> result = new ArrayList<>();
+		try (InputStream bis = new ByteArrayInputStream(excelBytes)) {
+			EasyExcel.read(bis, new AnalysisEventListener<Map<Integer, String>>() {
+				@Override
+				public void invoke(Map<Integer, String> rowMap, AnalysisContext context) {
+					String itemNo = rowMap.get(0);
+					if (!isValidItemNo(itemNo)) {
+						return;
+					}
+					ScreenValidation v = buildScreenValidation(rowMap, actionColumnNames);
+					result.add(v);
+					log.info("Parsed: itemNo={}, validationName={}", v.getItemNo(), v.getValidationName());
+				}
+
+				@Override
+				public void doAfterAllAnalysed(AnalysisContext context) {
+				}
+			}).sheet(sheetName).headRowNumber(SCREEN_VALIDATION_SHEET.START_POS_DATA_INDEX).doRead();
+		}
+
+		return result;
+	}
+
+	/**
+	 * 「画面チェック仕様書」シートのヘッダー列構造のバリデーションチェック
+	 * @param sheet シートオブジェクト
+	 * @param errors エラーオブジェクト
+	 */
+	public static void validateHeaders(Sheet sheet, List<ExcelParseError> errors) {
+		Row level0Header = sheet.getRow(SCREEN_VALIDATION_SHEET.START_POS_HEADER_INDEX);
+		Row level1Header = sheet.getRow(SCREEN_VALIDATION_SHEET.START_POS_HEADER_INDEX + 1);
+
+		for (ScreenValidationHeaderEnum header : ScreenValidationHeaderEnum.values()) {
+			String expected = header.getDisplayName();
+			int colIndex = header.getColumnIndex();
+			String actual = "";
+			Row targetRow = (header.getLevel() == 0) ? level0Header : level1Header;
+			if (targetRow != null) {
+				actual = getCellValue(targetRow, colIndex).trim();
+			}
+			if (!expected.equals(actual)) {
+				errors.add(new ExcelParseError(sheet.getSheetName(),
+						SCREEN_VALIDATION_SHEET.START_POS_HEADER_INDEX + header.getLevel() + 1, colIndex,
+						MessageService.getMessage("error.format.validation.wrongColum")));
+				break; // 或 continue，根据需求
+			}
+		}
+	}
+
+	/**
+	 * 读取チェックアクション列名（位于 START_POS_INDEX + 1 行，即第4行）
+	 */
+	private List<String> readActionColumnNames(byte[] excelBytes, String sheetName) throws Exception {
+		List<String> names = new ArrayList<>();
+		try (Workbook workbook = WorkbookFactory.create(new ByteArrayInputStream(excelBytes))) {
+			Sheet sheet = workbook.getSheet(sheetName);
+			Row headerRow = sheet.getRow(SCREEN_VALIDATION_SHEET.START_POS_HEADER_INDEX + 1);
+			if (headerRow == null) {
+				log.warn("チェックアクションヘッダ行（第5行）が存在しません");
+				return names;
+			}
+			int columnIndex = SCREEN_VALIDATION_SHEET.ACTION_START_INDEX;
+			for (int i = 0; i < SCREEN_VALIDATION_SHEET.ACTION_COLUMN_COUNT; i++) {
+				Cell cell = headerRow.getCell(columnIndex);
+				String value = (cell != null) ? cell.toString().trim() : "";
+				names.add(value);
+				columnIndex += 2;
+			}
+		}
+		return names;
+	}
+
+	/**
+	 * 从 Map 构建 ScreenValidation 对象
+	 */
+	private ScreenValidation buildScreenValidation(Map<Integer, String> rowMap, List<String> actionNames) {
+		ScreenValidation v = new ScreenValidation();
+		v.setItemNo(rowMap.get(0));
+		v.setItemName(rowMap.get(1));
+		v.setValidationName(rowMap.get(7));
+		v.setType(rowMap.get(18));
+		v.setValidationRule(rowMap.get(22));
+		v.setMassageId(rowMap.get(74));
+		v.setMessageContent(rowMap.get(79));
+		v.setParameter1(rowMap.get(105));
+		v.setParameter2(rowMap.get(111));
+		v.setParameter3(rowMap.get(117));
+		v.setParameter4(rowMap.get(123));
+		v.setParameter5(rowMap.get(129));
+		v.setRemarks(rowMap.get(135));
+		v.setBizWarining(rowMap.get(171));
+		v.setCodingMemo(rowMap.get(172));
+
+		// 构建アクションリスト
+		List<ScreenValidationAction> actions = new ArrayList<>();
+		int colIndex = SCREEN_VALIDATION_SHEET.ACTION_START_INDEX;
+		for (int i = 0; i < actionNames.size(); i++) {
+			String actionName = actionNames.get(i);
+			if (StringUtils.isEmpty(actionName)) {
+				break; // 遇到空白标题就停止
+			}
+			String cellValue = rowMap.get(colIndex);
+			ScreenValidationAction action = new ScreenValidationAction();
+			action.setActionName(actionName);
+			action.setHasChecked(SCREEN_VALIDATION_SHEET.MARK.equals(cellValue));
+			actions.add(action);
+			colIndex += 2;
+		}
+		v.setValidationActions(actions);
+		return v;
+	}
+
+	/**
+	 * 判断项番是否有效（非空且为数字）
+	 */
+	private boolean isValidItemNo(String itemNo) {
+		if (itemNo == null || itemNo.trim().isEmpty()) {
+			return false;
+		}
+		try {
+			Integer.parseInt(itemNo.trim());
+			return true;
+		} catch (NumberFormatException e) {
+			return false;
+		}
+	}
 }

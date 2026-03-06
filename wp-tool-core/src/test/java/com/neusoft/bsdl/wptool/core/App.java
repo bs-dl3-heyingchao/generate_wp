@@ -1,5 +1,7 @@
 package com.neusoft.bsdl.wptool.core;
 
+import java.io.File;
+
 import com.neusoft.bsdl.wptool.core.io.FileSource;
 import com.neusoft.bsdl.wptool.core.io.LocalFileSource;
 import com.neusoft.bsdl.wptool.core.model.ScreenExcelContent;
@@ -10,10 +12,18 @@ import tools.jackson.databind.ObjectMapper;
 public class App {
 
     public static void main(String[] args) throws Exception {
-        FileSource source = new LocalFileSource("C:\\Users\\heyingchao.DL\\Desktop\\workspace\\（内部設計書サンプル）MTI340S01B01_画面設計書_汎用テーブル一覧_error.xlsx");
+        if (args == null || args.length == 0) {
+            throw new IllegalArgumentException("Please pass input file name as the first argument.");
+        }
+
+        FileSource source = new LocalFileSource(args[0]);
         ScreenExcelContent screenExcelContent = ParseExcelUtils.parseScreenExcel(source);
         ObjectMapper objectMapper = new ObjectMapper();
-        String prettyJson = objectMapper.writerWithDefaultPrettyPrinter().writeValueAsString(screenExcelContent);
-        System.out.println(prettyJson);
+        File outputFile = new File("./target/output.json");
+        if (outputFile.getParentFile() != null) {
+            outputFile.getParentFile().mkdirs();
+        }
+        objectMapper.writerWithDefaultPrettyPrinter().writeValue(outputFile, screenExcelContent);
+        System.out.println("JSON output: " + outputFile.getPath());
     }
 }

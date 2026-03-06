@@ -102,9 +102,45 @@ public class WPParseException extends RuntimeException {
             if (columnIndex != null) {
                 location.append(", col=").append(columnIndex);
             }
+            if(rowIndex != null && columnIndex != null) {
+                location.append(" (").append(getPostion(columnIndex, rowIndex)).append(")");
+            }
             location.append(", message=").append(errorMessage == null ? "unknown" : errorMessage);
             return location.toString();
         }
     }
-
+    
+    /**
+     * Takes in a 0-based base-10 column and returns a ALPHA-26 representation. e.g.
+     * column #3 -&gt; D
+     * 
+     * @param col -
+     * @return -
+     */
+    private static String convertNumToColString(int col) {
+        String colRef = "";
+        int excelColNum = col + 1; // Excel counts column A as the 1st column, we treat it as the 0th one.
+        int colRemain = excelColNum;
+        while (colRemain > 0) {
+            int thisPart = colRemain % 26;
+            if (thisPart == 0) {
+                thisPart = 26;
+            }
+            colRemain = (colRemain - thisPart) / 26;
+            char colChar = (char) (thisPart + 64); // The letter A is at 65
+            colRef = colChar + colRef;
+        }
+        return colRef;
+    }
+    
+    /**
+     * 3,0 -> D1
+     * 
+     * @param colIndex
+     * @param rowIndex
+     * @return
+     */
+    private static String getPostion(int colIndex, int rowIndex) {
+        return convertNumToColString(colIndex) + ":" + (rowIndex + 1);
+    }
 }

@@ -5,7 +5,6 @@ import java.io.InputStream;
 import java.util.ArrayList;
 import java.util.List;
 
-import org.apache.commons.collections.CollectionUtils;
 import org.apache.poi.ss.usermodel.Row;
 import org.apache.poi.ss.usermodel.Sheet;
 import org.apache.poi.ss.usermodel.Workbook;
@@ -14,133 +13,198 @@ import org.apache.poi.ss.usermodel.WorkbookFactory;
 import com.alibaba.excel.EasyExcel;
 import com.alibaba.excel.context.AnalysisContext;
 import com.alibaba.excel.event.AnalysisEventListener;
+import com.alibaba.excel.util.StringUtils;
+import com.google.common.collect.Lists;
 import com.neusoft.bsdl.wptool.core.CommonConstant.DB_CONFIG_SHEET;
-import com.neusoft.bsdl.wptool.core.enums.DBConfigItemDefinitionDetailEnum;
 import com.neusoft.bsdl.wptool.core.enums.DBConfigItemDefinitionEnum;
+import com.neusoft.bsdl.wptool.core.enums.DBConfigItemDefinitionDetailEnum;
 import com.neusoft.bsdl.wptool.core.exception.WPParseException.ExcelParseError;
 import com.neusoft.bsdl.wptool.core.io.FileSource;
+import com.neusoft.bsdl.wptool.core.model.DBConfigDefinition;
 import com.neusoft.bsdl.wptool.core.model.DBConfigItemDefinition;
 import com.neusoft.bsdl.wptool.core.model.DBConfigSubItemDefinition;
 
 import lombok.extern.slf4j.Slf4j;
 
 /**
- * DB設定項目定義のコンテンツの解析ツール
+ * DB設定項目定義のコンテンツの解析ツール（支持多操作ブロック）
  */
 @Slf4j
 public class DbConfigItemDefinitionParseExcel extends AbstractParseTool {
 
-	public DBConfigItemDefinition parseSpecSheet(FileSource source, String sheetName, List<ExcelParseError> errors)
+	/**
+	 * メイン解析メソッド
+	 */
+	public DBConfigDefinition parseSpecSheet(FileSource source, String sheetName, List<ExcelParseError> errors)
 			throws Exception {
-		// エクセルファイルを読込む
 		byte[] excelBytes;
 		try (InputStream is = source.getInputStream()) {
 			excelBytes = is.readAllBytes();
 		}
 
-		// バリデーションチェックを実施する
+		// 操作エリアのバリデーションチェックを実施する
 		try (Workbook workbook = WorkbookFactory.create(new ByteArrayInputStream(excelBytes))) {
 			Sheet sheet = workbook.getSheet(sheetName);
 			validateHeaders(sheet, errors);
-			if (!CollectionUtils.isEmpty(errors)) {
+			if (!errors.isEmpty()) {
 				return null;
 			}
 		}
 
-		// ヘッダ情報を解析する
-		DBConfigItemDefinition result;
+		// 操作エリアごとに解析する
+		List<DBConfigItemDefinition> processList = Lists.newArrayList();
 		try (Workbook workbook = WorkbookFactory.create(new ByteArrayInputStream(excelBytes))) {
 			Sheet sheet = workbook.getSheet(sheetName);
-			result = readHeaderMetadata(sheet);
-		}
+			int lastRowNum = sheet.getLastRowNum();
+			int currentRow = DB_CONFIG_SHEET.START_POS_HEADER_INDEX;
 
-		// 明細情報を解析する
-		List<DBConfigSubItemDefinition> subLayouts = new ArrayList<>();
-		AnalysisEventListener<DBConfigSubItemDefinition> listener = new AnalysisEventListener<DBConfigSubItemDefinition>() {
-			@Override
-			public void invoke(DBConfigSubItemDefinition row, AnalysisContext context) {
-				if (row != null) {
-					subLayouts.add(row);
+			while (currentRow <= lastRowNum) {
+				Row row = sheet.getRow(currentRow);
+				String cell0 = getCellValue(row, 0).trim();
+				if (DBConfigItemDefinitionEnum.FUNCTION_NAME.getDisplayName().equals(cell0)) {
+					DBConfigItemDefinition item = new DBConfigItemDefinition();
+					item.setDataModel(cell0);
+					item.setOperation(getCellValue(row, 37).trim());
+					Row nextRow = sheet.getRow(currentRow + 1);
+					if (nextRow != null) {
+						item.setOperationCode(getCellValue(nextRow, 6).trim());
+						item.setTableName(getCellValue(nextRow, 37).trim());
+					}
+					// 明細の開始行
+					int detailStartRow = currentRow + 4;
+					List<DBConfigSubItemDefinition> details = readDetailsFromRow(excelBytes, sheetName, detailStartRow);
+					item.setDetails(details);
+					processList.add(item);
+
+					currentRow = findNextBlockStart(sheet, detailStartRow + 1);
+				} else {
+					currentRow++;
 				}
 			}
-
-			@Override
-			public void doAfterAllAnalysed(AnalysisContext context) {
-			}
-		};
-
-		try (InputStream bis = new ByteArrayInputStream(excelBytes)) {
-			EasyExcel.read(bis, DBConfigSubItemDefinition.class, listener).sheet(sheetName).headRowNumber(9).doRead();
 		}
 
-		result.setDetails(subLayouts);
+		DBConfigDefinition result = new DBConfigDefinition();
+		result.setProcessList(processList);
 		return result;
 	}
 
 	/**
-	 * 「DB設定項目定義」シートのヘッダー列、明細列構造のバリデーションチェック
-	 * @param sheet シートオブジェクト
-	 * @param errors エラーオブジェクト
+	 * 明細データの読込み（使用 EasyExcel）
 	 */
-	public static void validateHeaders(Sheet sheet, List<ExcelParseError> errors) {
-		// DB設定項目定義のヘッダバリデーションチェック
-		Row levle0_headerRow = sheet.getRow(DB_CONFIG_SHEET.START_POS_HEADER_INDEX);
-		Row levle1_headerRow = sheet.getRow(DB_CONFIG_SHEET.START_POS_HEADER_INDEX + 1);
-		for (DBConfigItemDefinitionEnum header : DBConfigItemDefinitionEnum.values()) {
-			String expectedName = header.getDisplayName();
-			int expectedIndex = header.getColumnIndex();
-			String actualName = "";
-			if (header.getLevel() == 0) {
-				actualName = getCellValue(levle0_headerRow, expectedIndex).trim();
-			} else {
-				actualName = getCellValue(levle1_headerRow, expectedIndex).trim();
-			}
+	private List<DBConfigSubItemDefinition> readDetailsFromRow(byte[] excelBytes, String sheetName, int startRow) {
+		List<DBConfigSubItemDefinition> details = new ArrayList<>();
+		try (InputStream bis = new ByteArrayInputStream(excelBytes)) {
+			EasyExcel
+					.read(bis, DBConfigSubItemDefinition.class, new AnalysisEventListener<DBConfigSubItemDefinition>() {
+						@Override
+						public void invoke(DBConfigSubItemDefinition data, AnalysisContext context) {
+							if (data != null && !StringUtils.isEmpty(data.getLogicalName())) {
+								details.add(data);
+							}
+						}
 
-			if (!expectedName.equals(actualName)) {
-				errors.add(new ExcelParseError(sheet.getSheetName(), DB_CONFIG_SHEET.START_POS_HEADER_INDEX + 1,
-						expectedIndex, MessageService.getMessage("error.format.dbConfig.wrongColumn")));
-				break;
-			}
+						@Override
+						public void doAfterAllAnalysed(AnalysisContext context) {
+						}
+					}).sheet(sheetName).headRowNumber(startRow).doRead();
+		} catch (Exception e) {
+			log.warn("明细解析失败，startRow={}", startRow, e);
 		}
-		// DB設定項目定義のヘッダバリデーションチェック
-		Row detailRow = sheet.getRow(DB_CONFIG_SHEET.START_POS_DETAIL_INDEX);
-
-		for (DBConfigItemDefinitionDetailEnum header : DBConfigItemDefinitionDetailEnum.values()) {
-			String expectedName = header.getDisplayName();
-			int expectedIndex = header.getColumnIndex();
-
-			String actualName = getCellValue(detailRow, expectedIndex).trim();
-
-			if (!expectedName.equals(actualName)) {
-				errors.add(new ExcelParseError(sheet.getSheetName(), DB_CONFIG_SHEET.START_POS_DETAIL_INDEX + 1,
-						expectedIndex, MessageService.getMessage("error.format.dbConfig.wrongColumn")));
-				break;
-			}
-		}
-
+		return details;
 	}
 
 	/**
-	 * ヘッダ情報取得
+	 * 「DB設定項目定義」シートのすべての操作ブロックに対してヘッダー構造をバリデーション
 	 * 
 	 * @param sheet
-	 * @return
+	 * @param errors
 	 */
-	private DBConfigItemDefinition readHeaderMetadata(Sheet sheet) {
-		DBConfigItemDefinition layout = new DBConfigItemDefinition();
-		// 六行目：データモデル | 操作
-		Row row0 = sheet.getRow(DB_CONFIG_SHEET.START_POS_HEADER_INDEX);
-		if (row0 != null) {
-			layout.setDataModel(getCellValue(row0, 6));
-			layout.setOperation(getCellValue(row0, 37));
-		}
+	public static void validateHeaders(Sheet sheet, List<ExcelParseError> errors) {
+		int currentRow = DB_CONFIG_SHEET.START_POS_HEADER_INDEX;
+		int lastRowNum = sheet.getLastRowNum();
 
-		// 七行目：操作コード | 名前
-		Row row1 = sheet.getRow(DB_CONFIG_SHEET.START_POS_HEADER_INDEX + 1);
-		if (row1 != null) {
-			layout.setOperationCode(getCellValue(row1, 6));
-			layout.setTableName(getCellValue(row1, 37));
+		while (currentRow <= lastRowNum) {
+			Row row = sheet.getRow(currentRow);
+			String cell0 = getCellValue(row, 0).trim();
+			if (DBConfigItemDefinitionEnum.FUNCTION_NAME.getDisplayName().equals(cell0)) {
+				validateMainHeader(sheet, currentRow, errors);
+				int detailHeaderRowNum = currentRow + 3;
+				Row detailHeaderRow = sheet.getRow(detailHeaderRowNum);
+				if (detailHeaderRow != null) {
+					validateDetailHeader(detailHeaderRow, detailHeaderRowNum, sheet.getSheetName(), errors);
+				} else {
+					errors.add(new ExcelParseError(sheet.getSheetName(), detailHeaderRowNum + 1, 0,
+							MessageService.getMessage("error.format.dbConfig.wrongColumn")));
+				}
+
+				currentRow = findNextBlockStart(sheet, currentRow + 4);
+			} else {
+				currentRow++;
+			}
 		}
-		return layout;
+	}
+
+	/**
+	 * ヘッダ情報のバリデーション
+	 * 
+	 * @param sheet
+	 * @param mainHeaderStartRow
+	 * @param errors
+	 */
+	private static void validateMainHeader(Sheet sheet, int mainHeaderStartRow, List<ExcelParseError> errors) {
+		Row level0Row = sheet.getRow(mainHeaderStartRow);
+		Row level1Row = sheet.getRow(mainHeaderStartRow + 1);
+
+		for (DBConfigItemDefinitionEnum header : DBConfigItemDefinitionEnum.values()) {
+			String expected = header.getDisplayName();
+			int colIndex = header.getColumnIndex();
+			String actual = "";
+			Row targetRow = (header.getLevel() == 0) ? level0Row : level1Row;
+			if (targetRow != null) {
+				actual = getCellValue(targetRow, colIndex).trim();
+			}
+			if (!expected.equals(actual)) {
+				errors.add(new ExcelParseError(sheet.getSheetName(), mainHeaderStartRow + header.getLevel() + 1,
+						colIndex + 1, MessageService.getMessage("error.format.dbConfig.wrongColumn")));
+			}
+		}
+	}
+
+	/**
+	 * 明細のバリデーション
+	 * 
+	 * @param detailHeaderRow
+	 * @param rowNum
+	 * @param sheetName
+	 * @param errors
+	 */
+	private static void validateDetailHeader(Row detailHeaderRow, int rowNum, String sheetName,
+			List<ExcelParseError> errors) {
+		for (DBConfigItemDefinitionDetailEnum header : DBConfigItemDefinitionDetailEnum.values()) {
+			String expected = header.getDisplayName();
+			int colIndex = header.getColumnIndex();
+			String actual = getCellValue(detailHeaderRow, colIndex).trim();
+			if (!expected.equals(actual)) {
+				errors.add(new ExcelParseError(sheetName, rowNum + 1, colIndex + 1,
+						MessageService.getMessage("error.format.dbConfig.wrongColumn")));
+			}
+		}
+	}
+
+	/**
+	 * 查找下一个操作区块起始行（第一列为 FUNCTION_NAME）
+	 */
+	private static int findNextBlockStart(Sheet sheet, int fromRow) {
+		int lastRow = sheet.getLastRowNum();
+		for (int i = fromRow; i <= lastRow; i++) {
+			Row row = sheet.getRow(i);
+			if (row != null) {
+				String cell0 = getCellValue(row, 0).trim();
+				if (DBConfigItemDefinitionEnum.FUNCTION_NAME.getDisplayName().equals(cell0)) {
+					return i;
+				}
+			}
+		}
+		return lastRow + 1;
 	}
 }

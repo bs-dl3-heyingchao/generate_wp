@@ -5,25 +5,49 @@ import java.util.Collections;
 import java.util.List;
 import java.util.Objects;
 
+/**
+ * Excel解析時のエラー情報を保持する例外クラスです。 複数のエラーを集約して、詳細メッセージとして返却できます。
+ */
 public class WPParseException extends RuntimeException {
 
     private static final long serialVersionUID = 1L;
 
     private final List<ExcelParseError> errors = new ArrayList<>();
 
+    /**
+     * デフォルトメッセージで例外を生成します。
+     */
     public WPParseException() {
         super("Excel parse error");
     }
 
+    /**
+     * 指定メッセージで例外を生成します。
+     *
+     * @param message 例外メッセージ
+     */
     public WPParseException(String message) {
         super(message);
     }
 
-    public WPParseException(String sheetName, Integer rowIndex, Integer columnIndex, String errorMessage) {
+    /**
+     * 単一エラー情報を指定して例外を生成します。
+     *
+     * @param sheetName    シート名
+     * @param rowNumber    行番号（1始まり）
+     * @param colNumber    列番号（1始まり）
+     * @param errorMessage エラーメッセージ
+     */
+    public WPParseException(String sheetName, Integer rowNumber, Integer colNumber, String errorMessage) {
         this();
-        addError(sheetName, rowIndex, columnIndex, errorMessage);
+        addError(sheetName, rowNumber, colNumber, errorMessage);
     }
 
+    /**
+     * 既存のエラー一覧を指定して例外を生成します。
+     *
+     * @param errors エラー一覧
+     */
     public WPParseException(List<ExcelParseError> errors) {
         this();
         if (errors != null) {
@@ -31,22 +55,50 @@ public class WPParseException extends RuntimeException {
         }
     }
 
-    public void addError(String sheetName, Integer rowIndex, Integer columnIndex, String errorMessage) {
-        this.errors.add(new ExcelParseError(sheetName, rowIndex, columnIndex, errorMessage));
+    /**
+     * エラー情報を1件追加します。
+     *
+     * @param sheetName    シート名
+     * @param rowNumber    行番号（1始まり）
+     * @param colNumber    列番号（1始まり）
+     * @param errorMessage エラーメッセージ
+     */
+    public void addError(String sheetName, Integer rowNumber, Integer colNumber, String errorMessage) {
+        this.errors.add(new ExcelParseError(sheetName, rowNumber, colNumber, errorMessage));
     }
 
+    /**
+     * エラー情報を1件追加します。
+     *
+     * @param error エラー情報
+     */
     public void addError(ExcelParseError error) {
         this.errors.add(Objects.requireNonNull(error, "error must not be null"));
     }
 
+    /**
+     * 保持しているエラー一覧を返します（読み取り専用）。
+     *
+     * @return エラー一覧
+     */
     public List<ExcelParseError> getErrors() {
         return Collections.unmodifiableList(errors);
     }
 
+    /**
+     * エラーを保持しているかを返します。
+     *
+     * @return エラーが存在する場合は true
+     */
     public boolean hasErrors() {
         return !errors.isEmpty();
     }
 
+    /**
+     * 基本メッセージにエラー詳細を付与したメッセージを返します。
+     *
+     * @return 例外メッセージ
+     */
     @Override
     public String getMessage() {
         String baseMessage = super.getMessage();
@@ -66,14 +118,14 @@ public class WPParseException extends RuntimeException {
 
     public static class ExcelParseError {
         private final String sheetName;
-        private final Integer rowIndex;
-        private final Integer columnIndex;
+        private final Integer rowNumber;
+        private final Integer colNumber;
         private final String errorMessage;
 
-        public ExcelParseError(String sheetName, Integer rowIndex, Integer columnIndex, String errorMessage) {
+        public ExcelParseError(String sheetName, Integer rowNumber, Integer colNumber, String errorMessage) {
             this.sheetName = sheetName;
-            this.rowIndex = rowIndex;
-            this.columnIndex = columnIndex;
+            this.rowNumber = rowNumber;
+            this.colNumber = colNumber;
             this.errorMessage = errorMessage;
         }
 
@@ -81,12 +133,22 @@ public class WPParseException extends RuntimeException {
             return sheetName;
         }
 
-        public Integer getRowIndex() {
-            return rowIndex;
+        /**
+         * エラー発生行番号（1始まり）を返します。
+         *
+         * @return 行番号（1始まり）
+         */
+        public Integer getRowNumber() {
+            return rowNumber;
         }
 
-        public Integer getColumnIndex() {
-            return columnIndex;
+        /**
+         * エラー発生列番号（1始まり）を返します。
+         *
+         * @return 列番号（1始まり）
+         */
+        public Integer getColNumber() {
+            return colNumber;
         }
 
         public String getErrorMessage() {
@@ -96,31 +158,29 @@ public class WPParseException extends RuntimeException {
         public String format() {
             StringBuilder location = new StringBuilder();
             location.append("sheet=").append(sheetName == null ? "unknown" : sheetName);
-            if (rowIndex != null) {
-                location.append(", row=").append(rowIndex);
+            if (rowNumber != null) {
+                location.append(", row=").append(rowNumber);
             }
-            if (columnIndex != null) {
-                location.append(", col=").append(columnIndex);
+            if (colNumber != null) {
+                location.append(", col=").append(colNumber);
             }
-            if(rowIndex != null && columnIndex != null) {
-                location.append(" (").append(getPostion(columnIndex, rowIndex)).append(")");
+            if (rowNumber != null && colNumber != null) {
+                location.append(" (").append(getCellAddress(colNumber, rowNumber)).append(")");
             }
             location.append(", message=").append(errorMessage == null ? "unknown" : errorMessage);
             return location.toString();
         }
     }
-    
+
     /**
-     * Takes in a 0-based base-10 column and returns a ALPHA-26 representation. e.g.
-     * column #3 -&gt; D
-     * 
-     * @param col -
-     * @return -
+     * 1始まりの列番号を、Excel形式の列記号（A, B, ..., Z, AA, ...）へ変換します。 例: 4 -&gt; D
+     *
+     * @param colNumber 列番号（1始まり）
+     * @return Excel列記号
      */
-    private static String convertNumToColString(int col) {
+    public static String colNumToLetter(int colNumber) {
         String colRef = "";
-        int excelColNum = col + 1; // Excel counts column A as the 1st column, we treat it as the 0th one.
-        int colRemain = excelColNum;
+        int colRemain = colNumber;
         while (colRemain > 0) {
             int thisPart = colRemain % 26;
             if (thisPart == 0) {
@@ -132,15 +192,16 @@ public class WPParseException extends RuntimeException {
         }
         return colRef;
     }
-    
+
     /**
-     * 3,0 -> D1
-     * 
-     * @param colIndex
-     * @param rowIndex
-     * @return
+     * 列番号・行番号（ともに1始まり）からセルアドレスを生成します。 例: 4,1 -&gt; D1
+     *
+     * @param colNumber 列番号（1始まり）
+     * @param rowNumber 行番号（1始まり）
+     * @return セルアドレス
      */
-    private static String getPostion(int colIndex, int rowIndex) {
-        return convertNumToColString(colIndex) + ":" + (rowIndex + 1);
+    public static String getCellAddress(int colNumber, int rowNumber) {
+        return colNumToLetter(colNumber) + rowNumber;
     }
+
 }

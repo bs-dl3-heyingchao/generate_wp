@@ -16,12 +16,9 @@ import com.neusoft.bsdl.wptool.core.exception.WPParseException.ExcelParseError;
 import com.neusoft.bsdl.wptool.core.io.FileSource;
 import com.neusoft.bsdl.wptool.core.model.ScreenMetadata;
 
-import lombok.extern.slf4j.Slf4j;
-
 /**
  * 画面仕様書のヘッダーメタデータ（第2行）を解析するサービス
  */
-@Slf4j
 public class ScreenMetadataParser extends AbstractParseTool{
 
 	/**
@@ -38,7 +35,6 @@ public class ScreenMetadataParser extends AbstractParseTool{
 			if (sheet == null) {
 				throw new WPParseException("シートが見つかりません: " + sheetName);
 			}
-
 			// バリデーションチェックを実施する
 			validateHeaders(sheet,errors);
 			
@@ -65,7 +61,6 @@ public class ScreenMetadataParser extends AbstractParseTool{
 			meta.setScreenId(getCellValue(dataRow, ModifyHistoryHeaderEnum.SCREEN_ID.getColumnIndex()));
 			// 画面名
 			meta.setScreenName(getCellValue(dataRow, ModifyHistoryHeaderEnum.SCREEN_NAME.getColumnIndex()));
-
 			return meta;
 		}
 	}
@@ -91,6 +86,4 @@ public class ScreenMetadataParser extends AbstractParseTool{
 			}
 		}
 	}
-
-	
 }

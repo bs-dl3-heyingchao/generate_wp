@@ -22,12 +22,9 @@ import com.neusoft.bsdl.wptool.core.io.FileSource;
 import com.neusoft.bsdl.wptool.core.model.ScreenItemDescription;
 import com.neusoft.bsdl.wptool.core.model.ScreenItemDescriptionResult;
 
-import lombok.extern.slf4j.Slf4j;
-
 /**
  * 画面項目説明書のコンテンツの解析ツール
  */
-@Slf4j
 public class ScreenItemDescriptionParseExcel extends AbstractParseTool {
 	/**
 	 * excel解析
@@ -50,21 +47,20 @@ public class ScreenItemDescriptionParseExcel extends AbstractParseTool {
 				return null;
 			}
 		}
-		
-		 // 明細情報を解析する
+
+		// 明細情報を解析する
 		try (InputStream is2 = source.getInputStream()) {
-	        GroupingListener listener = new GroupingListener();
-	        EasyExcel.read(is2, ScreenItemDescription.class, listener)
-	            .sheet(sheetName)
-	            .headRowNumber(SCREEN_ITEM_DESCRIPTION_SHEET.START_POS_DATA_INDEX)
-	            .doRead();
-	        return listener.getResult();
-	    }
+			GroupingListener listener = new GroupingListener();
+			EasyExcel.read(is2, ScreenItemDescription.class, listener).sheet(sheetName)
+					.headRowNumber(SCREEN_ITEM_DESCRIPTION_SHEET.START_POS_DATA_INDEX).doRead();
+			return listener.getResult();
+		}
 	}
 
 	/**
 	 * 「画面項目説明書」シートのヘッダー列構造のバリデーションチェック
-	 * @param sheet シートオブジェクト
+	 * 
+	 * @param sheet  シートオブジェクト
 	 * @param errors エラーオブジェクト
 	 */
 	public static void validateHeaders(Sheet sheet, List<ExcelParseError> errors) {
@@ -83,7 +79,7 @@ public class ScreenItemDescriptionParseExcel extends AbstractParseTool {
 
 			if (!expectedName.equals(actualName)) {
 				errors.add(new ExcelParseError(sheet.getSheetName(),
-						SCREEN_ITEM_DESCRIPTION_SHEET.START_POS_HEADER_INDEX + 1, expectedIndex,
+						SCREEN_ITEM_DESCRIPTION_SHEET.START_POS_HEADER_INDEX + 1, expectedIndex + 1,
 						MessageService.getMessage("error.format.itemDescription.wrongColumn")));
 				break;
 			}
@@ -104,8 +100,6 @@ public class ScreenItemDescriptionParseExcel extends AbstractParseTool {
 			// 項目名
 			String fieldName = Objects.toString(row.getItemName(), "").trim();
 
-			log.info("Processing row: itemNo='{}', fieldName='{}'", itemNo, fieldName);
-
 			// グループ名称設定
 			if (fieldName.isEmpty() && !itemNo.isEmpty()) {
 				saveCurrentGroup();
@@ -117,7 +111,6 @@ public class ScreenItemDescriptionParseExcel extends AbstractParseTool {
 				try {
 					Integer.parseInt(itemNo);
 				} catch (NumberFormatException e) {
-					log.warn("无效编号格式，跳过: {}", itemNo);
 					return;
 				}
 				currentItems.add(row);

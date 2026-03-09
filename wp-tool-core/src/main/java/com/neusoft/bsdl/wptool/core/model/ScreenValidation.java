@@ -1,9 +1,9 @@
 package com.neusoft.bsdl.wptool.core.model;
 
+import java.util.ArrayList;
 import java.util.List;
 
 import com.alibaba.excel.annotation.ExcelProperty;
-import com.google.common.collect.Lists;
 
 import lombok.Data;
 
@@ -28,7 +28,7 @@ public class ScreenValidation {
 	private String validationRule;
 
 	// チェックアクションエリア
-	private List<ScreenValidationAction> validationActions = Lists.newArrayList();
+	private List<ScreenValidationAction> validationActions = new ArrayList<ScreenValidationAction>();
 
 	@ExcelProperty(value = "メッセージID", index = 80)
 	private String massageId;

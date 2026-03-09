@@ -14,10 +14,9 @@ import com.alibaba.excel.EasyExcel;
 import com.alibaba.excel.context.AnalysisContext;
 import com.alibaba.excel.event.AnalysisEventListener;
 import com.alibaba.excel.util.StringUtils;
-import com.google.common.collect.Lists;
 import com.neusoft.bsdl.wptool.core.CommonConstant.DB_CONFIG_SHEET;
-import com.neusoft.bsdl.wptool.core.enums.DBConfigItemDefinitionEnum;
 import com.neusoft.bsdl.wptool.core.enums.DBConfigItemDefinitionDetailEnum;
+import com.neusoft.bsdl.wptool.core.enums.DBConfigItemDefinitionEnum;
 import com.neusoft.bsdl.wptool.core.exception.WPParseException.ExcelParseError;
 import com.neusoft.bsdl.wptool.core.io.FileSource;
 import com.neusoft.bsdl.wptool.core.model.DBConfigDefinition;
@@ -52,7 +51,7 @@ public class DbConfigItemDefinitionParseExcel extends AbstractParseTool {
 		}
 
 		// 操作エリアごとに解析する
-		List<DBConfigItemDefinition> processList = Lists.newArrayList();
+		List<DBConfigItemDefinition> processList = new ArrayList<DBConfigItemDefinition>();
 		try (Workbook workbook = WorkbookFactory.create(new ByteArrayInputStream(excelBytes))) {
 			Sheet sheet = workbook.getSheet(sheetName);
 			int lastRowNum = sheet.getLastRowNum();

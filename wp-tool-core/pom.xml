@@ -53,12 +53,6 @@
 			<version>3.17.0</version>
 		</dependency>
 
-		<!-- SVNKit（支持 SVN 文件拉取） -->
-		<dependency>
-			<groupId>org.tmatesoft.svnkit</groupId>
-			<artifactId>svnkit</artifactId>
-			<version>1.10.5</version>
-		</dependency>
 		<!--添加一个实现（推荐 slf4j-simple）-->
 		<dependency>
 			<groupId>org.slf4j</groupId>
@@ -70,12 +64,13 @@
 			<groupId>org.slf4j</groupId>
 			<artifactId>slf4j-simple</artifactId>
 			<version>2.0.17</version>
+			<scope>test</scope>
 		</dependency>
-		<dependency>
+<!--		<dependency>
 			<groupId>com.google.guava</groupId>
 			<artifactId>guava</artifactId>
 			<version>33.3.1-jre</version>
-		</dependency>
+		</dependency>-->
 		<dependency>
 			<groupId>tools.jackson.core</groupId>
 			<artifactId>jackson-databind</artifactId>

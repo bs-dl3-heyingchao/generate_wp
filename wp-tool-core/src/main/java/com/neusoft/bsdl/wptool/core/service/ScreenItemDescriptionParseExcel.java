@@ -14,7 +14,6 @@ import org.apache.poi.ss.usermodel.WorkbookFactory;
 import com.alibaba.excel.EasyExcel;
 import com.alibaba.excel.context.AnalysisContext;
 import com.alibaba.excel.event.AnalysisEventListener;
-import com.google.common.collect.Lists;
 import com.neusoft.bsdl.wptool.core.CommonConstant.SCREEN_ITEM_DESCRIPTION_SHEET;
 import com.neusoft.bsdl.wptool.core.enums.ScreenItemDescriptionHeaderEnum;
 import com.neusoft.bsdl.wptool.core.exception.WPParseException.ExcelParseError;
@@ -104,7 +103,7 @@ public class ScreenItemDescriptionParseExcel extends AbstractParseTool {
 			if (fieldName.isEmpty() && !itemNo.isEmpty()) {
 				saveCurrentGroup();
 				this.currentGroupName = itemNo;
-				this.currentItems = Lists.newArrayList();
+				this.currentItems = new ArrayList<ScreenItemDescription>();
 			}
 			// アイテムの値設定
 			else if (!itemNo.isEmpty() && !fieldName.isEmpty()) {

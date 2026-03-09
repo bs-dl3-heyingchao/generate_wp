@@ -2,18 +2,18 @@
  * Copyright 2023, Yokogawa Rental and Lease Corporation. All rights reserved.
  */
 
-package $mapperPkg$;
+package ${mapperPkg};
 
 import org.apache.ibatis.annotations.Mapper;
 import org.apache.ibatis.cursor.Cursor;
 
-import $entityPkg$.$entityClassName$;
+import ${entityPkg}.${entityClassName};
 
 /**
- * $tableFullName$マッピング用インターフェースクラス.
+ * ${tableFullName}マッピング用インターフェースクラス.
  * <dl>
  * <dt><b> 概要:</b></dt>
- * <dd>$tableFullName$マッピング用インターフェースクラスです。</dd>
+ * <dd>${tableFullName}マッピング用インターフェースクラスです。</dd>
  * </dl>
  *
  * @author Neusoft
@@ -21,88 +21,88 @@ import $entityPkg$.$entityClassName$;
  * @since 新規作成
  */
 @Mapper
-public interface $mapperClassName$ {
-#if(${pkList.size()} > 0)
+public interface ${mapperClassName} {
+#if($pkList.size() > 0)
 
     /**
-     * $tableFullName$情報取得.
+    * ${tableFullName}情報取得.
      *
      * @param dto
      *        検索条件
-     * @return $tableFullName$情報
+    * @return ${tableFullName}情報
      */
-    $entityClassName$ selectByPk($entityClassName$ dto);
+    ${entityClassName} selectByPk(${entityClassName} dto);
 
     /**
-     * $tableFullName$情報取得(ロック).
+    * ${tableFullName}情報取得(ロック).
      *
      * @param dto
      *        検索条件
-     * @return $tableFullName$情報
+    * @return ${tableFullName}情報
      */
-    $entityClassName$ selectForUpdateByPk($entityClassName$ dto);
+    ${entityClassName} selectForUpdateByPk(${entityClassName} dto);
 #end
 
     /**
-     * $tableFullName$情報削除.
+    * ${tableFullName}情報削除.
      *
-     * @return $tableFullName$全件情報
+    * @return ${tableFullName}全件情報
      */
-    Cursor<$entityClassName$> selectAll();
-#if(${pkList.size()} > 0)
+    Cursor<${entityClassName}> selectAll();
+#if($pkList.size() > 0)
 
     /**
-     * $tableFullName$情報削除.
+    * ${tableFullName}情報削除.
      *
      * @param dto
      *        削除条件
      * @return 削除件数
      */
-    int deleteByPk($entityClassName$ dto);
+    int deleteByPk(${entityClassName} dto);
 #end
 
     /**
-     * $tableFullName$全件情報削除.
+    * ${tableFullName}全件情報削除.
      *
      * @return 削除件数
      */
     int deleteAll();
 
     /**
-     * $tableFullName$登録.
+    * ${tableFullName}登録.
      *
      * @param dto
      *        登録情報
      * @return 登録件数
      */
-    int insert($entityClassName$ dto);
+    int insert(${entityClassName} dto);
 
     /**
-     * $tableFullName$登録（NULL除く）.
+    * ${tableFullName}登録（NULL除く）.
      *
      * @param dto
      *        登録情報
      * @return 登録件数
      */
-    int insertNotNull($entityClassName$ dto);
-#if(${pkList.size()} > 0)
+    int insertNotNull(${entityClassName} dto);
+#if($pkList.size() > 0)
 
     /**
-     * $tableFullName$更新.
+    * ${tableFullName}更新.
      *
      * @param dto
      *        更新情報
      * @return 更新件数
      */
-    int updateByPk($entityClassName$ dto);
+    int updateByPk(${entityClassName} dto);
 
     /**
-     * $tableFullName$更新（NULL除く）.
+    * ${tableFullName}更新（NULL除く）.
      *
      * @param dto
      *        更新情報
      * @return 更新件数
      */
-    int updateNotNullByPk($entityClassName$ dto);
+    int updateNotNullByPk(${entityClassName} dto);
 #end
 }

@@ -1,11 +1,11 @@
 <?xml version = "1.0"  encoding = "UTF-8" ?>
   <io>
     <tool-version>2.5.3.0</tool-version>
-    <code>$gmIoId$</code>
-    <name>$gmName$</name>
-    <io-type>$io_type$</io-type>
+        <code>${gmIoId}</code>
+        <name>${gmName}</name>
+        <io-type>${io_type}</io-type>
     <dm-code>$!{gmDmCode}</dm-code>
-#if(${gmIoCondition})
+#if($gmIoCondition)
     <condition>${gmIoCondition}</condition>
 #end
     <is-disable>false</is-disable>
@@ -13,11 +13,11 @@
     <create-time>2022-04-28 10:49:10.0</create-time>
     <io-parts-list/>
     <io-item-list>
-#foreach ($!{item} in $!{ioItemList})
+#foreach($item in $!{ioItemList})
       <io-item>
         <io-code>$!{gmIoId}</io-code>
         <code>$!{item.code}</code>
-#if(${item.label})
+#if($item.label)
         <name>$!{item.label}</name>
 #else
         <name>$!{item.name}</name>
@@ -30,74 +30,74 @@
         <min-length>0</min-length>
         <max-length>0</max-length>
         <max-ByteSize>0</max-ByteSize>
-#if(${item.default_value})
+#if($item.default_value)
         <default-value>$!{item.default_value}</default-value>
 #end
-#if(${item.statement})
+#if($item.statement)
         <statement>$!{item.statement}</statement>
 #end
-#if(${item.msg_code_ng})
+#if($item.msg_code_ng)
         <msg-code-ng>${item.msg_code_ng}</msg-code-ng>
 #end
-#if(${item.msg_param_ng})
+#if($item.msg_param_ng)
         <msg-param-ng>${item.msg_param_ng}</msg-param-ng>
 #end
-#if(${item.condition})
+#if($item.condition)
         <condition>$!{item.condition}</condition>
 #end
         <level>$!{item.level}</level>
         <sort-key>0</sort-key>
-#if(${item.dm_code})
+#if($item.dm_code)
         <dm-code>$!{item.dm_code}</dm-code>
 #end
-#if(${item.dm_item_code})
+#if($item.dm_item_code)
         <dm-item-code>$!{item.dm_item_code}</dm-item-code>
 #end
-#if(${item.choiceInfo})
+#if($item.choiceInfo)
         <choice-list>
-#if(${item.choiceInfo.fixed})
+#if($item.choiceInfo.fixed)
           <fixed>$!{item.choiceInfo.fixed}</fixed>
 #end
-#if(${item.choiceInfo.dmCode})
+#if($item.choiceInfo.dmCode)
           <dm-code>$!{item.choiceInfo.dmCode}</dm-code>
 #end
-#if(${item.choiceInfo.condition})
+#if($item.choiceInfo.condition)
           <condition>$!{item.choiceInfo.condition}</condition>
 #end
-#if(${item.choiceInfo.valueDmItemCode})
+#if($item.choiceInfo.valueDmItemCode)
           <value-dm-item-code>$!{item.choiceInfo.valueDmItemCode}</value-dm-item-code>
 #end
-#if(${item.choiceInfo.nameDmItemCode1})
+#if($item.choiceInfo.nameDmItemCode1)
           <name-dm-item-code1>$!{item.choiceInfo.nameDmItemCode1}</name-dm-item-code1>
 #end
-#if(${item.choiceInfo.nameDmItemCode2})
+#if($item.choiceInfo.nameDmItemCode2)
           <name-dm-item-code2>$!{item.choiceInfo.nameDmItemCode2}</name-dm-item-code2>
 #end
-#if(${item.choiceInfo.sortDmItemCode1})
+#if($item.choiceInfo.sortDmItemCode1)
           <sort-dm-item-code1>$!{item.choiceInfo.sortDmItemCode1}</sort-dm-item-code1>
 #end
-#if(${item.choiceInfo.sortDmItemCode2})
+#if($item.choiceInfo.sortDmItemCode2)
           <sort-dm-item-code2>$!{item.choiceInfo.sortDmItemCode2}</sort-dm-item-code2>
 #end
-#if(${item.choiceInfo.sortType1})
+#if($item.choiceInfo.sortType1)
           <sort-type1>$!{item.choiceInfo.sortType1}</sort-type1>
 #end
-#if(${item.choiceInfo.sortType2})
+#if($item.choiceInfo.sortType2)
           <sort-type2>$!{item.choiceInfo.sortType2}</sort-type2>
 #end
         </choice-list>
 #end
-#if(${item.is_disable})
+#if($item.is_disable)
         <is-disable>${item.is_disable}</is-disable>
 #end        
-#if(${item.description})
+#if($item.description)
         <description>$!{item.description}</description>
 #end
         <creator>eclipse</creator>
         <create-time>2022-04-28 10:49:10.0</create-time>
-#if(${item.io_item_prop_list})
+#if($item.io_item_prop_list)
         <io-item-prop-list>
-#foreach ($!{itemProp} in $!{item.io_item_prop_list})
+#foreach($itemProp in $!{item.io_item_prop_list})
           <io-item-prop>
             <key>$!{itemProp.key}</key>
             <value>$!{itemProp.value}</value>
@@ -114,11 +114,11 @@
     </io-item-list>
     <io-prop-list/>
     <sec-io>
-      <io-code>$gmIoId$</io-code>
+        <io-code>${gmIoId}</io-code>
       <is-disable>false</is-disable>
     </sec-io>
     <sec-menu>
-      <io-code>$gmIoId$</io-code>
+        <io-code>${gmIoId}</io-code>
       <is-disable>false</is-disable>
     </sec-menu>
   </io>

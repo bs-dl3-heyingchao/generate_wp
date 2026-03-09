@@ -2,32 +2,32 @@
 
 EXEC sys.sp_dropextendedproperty  @name=N'MS_Description'
                                 ,@level0type=N'SCHEMA'
-                                ,@level0name=N'$schemaName$'
+                                ,@level0name=N'${schemaName}'
                                 ,@level1type=N'TABLE'
-                                ,@level1name=N'$tableName$'
+                                ,@level1name=N'${tableName}'
 go
 EXEC sys.sp_addextendedproperty  @name=N'MS_Description'
-                                ,@value=N'$tableFullName$'
+                                ,@value=N'${tableFullName}'
                                 ,@level0type=N'SCHEMA'
-                                ,@level0name=N'$schemaName$'
+                                ,@level0name=N'${schemaName}'
                                 ,@level1type=N'TABLE'
-                                ,@level1name=N'$tableName$'
+                                ,@level1name=N'${tableName}'
 go
-#foreach (${item} in ${propertyList})
+#foreach($item in $propertyList)
 EXEC sys.sp_dropextendedproperty  @name=N'MS_Description'
                                 ,@level0type=N'SCHEMA'
-                                ,@level0name=N'$schemaName$'
+                                ,@level0name=N'${schemaName}'
                                 ,@level1type=N'TABLE'
-                                ,@level1name=N'$tableName$'
+                                ,@level1name=N'${tableName}'
                                 ,@level2type=N'COLUMN'
                                 ,@level2name=N'${item.fieldName.toUpperCase()}'
 go
 EXEC sys.sp_addextendedproperty  @name=N'MS_Description'
                                 ,@value=N'${item.fieldFullName}'
                                 ,@level0type=N'SCHEMA'
-                                ,@level0name=N'$schemaName$'
+                                ,@level0name=N'${schemaName}'
                                 ,@level1type=N'TABLE'
-                                ,@level1name=N'$tableName$'
+                                ,@level1name=N'${tableName}'
                                 ,@level2type=N'COLUMN'
                                 ,@level2name=N'${item.fieldName.toUpperCase()}'
 go

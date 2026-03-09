@@ -37,7 +37,7 @@ public class ScreenValidationParseExcel extends AbstractParseTool {
 		// エクセルファイルを読込む
 		byte[] excelBytes;
 		try (InputStream is = source.getInputStream()) {
-			excelBytes = is.readAllBytes(); 
+			excelBytes = is.readAllBytes();
 		}
 
 		// バリデーションチェックを実施する
@@ -64,7 +64,6 @@ public class ScreenValidationParseExcel extends AbstractParseTool {
 					}
 					ScreenValidation v = buildScreenValidation(rowMap, actionColumnNames);
 					result.add(v);
-					log.info("Parsed: itemNo={}, validationName={}", v.getItemNo(), v.getValidationName());
 				}
 
 				@Override
@@ -78,7 +77,8 @@ public class ScreenValidationParseExcel extends AbstractParseTool {
 
 	/**
 	 * 「画面チェック仕様書」シートのヘッダー列構造のバリデーションチェック
-	 * @param sheet シートオブジェクト
+	 * 
+	 * @param sheet  シートオブジェクト
 	 * @param errors エラーオブジェクト
 	 */
 	public static void validateHeaders(Sheet sheet, List<ExcelParseError> errors) {
@@ -95,8 +95,8 @@ public class ScreenValidationParseExcel extends AbstractParseTool {
 			}
 			if (!expected.equals(actual)) {
 				errors.add(new ExcelParseError(sheet.getSheetName(),
-						SCREEN_VALIDATION_SHEET.START_POS_HEADER_INDEX + header.getLevel() + 1, colIndex,
-						MessageService.getMessage("error.format.validation.wrongColum")));
+						SCREEN_VALIDATION_SHEET.START_POS_HEADER_INDEX + header.getLevel() + 1, colIndex + 1,
+						MessageService.getMessage("error.format.validation.wrongColumn")));
 				break; // 或 continue，根据需求
 			}
 		}
@@ -135,16 +135,17 @@ public class ScreenValidationParseExcel extends AbstractParseTool {
 		v.setValidationName(rowMap.get(7));
 		v.setType(rowMap.get(18));
 		v.setValidationRule(rowMap.get(22));
-		v.setMassageId(rowMap.get(74));
-		v.setMessageContent(rowMap.get(79));
-		v.setParameter1(rowMap.get(105));
-		v.setParameter2(rowMap.get(111));
-		v.setParameter3(rowMap.get(117));
-		v.setParameter4(rowMap.get(123));
-		v.setParameter5(rowMap.get(129));
-		v.setRemarks(rowMap.get(135));
-		v.setBizWarining(rowMap.get(171));
-		v.setCodingMemo(rowMap.get(172));
+		v.setMassageId(rowMap.get(80));
+		v.setMessageContent(rowMap.get(85));
+		v.setParameter1(rowMap.get(111));
+		v.setParameter2(rowMap.get(117));
+		v.setParameter3(rowMap.get(123));
+		v.setParameter4(rowMap.get(129));
+		v.setParameter5(rowMap.get(135));
+		v.setRemarks(rowMap.get(141));
+		v.setBizWarining(rowMap.get(177));
+		v.setCodingMemo(rowMap.get(178));
+		v.setMemo(rowMap.get(210));
 
 		// 构建アクションリスト
 		List<ScreenValidationAction> actions = new ArrayList<>();
@@ -152,7 +153,7 @@ public class ScreenValidationParseExcel extends AbstractParseTool {
 		for (int i = 0; i < actionNames.size(); i++) {
 			String actionName = actionNames.get(i);
 			if (StringUtils.isEmpty(actionName)) {
-				break; // 遇到空白标题就停止
+				break;
 			}
 			String cellValue = rowMap.get(colIndex);
 			ScreenValidationAction action = new ScreenValidationAction();

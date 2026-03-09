@@ -59,4 +59,7 @@ public class ScreenValidation {
 
 	@ExcelProperty(value = "実装メモ", index = 178)
 	private String codingMemo;
+	
+	@ExcelProperty(value = "メモ", index = 210)
+	private String memo;
 }

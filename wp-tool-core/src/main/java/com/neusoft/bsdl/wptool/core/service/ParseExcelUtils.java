@@ -14,7 +14,7 @@ import com.neusoft.bsdl.wptool.core.exception.WPParseException;
 import com.neusoft.bsdl.wptool.core.exception.WPParseException.ExcelParseError;
 import com.neusoft.bsdl.wptool.core.io.FileSource;
 import com.neusoft.bsdl.wptool.core.model.CsvLayout;
-import com.neusoft.bsdl.wptool.core.model.DBConfigItemDefinition;
+import com.neusoft.bsdl.wptool.core.model.DBConfigDefinition;
 import com.neusoft.bsdl.wptool.core.model.ExcelSheetContent;
 import com.neusoft.bsdl.wptool.core.model.ScreenExcelContent;
 import com.neusoft.bsdl.wptool.core.model.ScreenFuncSpecification;
@@ -35,7 +35,7 @@ public class ParseExcelUtils {
 	 */
 	public static ScreenExcelContent parseScreenExcel(FileSource source) throws Exception {
 		List<String> sheetNames = getSheetNames(source.getInputStream());
-		log.info("sheetLists:{}", sheetNames.toString());
+		log.info("対象エクセルのシート名称リスト:{}", sheetNames.toString());
 		//シートリストが存在しない場合、異常終了
 		if (sheetNames.isEmpty()) {
 			throw new WPParseException(MessageService.getMessage("error.sheets.not.exists"));
@@ -85,8 +85,8 @@ public class ParseExcelUtils {
 			} else if (sheetName.indexOf(CommonConstant.DB_CONFIG_SHEET.SHEET_NAME) != -1) {
 				// DB設定項目定義(複数シートが存在する可能)
 				DbConfigItemDefinitionParseExcel parseExcel = new DbConfigItemDefinitionParseExcel();
-				DBConfigItemDefinition contents = parseExcel.parseSpecSheet(source, sheetName,errors);
-				ExcelSheetContent<DBConfigItemDefinition> excelSheetContent = new ExcelSheetContent<>();
+				DBConfigDefinition contents = parseExcel.parseSpecSheet(source, sheetName,errors);
+				ExcelSheetContent<DBConfigDefinition> excelSheetContent = new ExcelSheetContent<>();
 				excelSheetContent.setSheetName(sheetName);
 				excelSheetContent.setContent(contents);
 				sheetList.add(excelSheetContent);

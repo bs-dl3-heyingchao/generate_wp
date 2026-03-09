@@ -66,7 +66,8 @@ public class ScreenFuncSpecificationParseExcel extends AbstractParseTool {
 
 	/**
 	 * 「画面機能定義書」シートのヘッダー列構造のバリデーションチェック
-	 * @param sheet シートオブジェクト
+	 * 
+	 * @param sheet  シートオブジェクト
 	 * @param errors エラーオブジェクト
 	 */
 	public static void validateHeaders(Sheet sheet, List<ExcelParseError> errors) {
@@ -80,7 +81,7 @@ public class ScreenFuncSpecificationParseExcel extends AbstractParseTool {
 
 			if (!expectedName.equals(actualName)) {
 				errors.add(new ExcelParseError(sheet.getSheetName(),
-						SCREEN_FUNC_SPECIFICATION_SHEET.START_POS_HEADER_INDEX + 1, expectedIndex,
+						SCREEN_FUNC_SPECIFICATION_SHEET.START_POS_HEADER_INDEX + 1, expectedIndex + 1,
 						MessageService.getMessage("error.format.funcSpecification.wrongColumn")));
 				break;
 			}

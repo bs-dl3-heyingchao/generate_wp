@@ -1,5 +1,6 @@
 package com.neusoft.bsdl.wptool.check;
 
+import com.neusoft.bsdl.wptool.check.context.WPCheckerContext;
 import com.neusoft.bsdl.wptool.core.model.ScreenExcelContent;
 
 class WPScreenCheckerTest {

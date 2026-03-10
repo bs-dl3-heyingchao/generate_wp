@@ -8,7 +8,7 @@ import java.util.Objects;
 /**
  * Excel解析時のエラー情報を保持する例外クラスです。 複数のエラーを集約して、詳細メッセージとして返却できます。
  */
-public class WPParseException extends RuntimeException {
+public class WPParseExcelException extends WPException {
 
     private static final long serialVersionUID = 1L;
 
@@ -17,7 +17,7 @@ public class WPParseException extends RuntimeException {
     /**
      * デフォルトメッセージで例外を生成します。
      */
-    public WPParseException() {
+    public WPParseExcelException() {
         super("Excel parse error");
     }
 
@@ -26,7 +26,7 @@ public class WPParseException extends RuntimeException {
      *
      * @param message 例外メッセージ
      */
-    public WPParseException(String message) {
+    public WPParseExcelException(String message) {
         super(message);
     }
 
@@ -38,7 +38,7 @@ public class WPParseException extends RuntimeException {
      * @param colNumber    列番号（1始まり）
      * @param errorMessage エラーメッセージ
      */
-    public WPParseException(String sheetName, Integer rowNumber, Integer colNumber, String errorMessage) {
+    public WPParseExcelException(String sheetName, Integer rowNumber, Integer colNumber, String errorMessage) {
         this();
         addError(sheetName, rowNumber, colNumber, errorMessage);
     }
@@ -48,7 +48,7 @@ public class WPParseException extends RuntimeException {
      *
      * @param errors エラー一覧
      */
-    public WPParseException(List<ExcelParseError> errors) {
+    public WPParseExcelException(List<ExcelParseError> errors) {
         this();
         if (errors != null) {
             this.errors.addAll(errors);

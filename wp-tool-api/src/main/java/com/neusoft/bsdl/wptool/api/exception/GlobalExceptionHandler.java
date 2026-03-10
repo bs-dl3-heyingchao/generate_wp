@@ -13,15 +13,15 @@ import org.springframework.web.server.ResponseStatusException;
 import org.springframework.web.servlet.resource.NoResourceFoundException;
 
 import com.neusoft.bsdl.wptool.api.dto.ApiResponse;
-import com.neusoft.bsdl.wptool.core.exception.WPParseException;
+import com.neusoft.bsdl.wptool.core.exception.WPParseExcelException;
 
 @RestControllerAdvice
 public class GlobalExceptionHandler {
 
     private static final Logger log = LoggerFactory.getLogger(GlobalExceptionHandler.class);
 
-    @ExceptionHandler(WPParseException.class)
-    public ResponseEntity<ApiResponse<Void>> handleWPParseException(WPParseException exception) {
+    @ExceptionHandler(WPParseExcelException.class)
+    public ResponseEntity<ApiResponse<Void>> handleWPParseException(WPParseExcelException exception) {
         return ResponseEntity.badRequest().body(ApiResponse.error(HttpStatus.BAD_REQUEST.value(), exception.getMessage()));
     }
 

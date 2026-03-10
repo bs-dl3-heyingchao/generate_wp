@@ -19,7 +19,7 @@ import com.alibaba.excel.event.AnalysisEventListener;
 import com.alibaba.excel.util.StringUtils;
 import com.neusoft.bsdl.wptool.core.CommonConstant.SCREEN_VALIDATION_SHEET;
 import com.neusoft.bsdl.wptool.core.enums.ScreenValidationHeaderEnum;
-import com.neusoft.bsdl.wptool.core.exception.WPParseException.ExcelParseError;
+import com.neusoft.bsdl.wptool.core.exception.WPParseExcelException.ExcelParseError;
 import com.neusoft.bsdl.wptool.core.io.FileSource;
 import com.neusoft.bsdl.wptool.core.model.ScreenValidation;
 import com.neusoft.bsdl.wptool.core.model.ScreenValidationAction;

@@ -16,7 +16,7 @@ import com.alibaba.excel.context.AnalysisContext;
 import com.alibaba.excel.event.AnalysisEventListener;
 import com.neusoft.bsdl.wptool.core.CommonConstant.SCREEN_ITEM_DESCRIPTION_SHEET;
 import com.neusoft.bsdl.wptool.core.enums.ScreenItemDescriptionHeaderEnum;
-import com.neusoft.bsdl.wptool.core.exception.WPParseException.ExcelParseError;
+import com.neusoft.bsdl.wptool.core.exception.WPParseExcelException.ExcelParseError;
 import com.neusoft.bsdl.wptool.core.io.FileSource;
 import com.neusoft.bsdl.wptool.core.model.ScreenItemDescription;
 import com.neusoft.bsdl.wptool.core.model.ScreenItemDescriptionResult;

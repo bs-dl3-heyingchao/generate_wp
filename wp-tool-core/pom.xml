@@ -27,7 +27,7 @@
 		<dependency>
 			<groupId>com.alibaba</groupId>
 			<artifactId>easyexcel</artifactId>
-			<version>3.3.4</version>
+			<version>4.0.3</version>
 		</dependency>
 		<!-- Lombok：编译期自动生成 getter/setter/toString 等 -->
 		<dependency>
@@ -66,11 +66,17 @@
 			<version>2.0.17</version>
 			<scope>test</scope>
 		</dependency>
-<!--		<dependency>
-			<groupId>com.google.guava</groupId>
-			<artifactId>guava</artifactId>
-			<version>33.3.1-jre</version>
-		</dependency>-->
+		<dependency>
+			<groupId>cbai</groupId>
+			<artifactId>cbai-db-define-reader</artifactId>
+			<version>1.2.3</version>
+		</dependency>
+		<dependency>
+			<groupId>cbai</groupId>
+			<artifactId>cbai-util-excel</artifactId>
+ 			<version>1.5.3</version>
+		</dependency>
+
 		<dependency>
 			<groupId>tools.jackson.core</groupId>
 			<artifactId>jackson-databind</artifactId>
@@ -78,7 +84,16 @@
 			<scope>test</scope>
 		</dependency>
 	</dependencies>
-
+	<repositories>
+		<repository>
+			<id>central</id>
+			<url>https://repo.maven.apache.org/maven2</url>
+		</repository>
+		<repository>
+			<id>mvn-repo</id>
+			<url>https://raw.github.com/bcshmily/mvn-repo/master</url>
+		</repository>
+	</repositories>
 	<build>
 		<plugins>
 			<plugin>

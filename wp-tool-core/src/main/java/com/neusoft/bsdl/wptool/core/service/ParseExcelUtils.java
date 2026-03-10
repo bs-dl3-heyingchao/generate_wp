@@ -10,8 +10,8 @@ import org.apache.poi.ss.usermodel.Workbook;
 import org.apache.poi.ss.usermodel.WorkbookFactory;
 
 import com.neusoft.bsdl.wptool.core.CommonConstant;
-import com.neusoft.bsdl.wptool.core.exception.WPParseException;
-import com.neusoft.bsdl.wptool.core.exception.WPParseException.ExcelParseError;
+import com.neusoft.bsdl.wptool.core.exception.WPParseExcelException;
+import com.neusoft.bsdl.wptool.core.exception.WPParseExcelException.ExcelParseError;
 import com.neusoft.bsdl.wptool.core.io.FileSource;
 import com.neusoft.bsdl.wptool.core.model.CsvLayout;
 import com.neusoft.bsdl.wptool.core.model.DBConfigDefinition;
@@ -26,6 +26,18 @@ import lombok.extern.slf4j.Slf4j;
 
 @Slf4j
 public class ParseExcelUtils {
+//    /**
+//     * excel解析
+//     * 
+//     * @param source リソースファイル
+//     * @return
+//     * @throws Exception
+//     */
+//    public static DBQueryExcelContent parseDBQueryExcel(FileSource source) throws Exception {
+//        
+//        
+//    }
+    
 	/**
 	 * excel解析
 	 * 
@@ -38,7 +50,7 @@ public class ParseExcelUtils {
 		log.info("対象エクセルのシート名称リスト:{}", sheetNames.toString());
 		//シートリストが存在しない場合、異常終了
 		if (sheetNames.isEmpty()) {
-			throw new WPParseException(MessageService.getMessage("error.sheets.not.exists"));
+			throw new WPParseExcelException(MessageService.getMessage("error.sheets.not.exists"));
 		}
 		ScreenExcelContent parseExcelContent = new ScreenExcelContent();
 		//エラー結果
@@ -95,7 +107,7 @@ public class ParseExcelUtils {
 		}
 		//エラーが存在の場合、異常終了
 		if(!CollectionUtils.isEmpty(errors)) {
-			throw new WPParseException(errors);
+			throw new WPParseExcelException(errors);
 		}
 		//解析したヘッダ情報をコピーして結果に設定する
 		BeanUtils.copyProperties(parseExcelContent, screenMetadata);

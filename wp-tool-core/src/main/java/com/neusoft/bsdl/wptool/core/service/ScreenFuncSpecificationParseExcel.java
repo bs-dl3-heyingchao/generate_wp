@@ -17,7 +17,7 @@ import com.alibaba.excel.util.StringUtils;
 import com.neusoft.bsdl.wptool.core.CommonConstant;
 import com.neusoft.bsdl.wptool.core.CommonConstant.SCREEN_FUNC_SPECIFICATION_SHEET;
 import com.neusoft.bsdl.wptool.core.enums.ScreenFuncSpecificationHeaderEnum;
-import com.neusoft.bsdl.wptool.core.exception.WPParseException.ExcelParseError;
+import com.neusoft.bsdl.wptool.core.exception.WPParseExcelException.ExcelParseError;
 import com.neusoft.bsdl.wptool.core.io.FileSource;
 import com.neusoft.bsdl.wptool.core.model.ScreenFuncSpecification;
 

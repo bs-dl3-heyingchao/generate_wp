@@ -17,7 +17,7 @@ import com.alibaba.excel.event.AnalysisEventListener;
 import com.neusoft.bsdl.wptool.core.CommonConstant.CSV_LAYOUT_SHEET;
 import com.neusoft.bsdl.wptool.core.enums.CsvLayoutDetailEnum;
 import com.neusoft.bsdl.wptool.core.enums.CsvLayoutEnum;
-import com.neusoft.bsdl.wptool.core.exception.WPParseException.ExcelParseError;
+import com.neusoft.bsdl.wptool.core.exception.WPParseExcelException.ExcelParseError;
 import com.neusoft.bsdl.wptool.core.io.FileSource;
 import com.neusoft.bsdl.wptool.core.model.CsvLayout;
 import com.neusoft.bsdl.wptool.core.model.CsvSubLayout;

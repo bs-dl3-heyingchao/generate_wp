@@ -17,7 +17,7 @@ import com.alibaba.excel.util.StringUtils;
 import com.neusoft.bsdl.wptool.core.CommonConstant.DB_CONFIG_SHEET;
 import com.neusoft.bsdl.wptool.core.enums.DBConfigItemDefinitionDetailEnum;
 import com.neusoft.bsdl.wptool.core.enums.DBConfigItemDefinitionEnum;
-import com.neusoft.bsdl.wptool.core.exception.WPParseException.ExcelParseError;
+import com.neusoft.bsdl.wptool.core.exception.WPParseExcelException.ExcelParseError;
 import com.neusoft.bsdl.wptool.core.io.FileSource;
 import com.neusoft.bsdl.wptool.core.model.DBConfigDefinition;
 import com.neusoft.bsdl.wptool.core.model.DBConfigItemDefinition;

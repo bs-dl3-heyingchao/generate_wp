@@ -11,8 +11,8 @@ import org.apache.poi.ss.usermodel.WorkbookFactory;
 
 import com.neusoft.bsdl.wptool.core.CommonConstant.MODIFY_HISTORY_SHEET;
 import com.neusoft.bsdl.wptool.core.enums.ModifyHistoryHeaderEnum;
-import com.neusoft.bsdl.wptool.core.exception.WPParseException;
-import com.neusoft.bsdl.wptool.core.exception.WPParseException.ExcelParseError;
+import com.neusoft.bsdl.wptool.core.exception.WPParseExcelException;
+import com.neusoft.bsdl.wptool.core.exception.WPParseExcelException.ExcelParseError;
 import com.neusoft.bsdl.wptool.core.io.FileSource;
 import com.neusoft.bsdl.wptool.core.model.ScreenMetadata;
 
@@ -33,7 +33,7 @@ public class ScreenMetadataParser extends AbstractParseTool{
 		try (InputStream is = source.getInputStream(); Workbook workbook = WorkbookFactory.create(is)) {
 			Sheet sheet = workbook.getSheet(sheetName);
 			if (sheet == null) {
-				throw new WPParseException("シートが見つかりません: " + sheetName);
+				throw new WPParseExcelException("シートが見つかりません: " + sheetName);
 			}
 			// バリデーションチェックを実施する
 			validateHeaders(sheet,errors);

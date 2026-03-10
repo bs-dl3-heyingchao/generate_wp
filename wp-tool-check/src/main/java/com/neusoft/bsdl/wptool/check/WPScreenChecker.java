@@ -7,6 +7,11 @@ import lombok.extern.slf4j.Slf4j;
 
 @Slf4j
 public class WPScreenChecker {
+    private WPCheckerContext context;
+
+    public WPScreenChecker(WPCheckerContext context) {
+        this.context = context;
+    }
 
     public void checkScreenData(ScreenExcelContent screenExcelContent) throws WPException {
 

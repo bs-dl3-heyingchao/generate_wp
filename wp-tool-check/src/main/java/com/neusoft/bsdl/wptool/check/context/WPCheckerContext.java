@@ -15,7 +15,8 @@ public class WPCheckerContext {
     }
 
     public static WPCheckerContext create() {
-        WPTableSearchService tableSearchService = new WPTableSearchServiceImpl();
+        WPTableSearchServiceImpl tableSearchService = new WPTableSearchServiceImpl();
+        tableSearchService.initialize();
         return new WPCheckerContext(tableSearchService);
     }
 

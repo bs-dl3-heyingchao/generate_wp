@@ -4,9 +4,9 @@ import java.util.ArrayList;
 import java.util.Arrays;
 import java.util.List;
 import java.util.Objects;
+import java.util.Optional;
 
 import org.apache.commons.collections.CollectionUtils;
-import org.apache.commons.lang3.StringUtils;
 
 import com.neusoft.bsdl.wptool.core.exception.WPCheckException;
 import com.neusoft.bsdl.wptool.core.model.DBConfigDefinition;
@@ -15,21 +15,20 @@ import com.neusoft.bsdl.wptool.core.model.ScreenExcelContent;
 import com.neusoft.bsdl.wptool.core.model.ScreenItemDescriptionResult;
 import com.neusoft.bsdl.wptool.core.model.ScreenValidation;
 import com.neusoft.bsdl.wptool.validator.CommonConstant.SCREEN_ITEM_DESCRIPTION_SHEET;
-import com.neusoft.bsdl.wptool.validator.CommonConstant.SCREEN_VALIDATION_SHEET;
 import com.neusoft.bsdl.wptool.validator.context.WPValidatorContext;
 import com.neusoft.bsdl.wptool.validator.enums.ItemDescriptionIOEnum;
-import com.neusoft.bsdl.wptool.validator.model.MessageDefinition;
 import com.neusoft.bsdl.wptool.validator.service.impl.MessageService;
-import com.neusoft.bsdl.wptool.validator.service.impl.WPMessageLoaderService;
-import com.neusoft.bsdl.wptool.validator.utils.CommonUtils;
+import com.neusoft.bsdl.wptool.validator.service.impl.WPTableSearchService;
 
+import cbai.util.db.define.FieldBean;
+import cbai.util.db.define.TableBean;
 import lombok.extern.slf4j.Slf4j;
 
 @Slf4j
-public class WPScreenValidator {
+public class WPScreenValidator_back {
 	private WPValidatorContext context;
 
-	public WPScreenValidator(WPValidatorContext context) {
+	public WPScreenValidator_back(WPValidatorContext context) {
 		this.context = context;
 	}
 
@@ -48,13 +47,11 @@ public class WPScreenValidator {
 			} else if (CommonConstant.PARSE_SHEET_NAME.SCREEN_ITEM_DESCRIPTION_SHEET.equals(sheetName)) {
 				// 画面項目説明書
 				List<ScreenItemDescriptionResult> validList = (List<ScreenItemDescriptionResult>) sheet.getContent();
-				// 画面項目説明書のバリデーションチェックを実施する
 				validateScreenItemDescription(validList, errors);
 			} else if (CommonConstant.PARSE_SHEET_NAME.SCREEN_VALIDATION_SHEET.equals(sheetName)) {
 				// 画面バリデーション定義書
 				List<ScreenValidation> validList = (List<ScreenValidation>) sheet.getContent();
-				// 画面バリデーション定義書のバリデーションチェックを実施する
-				validateScreenValidation(validList, errors);
+
 			} else if (CommonConstant.PARSE_SHEET_NAME.BP_SHEET.equals(sheetName)) {
 				// BP定義書
 
@@ -71,63 +68,10 @@ public class WPScreenValidator {
 	}
 
 	/**
-	 * 画面バリデーション定義書のバリデーションチェックを実施する
-	 * 
-	 * @param validList バリデーションチェック対象
-	 * @param errors    エラーリスト
-	 */
-	private void validateScreenValidation(List<ScreenValidation> validList, List<String> errors) {
-		for (ScreenValidation screenValidation : validList) {
-			// [メッセージID／メッセージ内容／パラメータ]
-			// 種別「エラー」の場合、
-			// メッセージIDとメッセージ内容を記載していること。
-			// メッセージ一覧（共通）または、メッセージ（サブ）に記載のID、メッセージと一致していること。
-			// メッセージ内に{n}がある場合、パラメータを記載していること。
-			if (SCREEN_VALIDATION_SHEET.STR_ERROR.equals(screenValidation.getType())) {
-				if (StringUtils.isEmpty(screenValidation.getMessageId())
-						|| StringUtils.isEmpty(screenValidation.getMessageContent())) {
-					errors.add(MessageService.getMessage("error.screen.validation.msg.required").replace("{0}",
-							screenValidation.getItemNo()));
-					continue;
-				}
-
-				// メッセージIDとメッセージ内容の整合性チェック
-				WPMessageLoaderService service = (WPMessageLoaderService) context.getMessageLoaderService();
-				MessageDefinition messageObj = service.findMessageById(screenValidation.getMessageId());
-				// メッセージIDとメッセージ内容を記載してない場合、エラーリストにエラーメッセージを追加する
-				if (Objects.isNull(messageObj)) {
-					errors.add(MessageService.getMessage("error.screen.validation.error.message").replace("{0}",
-							screenValidation.getItemNo()));
-				}
-				// メッセージID:「{0}」のメッセージ内容が、メッセージ一覧の内容と一致していない場合、エラーリストにエラーメッセージを追加する
-				if (!Objects.isNull(messageObj)
-						&& !StringUtils.equals(messageObj.getMessageText(), screenValidation.getMessageContent())) {
-					errors.add(MessageService.getMessage("error.screen.validation.error.message.mismatch")
-							.replace("{0}", screenValidation.getItemNo()).replace("{1}", messageObj.getMessageText()));
-				}
-			}
-			// TODO: メッセージ内に{n}がある場合、パラメータを記載していること。
-
-			// [メッセージID／メッセージ内容／パラメータ]
-			// 種別「ワーニング」の場合、
-			// メッセージIDはなし、メッセージ内容は、別シートを参照の旨を記載していること。
-			// ※記載方法は、設計書サンプルを参照。
-			if (SCREEN_VALIDATION_SHEET.STR_WARNING.equals(screenValidation.getType())) {
-				if (!StringUtils.isEmpty(screenValidation.getMessageId())) {
-					errors.add(MessageService.getMessage("warning.screen.validation.msgId.not.required").replace("{0}",
-							screenValidation.getItemNo()));
-					continue;
-				}
-				// TODO:メッセージ内容は、別シートを参照の旨を記載していること。
-			}
-		}
-	}
-
-	/**
 	 * 画面項目説明書のバリデーションチェックを実施する
 	 * 
-	 * @param validList バリデーションチェック対象
-	 * @param errors    エラーリスト
+	 * @param validList
+	 * @param errors
 	 */
 	private void validateScreenItemDescription(List<ScreenItemDescriptionResult> validList, List<String> errors) {
 		for (ScreenItemDescriptionResult screenItemDescription : validList) {
@@ -149,7 +93,7 @@ public class WPScreenValidator {
 				}
 
 				// [属性(WP)／桁数(WP)]:
-				// TODO:I/O列の値はIO入出力、O出力項目の場合
+				// I/O列の値はIO入出力、O出力項目の場合
 				if ((ItemDescriptionIOEnum.IO.getDisplayName().equals(item.getIo())
 						|| ItemDescriptionIOEnum.OUTPUT.getDisplayName().equals(item.getIo()))
 						// 対象データモデル情報が記載されている場合、「DM」を記載していること。
@@ -160,16 +104,58 @@ public class WPScreenValidator {
 								// 対象データモデル情報が記載されていない場合は、属性、桁数と同じ値を記載していること。
 								|| (Arrays.asList(SCREEN_ITEM_DESCRIPTION_SHEET.ARR_OUTSIDE_SCOPE)
 										.contains(item.getModelName())
-										&& (!StringUtils.equals(item.getAttribute(), item.getAttributeWP())
-												|| StringUtils.equals(item.getLength(), item.getLengthWP()))))) {
+										&& (!item.getAttribute().equals(item.getAttributeWP())
+												|| !item.getLength().equals(item.getLengthWP()))))) {
 					errors.add(MessageService.getMessage("error.screen.item.description.wp").replace("{0}",
 							item.getItemNo()));
 				}
 
-				// [対象データモデル情報]
-				// TODO:データモデル名は、画面定義書の対象データモデル欄に記載している論理名称を記載していること。
-				// 他のデータモデル名を記載していないこと。
-				// 項目名は、データモデルに存在する項目を記載していること。
+				// [属性／桁数]
+				// I/O列の値はAアクション、Gグループの項目の場合
+				if ((ItemDescriptionIOEnum.ACTION.getDisplayName().equals(item.getIo())
+						|| ItemDescriptionIOEnum.GROUP.getDisplayName().equals(item.getIo()))
+						// 「-」を記載していること。
+						&& (!SCREEN_ITEM_DESCRIPTION_SHEET.STR_HAIHUN.equals(item.getAttribute())
+								|| !SCREEN_ITEM_DESCRIPTION_SHEET.STR_HAIHUN.equals(item.getLength()))) {
+					errors.add(MessageService.getMessage("error.screen.item.description.attr.haihun").replace("{0}",
+							item.getItemNo()));
+				}
+
+				// TODO:I/O列の値はIO入出力、O出力項目の場合、
+				if ((ItemDescriptionIOEnum.IO.getDisplayName().equals(item.getIo())
+						|| ItemDescriptionIOEnum.OUTPUT.getDisplayName().equals(item.getIo()))) {
+					// テーブル定義書の該当項目と同じ属性・桁数を記載していること。
+					WPTableSearchService service = (WPTableSearchService) context.getTableSearchService();
+					// データモデル名でテーブル定義書のコンテンツを取得する
+					TableBean ｔableContent = service.findTableByFullName(item.getModelName());
+					// テーブル定義書のコンテンツを取得する
+					if (!Objects.isNull(ｔableContent)) {
+						// テーブル定義書の該当項目と同じ属性・桁数を記載していること。
+						Optional<FieldBean> optional = ｔableContent.getFieldList().stream()
+								.filter(field -> field.getFieldFullName().equals(item.getModelItemName())).findFirst();
+						if (optional.isPresent()) {
+							FieldBean field = optional.get();
+							// TODO:
+							if ((item.getAttribute() != null && !item.getAttribute()
+									.equals(field.getOthers().get(SCREEN_ITEM_DESCRIPTION_SHEET.STR_WP_TYPE)))
+									|| (item.getLength() != null
+											&& !item.getLength().equals(String.valueOf(field.getLen())))) {
+								errors.add(MessageService.getMessage("error.screen.item.description.attr.table")
+										.replace("{0}", item.getItemNo())
+										.replace("{1}",
+												field.getOthers().get(SCREEN_ITEM_DESCRIPTION_SHEET.STR_WP_TYPE))
+										.replace("{2}", field.getLen()));
+							}
+						} else {
+							// テーブル定義書の該当項目が存在しない場合、エラーとする
+							errors.add(MessageService.getMessage("error.screen.item.description.field.notExists")
+									.replace("{0}", item.getModelItemName()).replace("{1}", item.getModelName())
+									.replace("{2}", item.getItemNo()));
+						}
+					} else {
+						// TODO: データモデル名でテーブル定義書のコンテンツが取得できない場合、エラーとする
+					}
+				}
 
 				// [フォーマット]
 				// TODO:数値項目、日付項目の場合（非表示項目は除く）、フォーマットを記載していること。
@@ -186,17 +172,12 @@ public class WPScreenValidator {
 						|| item.getItemName().indexOf(SCREEN_ITEM_DESCRIPTION_SHEET.STR_RADIO_BUTTON) > 0
 						|| item.getItemName().indexOf(SCREEN_ITEM_DESCRIPTION_SHEET.STR_DUPLICATE_CHECKBOX) > 0) {
 					// 選択リストの内容は空白の場合、エラーメッセージを出力する
-					if (StringUtils.isEmpty(item.getSelectList())) {
+					if (Objects.isNull(item.getSelectList()) || item.getSelectList().trim().isEmpty()) {
 						errors.add(MessageService.getMessage("error.screen.item.description.selectlist").replace("{0}",
 								item.getItemNo()));
 					}
-					// フォーマットチェック
-					if (!StringUtils.isEmpty(item.getSelectList())
-							&& !CommonUtils.containsAllRequiredTags(item.getSelectList(),
-									CommonConstant.SCREEN_ITEM_DESCRIPTION_SHEET.ARR_SELECT_LIST)) {
-						errors.add(MessageService.getMessage("error.screen.item.description.selectlist.format")
-								.replace("{0}", item.getItemNo()));
-					}
+					// TODO:フォーマットチェック
+
 				}
 			});
 		}
@@ -213,5 +194,4 @@ public class WPScreenValidator {
 					}
 				});
 	}
-
 }

@@ -48,5 +48,17 @@ public interface CommonConstant {
 		String STR_RADIO_BUTTON = "ラジオボタン";
 		//文字列：複数選択チェックボックス
 		String STR_DUPLICATE_CHECKBOX = "複数選択チェックボックス";
+		//文字列：テーブル定義書のデータ型(WP)列の格納されるKEY
+		String STR_WP_TYPE = "WP_TYPE";
+		//文字列：選択リストの配列
+		String[] ARR_SELECT_LIST = { "[DM]","[条件]","[値]","[名称]"  ,"[ソート順]" ,"[ソートタイプ]"  };
+	}
+	
+	/** 画面項目説明書 */
+	interface SCREEN_VALIDATION_SHEET {
+		//種別文字列：エラー
+		String STR_ERROR = "エラー";
+		//種別文字列：ワーニング
+		String STR_WARNING ="ワーニング";
 	}
 }

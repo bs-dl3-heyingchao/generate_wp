@@ -1,23 +1,36 @@
 package com.neusoft.bsdl.wptool.validator.context;
 
+import com.neusoft.bsdl.wptool.validator.service.IWPMessageLoaderService;
 import com.neusoft.bsdl.wptool.validator.service.IWPTableSearchService;
+import com.neusoft.bsdl.wptool.validator.service.impl.WPMessageLoaderService;
 import com.neusoft.bsdl.wptool.validator.service.impl.WPTableSearchService;
 
 public class WPValidatorContext {
-    public IWPTableSearchService getTableSearchService() {
-        return tableSearchService;
-    }
+	// テーブル/フィールド定義検索サービス
+	private IWPTableSearchService tableSearchService;
 
-    private IWPTableSearchService tableSearchService;
+	// メッセージ定義検索サービス
+	private IWPMessageLoaderService messageLoaderService;
 
-    private WPValidatorContext(IWPTableSearchService tableSearchService) {
-        this.tableSearchService = tableSearchService;
-    }
+	public IWPTableSearchService getTableSearchService() {
+		return tableSearchService;
+	}
 
-    public static WPValidatorContext create() {
-    	WPTableSearchService tableSearchService = new WPTableSearchService();
-        tableSearchService.initialize();
-        return new WPValidatorContext(tableSearchService);
-    }
+	public IWPMessageLoaderService getMessageLoaderService() {
+		return messageLoaderService;
+	}
+
+	private WPValidatorContext(IWPTableSearchService tableSearchService, IWPMessageLoaderService messageLoaderService) {
+		this.tableSearchService = tableSearchService;
+		this.messageLoaderService = messageLoaderService;
+	}
+
+	public static WPValidatorContext create() {
+		WPTableSearchService tableSearchService = new WPTableSearchService();
+		tableSearchService.initialize();
+		WPMessageLoaderService messageLoaderService = new WPMessageLoaderService();
+		messageLoaderService.initialize();
+		return new WPValidatorContext(tableSearchService, messageLoaderService);
+	}
 
 }

@@ -135,7 +135,7 @@ public class ScreenValidationParseExcel extends AbstractParseTool {
 		v.setValidationName(rowMap.get(7));
 		v.setType(rowMap.get(18));
 		v.setValidationRule(rowMap.get(22));
-		v.setMassageId(rowMap.get(80));
+		v.setMessageId(rowMap.get(80));
 		v.setMessageContent(rowMap.get(85));
 		v.setParameter1(rowMap.get(111));
 		v.setParameter2(rowMap.get(117));

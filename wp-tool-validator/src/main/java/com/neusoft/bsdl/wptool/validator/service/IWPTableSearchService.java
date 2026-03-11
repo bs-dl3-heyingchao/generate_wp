@@ -1,4 +1,5 @@
-package com.neusoft.bsdl.wptool.check.service;
+package com.neusoft.bsdl.wptool.validator.service;
+
 
 import cbai.util.db.define.FieldBean;
 import cbai.util.db.define.TableBean;
@@ -6,7 +7,7 @@ import cbai.util.db.define.TableBean;
 /**
  * テーブル/フィールド定義を名前で検索するサービス。
  */
-public interface WPTableSearchService {
+public interface IWPTableSearchService {
 
     /**
      * 論理名からテーブル定義を検索する。

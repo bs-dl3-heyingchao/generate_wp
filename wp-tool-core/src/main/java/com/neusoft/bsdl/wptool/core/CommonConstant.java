@@ -13,7 +13,16 @@ public interface CommonConstant {
 		// 解析開始行:ヘッダ
 		Integer START_POS_DATA_INDEX = 2;
 	}
-
+	/** 画面定義書 */
+	interface SCREEN_DEFINITION_SHEET {
+		// シート名称
+		String SHEET_NAME = "画面定義書";
+		// 論理名称
+		String LOGIC_NAME = "論理名称";
+		// 物理名称
+		String PHYSICAL_NAME = "物理名称";
+	}
+	
 	/** 画面項目説明書 */
 	interface SCREEN_ITEM_DESCRIPTION_SHEET {
 		// シート名称

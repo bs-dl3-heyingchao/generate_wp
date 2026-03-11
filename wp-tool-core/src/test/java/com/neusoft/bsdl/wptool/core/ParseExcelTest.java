@@ -16,7 +16,7 @@ import tools.jackson.databind.ObjectMapper;
 
 public class ParseExcelTest {
 
-    public static void main1(String[] args) throws Exception {
+    public static void main(String[] args) throws Exception {
         if (args == null || args.length == 0) {
             throw new IllegalArgumentException("Please pass input file name as the first argument.");
         }
@@ -32,16 +32,4 @@ public class ParseExcelTest {
         System.out.println("JSON output: " + outputFile.getPath());
     }
     
-    public static void main(String[] args) {
-        File cahceFile = new File("./target/wp_db.cache");
-        String basePath = "D:\\WORK\\128SYIS25142_devora\\SVN_CITS\\documents\\04_内部設計\\02_作成ドキュメント\\50_機能設計\\80_DB設計書\\02_テーブル定義\\";
-//        String excelDir = "./db/第４．０版";
-        ITableBeanReader reader = new WPTableBeanReader(basePath);
-        List<TableBean> list = reader.readTableList();
-        list.forEach(t -> {
-            System.out.println(t.getTableFullName());
-        });
-        FileUtil.writeObjectToFile(list, cahceFile);  
-//        FileUtil.writeString(new File("./target/output.json"), JSONUtil.toStringPretty(list));  
-    }
 }

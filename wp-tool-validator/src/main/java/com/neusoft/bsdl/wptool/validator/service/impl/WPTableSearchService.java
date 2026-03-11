@@ -1,18 +1,19 @@
-package com.neusoft.bsdl.wptool.check.service.impl;
+package com.neusoft.bsdl.wptool.validator.service.impl;
+
 
 import java.util.LinkedHashMap;
 import java.util.Map;
 
-import com.neusoft.bsdl.wptool.check.service.WPTableSearchService;
+import com.neusoft.bsdl.wptool.validator.service.IWPTableSearchService;
 
 import cbai.util.db.define.FieldBean;
 import cbai.util.db.define.TableBean;
 
-public class WPTableSearchServiceImpl implements WPTableSearchService {
+public class WPTableSearchService implements IWPTableSearchService {
 
     private Map<String, TableBean> tableMap = new LinkedHashMap<String, TableBean>();
 
-    public WPTableSearchServiceImpl() {
+    public WPTableSearchService() {
     }
 
     public synchronized void initialize() {

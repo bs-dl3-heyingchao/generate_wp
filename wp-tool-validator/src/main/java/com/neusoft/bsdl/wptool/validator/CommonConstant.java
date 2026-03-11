@@ -21,9 +21,32 @@ public interface CommonConstant {
 		// 処理機能記述書
 		String BP_SHEET = "処理機能記述書";
 	}
-	
-	interface SCREEN_ITEM_DESCRIPTION_SHEET{
-		//文字列：-,ー
-		String[] STR_HAIHUN = {"-","ー"};
+
+	/** 画面項目説明書 */
+	interface SCREEN_ITEM_DESCRIPTION_SHEET {
+		// TODO ： 文字列：-,－
+		String[] ARR_HAIHUN = { "-", "－" };
+		// 対象データモデル情報が記載されている文字列：-,－,null以外の日本語
+		String[] ARR_OUTSIDE_SCOPE = { "-", "－", null, "" };
+		// 文字列：DM
+		String STR_DM = "DM";
+		// 文字列：-
+		String STR_HAIHUN = "-";
+		// 文字列：降順
+		String STR_SORT_DESC = "降順";
+		// 文字列：昇順
+		String STR_SORT_ASC = "昇順";
+		// 文字列：情報一覧
+		String STR_SORT_SCOPE_TITLE = "情報一覧";
+		// 文字列：数値項目、日付項目
+		String[] ARR_DATA_TYPE = { "NUM", "DATE" };
+		// 文字列：数値項目、日付項目
+		String STR_NO_DISPLAY = "非表示";
+		// 文字列：ドロップダウン
+		String STR_DROPDOWN = "ドロップダウン";
+		//文字列：ラジオボタン
+		String STR_RADIO_BUTTON = "ラジオボタン";
+		//文字列：複数選択チェックボックス
+		String STR_DUPLICATE_CHECKBOX = "複数選択チェックボックス";
 	}
 }

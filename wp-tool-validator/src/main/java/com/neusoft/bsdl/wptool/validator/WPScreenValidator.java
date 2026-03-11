@@ -117,7 +117,7 @@ public class WPScreenValidator {
 						// 「-」を記載していること。
 						&& (!SCREEN_ITEM_DESCRIPTION_SHEET.STR_HAIHUN.equals(item.getAttribute())
 								|| !SCREEN_ITEM_DESCRIPTION_SHEET.STR_HAIHUN.equals(item.getLength()))) {
-					errors.add(MessageService.getMessage("error.screen.item.description.attr").replace("{0}",
+					errors.add(MessageService.getMessage("error.screen.item.description.attr.haihun").replace("{0}",
 							item.getItemNo()));
 				}
 
@@ -132,18 +132,21 @@ public class WPScreenValidator {
 					if (!Objects.isNull(ｔableContent)) {
 						// テーブル定義書の該当項目と同じ属性・桁数を記載していること。
 						Optional<FieldBean> optional = ｔableContent.getFieldList().stream()
-								.filter(field -> field.getFieldName().equals(item.getItemName())).findFirst();
+								.filter(field -> field.getFieldFullName().equals(item.getModelItemName())).findFirst();
 						if (optional.isPresent()) {
 							FieldBean field = optional.get();
-							if (!item.getAttribute().equals(field.getType())
+							//TODO:
+							if (!item.getAttribute().equals(field.getOthers().get(SCREEN_ITEM_DESCRIPTION_SHEET.STR_WP_TYPE))
 									|| !item.getLength().equals(String.valueOf(field.getLen()))) {
-								errors.add(MessageService.getMessage("error.screen.item.description.attr")
-										.replace("{0}", item.getItemNo()));
+								errors.add(MessageService.getMessage("error.screen.item.description.attr.table")
+										.replace("{0}", item.getItemNo())
+										.replace("{1}", field.getOthers().get(SCREEN_ITEM_DESCRIPTION_SHEET.STR_WP_TYPE))
+										.replace("{2}", field.getLen()));
 							}
 						} else {
 							// テーブル定義書の該当項目が存在しない場合、エラーとする
 							errors.add(MessageService.getMessage("error.screen.item.description.field.notExists")
-									.replace("{0}", item.getItemName()).replace("{1}", item.getModelName()));
+									.replace("{0}", item.getModelItemName()).replace("{1}", item.getModelName()).replace("{2}", item.getItemNo()));
 						}
 					} else {
 						// TODO: データモデル名でテーブル定義書のコンテンツが取得できない場合、エラーとする

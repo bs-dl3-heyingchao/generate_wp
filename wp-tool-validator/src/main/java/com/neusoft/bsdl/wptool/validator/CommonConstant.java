@@ -48,5 +48,9 @@ public interface CommonConstant {
 		String STR_RADIO_BUTTON = "ラジオボタン";
 		//文字列：複数選択チェックボックス
 		String STR_DUPLICATE_CHECKBOX = "複数選択チェックボックス";
+		//文字列：テーブル定義書のデータ型(WP)列の格納されるKEY
+		String STR_WP_TYPE = "WP_TYPE";
+		
+		
 	}
 }

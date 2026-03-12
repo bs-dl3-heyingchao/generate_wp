@@ -171,6 +171,7 @@ public class WPScreenValidator {
 				// 他のデータモデル名を記載していないこと。
 				// 項目名は、データモデルに存在する項目を記載していること。
 
+
 				// [フォーマット]
 				// TODO:数値項目、日付項目の場合（非表示項目は除く）、フォーマットを記載していること。
 				if (!SCREEN_ITEM_DESCRIPTION_SHEET.STR_NO_DISPLAY.equals(item.getDisplay())

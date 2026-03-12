@@ -1,4 +1,4 @@
-package com.neusoft.bsdl.wptool.validator.model;
+package com.neusoft.bsdl.wptool.core.model;
 
 import lombok.Data;
 

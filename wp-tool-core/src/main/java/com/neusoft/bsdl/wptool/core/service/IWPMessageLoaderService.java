@@ -1,7 +1,7 @@
-package com.neusoft.bsdl.wptool.validator.service;
+package com.neusoft.bsdl.wptool.core.service;
 
 
-import com.neusoft.bsdl.wptool.validator.model.MessageDefinition;
+import com.neusoft.bsdl.wptool.core.model.MessageDefinition;
 
 /**
  * テーブル/フィールド定義を名前で検索するサービス。

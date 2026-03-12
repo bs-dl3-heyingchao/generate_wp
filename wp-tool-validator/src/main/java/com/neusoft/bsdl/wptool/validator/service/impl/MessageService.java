@@ -1,25 +1,33 @@
 package com.neusoft.bsdl.wptool.validator.service.impl;
 
-
 import java.io.IOException;
 import java.io.InputStream;
 import java.io.InputStreamReader;
+import java.net.URL;
 import java.nio.charset.StandardCharsets;
-import java.util.Properties;
+import java.util.*;
 
 /**
- * 共通メッセージ取得サービス
+ * 支持加载多个 message.properties 并合并
  */
 public class MessageService {
     private static final Properties properties = new Properties();
 
     static {
-        try (InputStream inputStream = MessageService.class.getClassLoader()
-                .getResourceAsStream("message.properties")) {
-            if (inputStream != null) {
-                properties.load(new InputStreamReader(inputStream, StandardCharsets.UTF_8));
-            } else {
-                throw new RuntimeException("未找到 message.properties 文件，请确保它位于 src/main/resources 目录下");
+        try {
+            // 获取所有名为 "message.properties" 的资源（包括 A、B 工程的）
+            Enumeration<URL> resources = MessageService.class.getClassLoader()
+                    .getResources("message.properties");
+
+            while (resources.hasMoreElements()) {
+                URL url = resources.nextElement();
+                try (InputStream inputStream = url.openStream()) {
+                    properties.load(new InputStreamReader(inputStream, StandardCharsets.UTF_8));
+                }
+            }
+
+            if (properties.isEmpty()) {
+                throw new RuntimeException("未找到任何 message.properties 文件");
             }
         } catch (IOException e) {
             throw new RuntimeException("无法加载 message.properties", e);

@@ -62,7 +62,7 @@ public class DbConfigItemDefinitionParseExcel extends AbstractParseTool {
 				String cell0 = getCellValue(row, 0).trim();
 				if (DBConfigItemDefinitionEnum.FUNCTION_NAME.getDisplayName().equals(cell0)) {
 					DBConfigItemDefinition item = new DBConfigItemDefinition();
-					item.setDataModel(cell0);
+					item.setDataModel(getCellValue(row, 6).trim());
 					item.setOperation(getCellValue(row, 37).trim());
 					Row nextRow = sheet.getRow(currentRow + 1);
 					if (nextRow != null) {

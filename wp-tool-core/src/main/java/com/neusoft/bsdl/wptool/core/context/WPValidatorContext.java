@@ -1,4 +1,4 @@
-package com.neusoft.bsdl.wptool.validator.context;
+package com.neusoft.bsdl.wptool.core.context;
 
 import com.neusoft.bsdl.wptool.core.service.IWPMessageLoaderService;
 import com.neusoft.bsdl.wptool.core.service.IWPTableSearchService;

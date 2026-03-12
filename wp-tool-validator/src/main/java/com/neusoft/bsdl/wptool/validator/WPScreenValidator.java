@@ -10,6 +10,7 @@ import java.util.stream.Collectors;
 import org.apache.commons.collections.CollectionUtils;
 import org.apache.commons.lang3.StringUtils;
 
+import com.neusoft.bsdl.wptool.core.context.WPValidatorContext;
 import com.neusoft.bsdl.wptool.core.exception.WPCheckException;
 import com.neusoft.bsdl.wptool.core.model.DBConfigDefinition;
 import com.neusoft.bsdl.wptool.core.model.ExcelSheetContent;
@@ -22,7 +23,6 @@ import com.neusoft.bsdl.wptool.core.model.ScreenValidation;
 import com.neusoft.bsdl.wptool.core.service.impl.WPMessageLoaderService;
 import com.neusoft.bsdl.wptool.validator.CommonConstant.SCREEN_ITEM_DESCRIPTION_SHEET;
 import com.neusoft.bsdl.wptool.validator.CommonConstant.SCREEN_VALIDATION_SHEET;
-import com.neusoft.bsdl.wptool.validator.context.WPValidatorContext;
 import com.neusoft.bsdl.wptool.validator.enums.ItemDescriptionIOEnum;
 import com.neusoft.bsdl.wptool.validator.service.impl.MessageService;
 import com.neusoft.bsdl.wptool.validator.utils.CommonUtils;

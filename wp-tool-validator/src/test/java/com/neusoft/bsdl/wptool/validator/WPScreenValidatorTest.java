@@ -1,10 +1,10 @@
 package com.neusoft.bsdl.wptool.validator;
 
+import com.neusoft.bsdl.wptool.core.context.WPValidatorContext;
 import com.neusoft.bsdl.wptool.core.io.FileSource;
 import com.neusoft.bsdl.wptool.core.io.LocalFileSource;
 import com.neusoft.bsdl.wptool.core.model.ScreenExcelContent;
 import com.neusoft.bsdl.wptool.core.service.ParseExcelUtils;
-import com.neusoft.bsdl.wptool.validator.context.WPValidatorContext;
 
 class WPScreenValidatorTest {
 

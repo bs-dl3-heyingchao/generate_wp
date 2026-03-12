@@ -5,7 +5,7 @@ import com.neusoft.bsdl.wptool.core.service.IWPTableSearchService;
 import com.neusoft.bsdl.wptool.core.service.impl.WPMessageLoaderService;
 import com.neusoft.bsdl.wptool.core.service.impl.WPTableSearchService;
 
-public class WPValidatorContext {
+public class WPContext {
 	// テーブル/フィールド定義検索サービス
 	private IWPTableSearchService tableSearchService;
 
@@ -20,17 +20,17 @@ public class WPValidatorContext {
 		return messageLoaderService;
 	}
 
-	private WPValidatorContext(IWPTableSearchService tableSearchService, IWPMessageLoaderService messageLoaderService) {
+	private WPContext(IWPTableSearchService tableSearchService, IWPMessageLoaderService messageLoaderService) {
 		this.tableSearchService = tableSearchService;
 		this.messageLoaderService = messageLoaderService;
 	}
 
-	public static WPValidatorContext create() {
+	public static WPContext create() {
 		WPTableSearchService tableSearchService = new WPTableSearchService();
 		tableSearchService.initialize();
 		WPMessageLoaderService messageLoaderService = new WPMessageLoaderService();
 		messageLoaderService.initialize();
-		return new WPValidatorContext(tableSearchService, messageLoaderService);
+		return new WPContext(tableSearchService, messageLoaderService);
 	}
 
 }

@@ -10,7 +10,7 @@ import java.util.stream.Collectors;
 import org.apache.commons.collections.CollectionUtils;
 import org.apache.commons.lang3.StringUtils;
 
-import com.neusoft.bsdl.wptool.core.context.WPValidatorContext;
+import com.neusoft.bsdl.wptool.core.context.WPContext;
 import com.neusoft.bsdl.wptool.core.exception.WPCheckException;
 import com.neusoft.bsdl.wptool.core.model.DBConfigDefinition;
 import com.neusoft.bsdl.wptool.core.model.ExcelSheetContent;
@@ -31,9 +31,9 @@ import lombok.extern.slf4j.Slf4j;
 
 @Slf4j
 public class WPScreenValidator {
-	private WPValidatorContext context;
+	private WPContext context;
 
-	public WPScreenValidator(WPValidatorContext context) {
+	public WPScreenValidator(WPContext context) {
 		this.context = context;
 	}
 

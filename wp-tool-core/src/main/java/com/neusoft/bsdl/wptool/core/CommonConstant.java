@@ -14,6 +14,30 @@ public interface CommonConstant {
 		Integer START_POS_DATA_INDEX = 2;
 	}
 
+	/** 画面定義書 */
+	interface SCREEN_DEFINITION_SHEET {
+		// シート名称
+		String SHEET_NAME = "画面定義書";
+		// A列：論理名など
+		int COL_A = 0;
+		// J列：物理名など
+		int COL_J = 9; 
+		 // S列：CRUD
+		int COL_CRUD = 18;
+		// U列：対象条件 / 入出力タイプ
+		int COL_U = 20; 
+		// BP列：対象条件のスコープの終了列
+		int COL_BP = 67; 
+		// AB列：外部ファイルの項目名
+		int COL_AB = 27; 
+		// AG列：外部ファイルの項目値
+		int COL_AG = 32; 
+		// シート名称
+		String STR_JAVASCRIPT = "Javascript";
+		// シート名称
+		String STR_CSS = "CSS";
+	}
+
 	/** 画面項目説明書 */
 	interface SCREEN_ITEM_DESCRIPTION_SHEET {
 		// シート名称

@@ -31,7 +31,7 @@ public class ScreenValidation {
 	private List<ScreenValidationAction> validationActions = new ArrayList<ScreenValidationAction>();
 
 	@ExcelProperty(value = "メッセージID", index = 80)
-	private String massageId;
+	private String messageId;
 
 	@ExcelProperty(value = "メッセージ内容", index = 85)
 	private String messageContent;

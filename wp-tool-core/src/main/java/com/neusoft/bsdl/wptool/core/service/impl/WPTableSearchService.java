@@ -1,4 +1,4 @@
-package com.neusoft.bsdl.wptool.validator.service.impl;
+package com.neusoft.bsdl.wptool.core.service.impl;
 
 import java.io.File;
 import java.util.LinkedHashMap;
@@ -8,7 +8,7 @@ import java.util.Map;
 import com.neusoft.bsdl.wptool.core.exception.WPException;
 import com.neusoft.bsdl.wptool.core.reader.WPTableBeanReader;
 import com.neusoft.bsdl.wptool.core.service.ConfigService;
-import com.neusoft.bsdl.wptool.validator.service.IWPTableSearchService;
+import com.neusoft.bsdl.wptool.core.service.IWPTableSearchService;
 
 import cbai.util.FileUtil;
 import cbai.util.db.define.FieldBean;

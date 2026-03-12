@@ -4,6 +4,8 @@ import java.util.ArrayList;
 import java.util.Arrays;
 import java.util.List;
 import java.util.Objects;
+import java.util.Set;
+import java.util.stream.Collectors;
 
 import org.apache.commons.collections.CollectionUtils;
 import org.apache.commons.lang3.StringUtils;
@@ -11,6 +13,8 @@ import org.apache.commons.lang3.StringUtils;
 import com.neusoft.bsdl.wptool.core.exception.WPCheckException;
 import com.neusoft.bsdl.wptool.core.model.DBConfigDefinition;
 import com.neusoft.bsdl.wptool.core.model.ExcelSheetContent;
+import com.neusoft.bsdl.wptool.core.model.ScreenDefinition;
+import com.neusoft.bsdl.wptool.core.model.ScreenDefinitionTargetData;
 import com.neusoft.bsdl.wptool.core.model.ScreenExcelContent;
 import com.neusoft.bsdl.wptool.core.model.ScreenItemDescriptionResult;
 import com.neusoft.bsdl.wptool.core.model.ScreenValidation;
@@ -41,15 +45,19 @@ public class WPScreenValidator {
 	 */
 	public void validateParseContent(ScreenExcelContent screenExcelContent) throws WPCheckException {
 		List<String> errors = new ArrayList<>();
+		// 画面定義書
+		ScreenDefinition ScreenDefinitionValidObj = null;
 		for (ExcelSheetContent<?> sheet : screenExcelContent.getSheetList()) {
 			String sheetName = sheet.getSheetName();
 			if (CommonConstant.PARSE_SHEET_NAME.SCREEN_DEFINITION_SHEET.equals(sheetName)) {
-				// 画面定義書
+				ScreenDefinitionValidObj = (ScreenDefinition) sheet.getContent();
+				// 画面定義書のバリデーションチェックを実施する
+				validateScreenDefinition(ScreenDefinitionValidObj, errors);
 			} else if (CommonConstant.PARSE_SHEET_NAME.SCREEN_ITEM_DESCRIPTION_SHEET.equals(sheetName)) {
 				// 画面項目説明書
 				List<ScreenItemDescriptionResult> validList = (List<ScreenItemDescriptionResult>) sheet.getContent();
 				// 画面項目説明書のバリデーションチェックを実施する
-				validateScreenItemDescription(validList, errors);
+				validateScreenItemDescription(validList, ScreenDefinitionValidObj, errors);
 			} else if (CommonConstant.PARSE_SHEET_NAME.SCREEN_VALIDATION_SHEET.equals(sheetName)) {
 				// 画面バリデーション定義書
 				List<ScreenValidation> validList = (List<ScreenValidation>) sheet.getContent();
@@ -68,6 +76,11 @@ public class WPScreenValidator {
 		if (!CollectionUtils.isEmpty(errors)) {
 			throw new WPCheckException(errors);
 		}
+	}
+
+	private void validateScreenDefinition(ScreenDefinition screenDefinitionValidObj, List<String> errors) {
+		// TODO Auto-generated method stub
+
 	}
 
 	/**
@@ -126,10 +139,12 @@ public class WPScreenValidator {
 	/**
 	 * 画面項目説明書のバリデーションチェックを実施する
 	 * 
-	 * @param validList バリデーションチェック対象
-	 * @param errors    エラーリスト
+	 * @param validList                バリデーションチェック対象
+	 * @param screenDefinitionValidObj 画面定義書の解析内容（対象データモデル情報のチェックに使用）
+	 * @param errors                   エラーリスト
 	 */
-	private void validateScreenItemDescription(List<ScreenItemDescriptionResult> validList, List<String> errors) {
+	private void validateScreenItemDescription(List<ScreenItemDescriptionResult> validList,
+			ScreenDefinition screenDefinitionValidObj, List<String> errors) {
 		for (ScreenItemDescriptionResult screenItemDescription : validList) {
 			screenItemDescription.getItems().forEach(item -> {
 				// 画面項目説明書の「IO」列には「I（入力）」「O（出力）」「A（アクション）」「G（グループ）」「IO（入出力）」以外の値を記載することはできません
@@ -167,10 +182,17 @@ public class WPScreenValidator {
 				}
 
 				// [対象データモデル情報]
-				// TODO:データモデル名は、画面定義書の対象データモデル欄に記載している論理名称を記載していること。
+				// データモデル名は、画面定義書の対象データモデル欄に記載している論理名称を記載していること。
 				// 他のデータモデル名を記載していないこと。
 				// 項目名は、データモデルに存在する項目を記載していること。
-
+				Set<String> logicalNames = screenDefinitionValidObj.getTargetModels().stream()
+						.map(ScreenDefinitionTargetData::getLogicalName).filter(Objects::nonNull)
+						.collect(Collectors.toSet());
+				if (!Arrays.asList(SCREEN_ITEM_DESCRIPTION_SHEET.ARR_OUTSIDE_SCOPE).contains(item.getModelName())
+						&& !logicalNames.contains(item.getModelName())) {
+					errors.add(MessageService.getMessage("error.screen.item.description.modelName.exits")
+							.replace("{0}", item.getModelName()).replace("{1}", item.getItemNo()));
+				}
 
 				// [フォーマット]
 				// TODO:数値項目、日付項目の場合（非表示項目は除く）、フォーマットを記載していること。

@@ -97,6 +97,6 @@ public interface CommonConstant {
 		Pattern PATTERN_OPERATION_CODE = Pattern.compile("^[A-Z0-9]{9}_([IU])[0-9]{3}$", Pattern.CASE_INSENSITIVE);
 
 		// TODO： [名前]WPネーミング規約 例：汎用テーブル詳細_登録 (日本語と半角アンダーバーを許可)
-		Pattern PATTERN_NAME =  Pattern.compile("^[\\u4E00-\\u9FFF\\u3040-\\u309F\\u30A0-\\u30FF\\u30FC_]*_[\\u4E00-\\u9FFF\\u3040-\\u309F\\u30A0-\\u30FF\\u30FC_]*$");;
+		Pattern PATTERN_NAME =  Pattern.compile("^[\\u4E00-\\u9FFF\\u3040-\\u309F\\u30A0-\\u30FF\\u30FC_]*(_|)[\\u4E00-\\u9FFF\\u3040-\\u309F\\u30A0-\\u30FF\\u30FC_]*$");
 	}
 }

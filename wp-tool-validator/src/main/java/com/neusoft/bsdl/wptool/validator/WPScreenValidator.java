@@ -112,17 +112,27 @@ public class WPScreenValidator {
 						.getMessage("error.db.config.operationTableName").replace("{0}", item.getTableName()));
 			}
 			// [項目]テーブル定義に存在する項目が記載されていること。
-			item.getDetails().forEach(detail -> {
-				WPTableSearchService service = (WPTableSearchService) context.getTableSearchService();
-				// データモデル名でテーブル定義書のコンテンツを取得する
-				TableBean ｔableContent = service.findTableByFullName(detail.getLogicalName());
-				if (Objects.isNull(ｔableContent)) {
-					// テーブル定義書の該当項目が存在しない場合、エラーとする
-					errors.add(sheetName + CommonConstant.MESSAGE_KUGIRI
-							+ MessageService.getMessage("error.db.config.logicalName.exits")
-									.replace("{0}", detail.getLogicalName()).replace("{1}", item.getDataModel()));
-				}
-			});
+			WPTableSearchService service = (WPTableSearchService) context.getTableSearchService();
+			// データモデル名でテーブル定義書のコンテンツを取得する
+			TableBean ｔableContent = service.findTableByFullName(item.getDataModel());
+			// 項目名は、テーブル定義書の項目名を記載していること。
+			if (!Objects.isNull(ｔableContent)) {
+				item.getDetails().forEach(detail -> {
+					if (!ｔableContent.getFieldList().stream()
+							.anyMatch(column -> StringUtils.equals(column.getFieldFullName(), detail.getLogicalName()))) {
+						// テーブル定義書の該当項目が存在しない場合、エラーとする
+						errors.add(sheetName + CommonConstant.MESSAGE_KUGIRI
+								+ MessageService.getMessage("error.db.config.logicalName.exits")
+										.replace("{0}", detail.getLogicalName())
+										.replace("{1}", item.getDataModel()));
+					}
+				});
+			}else {
+				// テーブル定義書の該当項目が存在しない場合、エラーとする
+				errors.add(sheetName + CommonConstant.MESSAGE_KUGIRI
+						+ MessageService.getMessage("error.db.config.table.exits")
+								.replace("{0}", item.getDataModel()));
+			}
 
 		});
 	}
@@ -131,7 +141,7 @@ public class WPScreenValidator {
 	 * 操作コードバリデーションチェック
 	 * 
 	 * @param code      操作コード，如 "MTI350S01_I010"
-	 * @param operation 操作类型："登録" 或 "更新"
+	 * @param operation 操作タイプ："登録" | "更新"
 	 * @return チェック結果
 	 */
 	public static boolean isValidCode(String code, String operation) {
@@ -143,8 +153,8 @@ public class WPScreenValidator {
 		if (!matcher.matches()) {
 			return false;
 		}
-		// "I" 或 "U"
-		String prefixType = matcher.group(1); 
+		// プレフィックスタイプを取得する
+		String prefixType = matcher.group(1);
 
 		if (CommonConstant.DB_CONFIG_SHEET.STR_DB_OPERATION_INSERT_NAME.equals(operation)) {
 			return CommonConstant.DB_CONFIG_SHEET.STR_DB_OPERATION_INSERT_PREFIX.equals(prefixType);
@@ -156,13 +166,14 @@ public class WPScreenValidator {
 	}
 
 	/**
-	 * 名前バリデーションチェック
+	 * TODO:名前バリデーションチェック
 	 * 
 	 * @param name
 	 * @return チェック結果
 	 */
 	public static boolean isValidName(String name) {
-		return name != null && !name.isEmpty() && CommonConstant.DB_CONFIG_SHEET.PATTERN_NAME.matcher(name).matches();
+		return true;
+		//return name != null && !name.isEmpty() && CommonConstant.DB_CONFIG_SHEET.PATTERN_NAME.matcher(name).matches();
 	}
 
 	/**

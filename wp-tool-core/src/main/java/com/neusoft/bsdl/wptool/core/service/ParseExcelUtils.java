@@ -48,12 +48,6 @@ public class ParseExcelUtils {
 	 * @throws Exception
 	 */
 	public static ScreenExcelContent parseScreenExcel(FileSource source) throws Exception {
-		log.info("解析対象シート名称リスト:{}", Arrays.asList(CommonConstant.SCREEN_DEFINITION_SHEET.SHEET_NAME,
-				CommonConstant.SCREEN_ITEM_DESCRIPTION_SHEET.SHEET_NAME,
-				CommonConstant.SCREEN_FUNC_SPECIFICATION_SHEET.SHEET_NAME,
-				CommonConstant.SCREEN_VALIDATION_SHEET.SHEET_NAME,
-				CommonConstant.CSV_LAYOUT_SHEET.SHEET_NAME, CommonConstant.DB_CONFIG_SHEET.SHEET_NAME));
-		
 		List<String> sheetNames = getSheetNames(source.getInputStream());
 		// シートリストが存在しない場合、異常終了
 		if (sheetNames.isEmpty()) {
@@ -147,6 +141,7 @@ public class ParseExcelUtils {
 			for (int i = 0; i < numberOfSheets; i++) {
 				sheetNames.add(workbook.getSheetName(i));
 			}
+			log.info("解析対象シート名称リスト:{}",sheetNames.toString());
 			return sheetNames;
 		}
 	}

@@ -3,13 +3,15 @@ package com.neusoft.bsdl.wptool.core.service.impl;
 import com.neusoft.bsdl.wptool.core.model.MessageDefinition;
 import com.neusoft.bsdl.wptool.core.service.IWPMessageLoaderService;
 
+/**
+ * メッセージ情報ロードツールクラス
+ */
 public class WPMessageLoaderService implements IWPMessageLoaderService {
 
 	public WPMessageLoaderService() {
 	}
 
 	public synchronized void initialize() {
-		// TODO:
 	}
 
 	@Override

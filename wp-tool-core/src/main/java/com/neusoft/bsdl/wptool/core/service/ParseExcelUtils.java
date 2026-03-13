@@ -1,7 +1,7 @@
 package com.neusoft.bsdl.wptool.core.service;
 
 import java.io.InputStream;
-import java.util.Arrays;
+import java.util.ArrayList;
 import java.util.List;
 
 import org.apache.commons.beanutils.BeanUtils;
@@ -16,6 +16,8 @@ import com.neusoft.bsdl.wptool.core.exception.WPParseExcelException.ExcelParseEr
 import com.neusoft.bsdl.wptool.core.io.FileSource;
 import com.neusoft.bsdl.wptool.core.model.CsvLayout;
 import com.neusoft.bsdl.wptool.core.model.DBConfigDefinition;
+import com.neusoft.bsdl.wptool.core.model.DBQueryExcelContent;
+import com.neusoft.bsdl.wptool.core.model.DBQuerySheetContent;
 import com.neusoft.bsdl.wptool.core.model.ExcelSheetContent;
 import com.neusoft.bsdl.wptool.core.model.ScreenDefinition;
 import com.neusoft.bsdl.wptool.core.model.ScreenExcelContent;
@@ -28,20 +30,40 @@ import lombok.extern.slf4j.Slf4j;
 
 @Slf4j
 public class ParseExcelUtils {
-//    /**
-//     * excel解析
-//     * 
-//     * @param source リソースファイル
-//     * @return
-//     * @throws Exception
-//     */
-//    public static DBQueryExcelContent parseDBQueryExcel(FileSource source) throws Exception {
-//        
-//        
-//    }
+	/**
+	 * dbQuery定義書解析
+	 * 
+	 * @param source リソースファイル
+	 * @return
+	 * @throws Exception
+	 */
+	public static DBQueryExcelContent parseDBQueryExcel(FileSource source) throws Exception {
+		List<String> sheetNames = getSheetNames(source.getInputStream());
+		DBQueryExcelContent parseExcelContent = new DBQueryExcelContent();
+		List<DBQuerySheetContent> querySheetContents = new ArrayList<>();
+		// エラー結果
+		List<ExcelParseError> errors = Lists.newArrayList();
+		
+		for (String sheetName : sheetNames) {
+			//改修履歴シートは解析対象外
+			if(CommonConstant.DBQUERY_SHEET.STR_SHEET_NAME_MODIFY_HISTORY.equals(sheetName)) {
+				continue;
+			}
+			DBQueryParseExcel parseExcel = new DBQueryParseExcel();
+			DBQuerySheetContent contents = parseExcel.parseSpecSheet(source, sheetName, errors);
+			querySheetContents.add(contents);
+		}
+		// エラーが存在の場合、異常終了
+		if (!CollectionUtils.isEmpty(errors)) {
+			throw new WPParseExcelException(errors);
+		}
+		parseExcelContent.setQuerySheetContents(querySheetContents);
+		log.info("解析したdbQuery定義書の内容:{}", parseExcelContent.toString());
+		return parseExcelContent;
+	}
 
 	/**
-	 * excel解析
+	 * 画面定義書解析
 	 * 
 	 * @param source リソースファイル
 	 * @return
@@ -141,7 +163,7 @@ public class ParseExcelUtils {
 			for (int i = 0; i < numberOfSheets; i++) {
 				sheetNames.add(workbook.getSheetName(i));
 			}
-			log.info("解析対象シート名称リスト:{}",sheetNames.toString());
+			log.info("解析対象シート名称リスト:{}", sheetNames.toString());
 			return sheetNames;
 		}
 	}

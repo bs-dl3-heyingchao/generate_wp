@@ -24,13 +24,38 @@ import com.neusoft.bsdl.wptool.core.model.DBConfigSubItemDefinition;
 import lombok.extern.slf4j.Slf4j;
 
 /**
- * DB設定項目定義のコンテンツの解析ツール（支持多操作ブロック）
+ * 「DB設定項目定義書」Excelシートを解析し、{@link DBConfigDefinition} モデルに変換するためのツールクラス。
+ * 
+ * <p>この定義書は「複数の操作ブロック（プロセス単位）」から構成されており、
+ * 各ブロックは以下の構造を持ちます：
+ * <ul>
+ *   <li><b>ヘッダ領域</b>：2行（機能名、データモデル、操作コード、テーブル名など）</li>
+ *   <li><b>明細ヘッダ</b>：1行（論理名・物理名・設定内容・備考）</li>
+ *   <li><b>明細データ</b>：可変行（各設定項目の詳細）</li>
+ * </ul>
+ * 
+ * <p>解析は「機能名」セル（A列）をブロックの開始マーカーとして、複数ブロックを順次処理します。
  */
 @Slf4j
 public class DbConfigItemDefinitionParseExcel extends AbstractParseTool {
 
 	/**
-	 * メイン解析メソッド
+	 * 指定されたExcelファイルソースから「DB設定項目定義書」シートを解析し、
+	 * {@link DBConfigDefinition} オブジェクトを構築して返却します。
+	 * 
+	 * <p>処理フロー：
+	 * <ol>
+	 *   <li>Excel全体をバイト配列として読み込み</li>
+	 *   <li>各操作ブロックのヘッダおよび明細ヘッダをバリデーション</li>
+	 *   <li>「機能名」セルを起点に、各ブロックのヘッダ情報と明細データを抽出</li>
+	 *   <li>全ブロックを {@link DBConfigDefinition#processList} に集約</li>
+	 * </ol>
+	 * 
+	 * @param source     解析対象のExcelファイルソース
+	 * @param sheetName  解析対象のシート名
+	 * @param errors     バリデーションエラーを格納するリスト（null不可）
+	 * @return 解析結果の {@link DBConfigDefinition} オブジェクト。エラー発生時は {@code null}
+	 * @throws Exception Excelの読み込みまたは解析中に予期せぬ例外が発生した場合
 	 */
 	public DBConfigDefinition parseSpecSheet(FileSource source, String sheetName, List<ExcelParseError> errors)
 			throws Exception {
@@ -39,7 +64,6 @@ public class DbConfigItemDefinitionParseExcel extends AbstractParseTool {
 		// ヘッダ情報のバリデーションチェック
 		try (Workbook workbook = WorkbookFactory.create(new ByteArrayInputStream(excelBytes))) {
 			Sheet sheet = workbook.getSheet(sheetName);
-			//バリデーションチェックを実施する
 			validateHeaders(sheet, errors);
 			if (!errors.isEmpty()) {
 				return null;
@@ -55,18 +79,25 @@ public class DbConfigItemDefinitionParseExcel extends AbstractParseTool {
 
 			while (currentRow <= lastRowNum) {
 				Row row = sheet.getRow(currentRow);
+				if (row == null) {
+					currentRow++;
+					continue;
+				}
 				String cell0 = getCellValue(row, 0).trim();
 				if (DBConfigItemDefinitionEnum.FUNCTION_NAME.getDisplayName().equals(cell0)) {
 					DBConfigItemDefinition item = new DBConfigItemDefinition();
-					//ヘッダ情報の設定
-					item.setDataModel(getCellValue(row, 6).trim());
-					item.setOperation(getCellValue(row, 37).trim());
+					// ヘッダ情報の設定（第1行）
+					item.setDataModel(getCellValue(row, 6).trim());      // G列
+					item.setOperation(getCellValue(row, 37).trim());     // AK列
+
+					// 第2行（操作コード、テーブル名）
 					Row nextRow = sheet.getRow(currentRow + 1);
 					if (nextRow != null) {
 						item.setOperationCode(getCellValue(nextRow, 6).trim());
 						item.setTableName(getCellValue(nextRow, 37).trim());
 					}
-					//明細情報の設定
+
+					// 明細データ範囲の特定（ヘッダ下3行目から次のブロック手前まで）
 					int detailStartRow = currentRow + 4;
 					int nextBlockStart = findNextBlockStart(sheet, detailStartRow);
 					int detailEndRow = nextBlockStart - 1;
@@ -88,12 +119,16 @@ public class DbConfigItemDefinitionParseExcel extends AbstractParseTool {
 	}
 
 	/**
-	 * 指定した行範囲から明細情報を読み取る
+	 * 指定された行範囲（開始行～終了行）から明細データを読み取り、
+	 * {@link DBConfigSubItemDefinition} のリストとして返却します。
 	 * 
-	 * @param sheet
-	 * @param startRow
-	 * @param endRow
-	 * @return
+	 * <p>途中で次の操作ブロックの開始マーカー（「機能名」セル）が出現した場合は、
+	 * そこで読み込みを中断します。
+	 * 
+	 * @param sheet     対象シート
+	 * @param startRow  明細データの開始行インデックス（0起点）
+	 * @param endRow    明細データの終了行インデックス（0起点）
+	 * @return 抽出された明細項目のリスト
 	 */
 	private List<DBConfigSubItemDefinition> readDetailsFromRange(Sheet sheet, int startRow, int endRow) {
 		List<DBConfigSubItemDefinition> details = new ArrayList<>();
@@ -105,7 +140,7 @@ public class DbConfigItemDefinitionParseExcel extends AbstractParseTool {
 
 			String cell0 = getCellValue(row, 0).trim();
 			if (DBConfigItemDefinitionEnum.FUNCTION_NAME.getDisplayName().equals(cell0)) {
-				break;
+				break; // 次のブロック開始 → 中断
 			}
 
 			DBConfigSubItemDefinition detail = parseDetailRow(row);
@@ -117,12 +152,18 @@ public class DbConfigItemDefinitionParseExcel extends AbstractParseTool {
 	}
 
 	/**
-	 * 解析单行明细
+	 * 明細データの1行を解析し、{@link DBConfigSubItemDefinition} オブジェクトにマッピングします。
+	 * 
+	 * <p>各カラムの位置は {@link DBConfigItemDefinitionDetailEnum} に基づいて動的に取得し、
+	 * 論理名・物理名・設定内容・備考の4項目を設定します。
+	 * 
+	 * @param row 解析対象のExcel行オブジェクト
+	 * @return 構築された明細項目オブジェクト。無効な行の場合は null
 	 */
 	private DBConfigSubItemDefinition parseDetailRow(Row row) {
 		DBConfigSubItemDefinition detail = new DBConfigSubItemDefinition();
 
-		// 根据 DBConfigItemDefinitionDetailEnum 的列索引映射字段
+		// DBConfigItemDefinitionDetailEnum に基づき、各列をマッピング
 		for (DBConfigItemDefinitionDetailEnum field : DBConfigItemDefinitionDetailEnum.values()) {
 			String value = getCellValue(row, field.getColumnIndex()).trim();
 			switch (field) {
@@ -146,11 +187,11 @@ public class DbConfigItemDefinitionParseExcel extends AbstractParseTool {
 	}
 
 	/**
-	 * 次の操作ブロックの開始行を見つける
+	 * 指定行から次の「操作ブロック」の開始行（「機能名」セルが存在する行）を検索します。
 	 * 
-	 * @param sheet
-	 * @param fromRow
-	 * @return
+	 * @param sheet    対象シート
+	 * @param fromRow  検索開始行インデックス（0起点）
+	 * @return 次のブロックの開始行インデックス。見つからない場合は {@code sheet.getLastRowNum() + 1}
 	 */
 	private static int findNextBlockStart(Sheet sheet, int fromRow) {
 		int lastRow = sheet.getLastRowNum();
@@ -167,10 +208,13 @@ public class DbConfigItemDefinitionParseExcel extends AbstractParseTool {
 	}
 
 	/**
-	 * ヘッダ情報バリデーションチェックを実施する
+	 * シート全体のヘッダ構造をバリデーションします。
 	 * 
-	 * @param sheet
-	 * @param errors
+	 * <p>「機能名」セルを起点に各操作ブロックを走査し、
+	 * それぞれのメインヘッダ（2行）および明細ヘッダ（1行）が仕様通りかを検証します。
+	 * 
+	 * @param sheet  検証対象のExcelシート
+	 * @param errors 検証エラーを格納するリスト（null不可）
 	 */
 	public static void validateHeaders(Sheet sheet, List<ExcelParseError> errors) {
 		int currentRow = DB_CONFIG_SHEET.START_POS_HEADER_INDEX;
@@ -178,21 +222,29 @@ public class DbConfigItemDefinitionParseExcel extends AbstractParseTool {
 
 		while (currentRow <= lastRowNum) {
 			Row row = sheet.getRow(currentRow);
+			if (row == null) {
+				currentRow++;
+				continue;
+			}
 			String cell0 = getCellValue(row, 0).trim();
 			if (DBConfigItemDefinitionEnum.FUNCTION_NAME.getDisplayName().equals(cell0)) {
+				// メインヘッダ（2行）の検証
 				validateMainHeader(sheet, currentRow, errors);
-				// ヘッダ情報のフォーマットが正しくない場合、処理終了
 				if (!CollectionUtils.isEmpty(errors)) {
-					return;
+					return; // 初回エラーで即時終了
 				}
+
+				// 明細ヘッダ（1行）の検証
 				int detailHeaderRowNum = currentRow + 3;
 				Row detailHeaderRow = sheet.getRow(detailHeaderRowNum);
 				if (detailHeaderRow != null) {
 					validateDetailHeader(detailHeaderRow, detailHeaderRowNum, sheet.getSheetName(), errors);
 				} else {
-					errors.add(new ExcelParseError(sheet.getSheetName(), detailHeaderRowNum + 1, 0,
+					errors.add(new ExcelParseError(sheet.getSheetName(), detailHeaderRowNum + 1, 1,
 							MessageService.getMessage("error.format.dbConfig.wrongColumn")));
 				}
+
+				// 次のブロックへジャンプ
 				currentRow = findNextBlockStart(sheet, currentRow + 4);
 			} else {
 				currentRow++;
@@ -201,11 +253,14 @@ public class DbConfigItemDefinitionParseExcel extends AbstractParseTool {
 	}
 
 	/**
-	 * メインヘッダのバリデーションチェックを実施する
+	 * 単一の操作ブロックにおけるメインヘッダ（2行）を検証します。
 	 * 
-	 * @param sheet
-	 * @param mainHeaderStartRow
-	 * @param errors
+	 * <p>{@link DBConfigItemDefinitionEnum} に定義された各ヘッダ項目について、
+	 * 期待値と実際のセル値が一致するかを確認します。
+	 * 
+	 * @param sheet               対象シート
+	 * @param mainHeaderStartRow  メインヘッダの開始行インデックス（0起点）
+	 * @param errors              エラー格納リスト
 	 */
 	private static void validateMainHeader(Sheet sheet, int mainHeaderStartRow, List<ExcelParseError> errors) {
 		Row level0Row = sheet.getRow(mainHeaderStartRow);
@@ -227,12 +282,15 @@ public class DbConfigItemDefinitionParseExcel extends AbstractParseTool {
 	}
 
 	/**
-	 * 明細ヘッダのバリデーションチェックを実施する
+	 * 明細ヘッダ行（1行）を検証します。
 	 * 
-	 * @param detailHeaderRow
-	 * @param rowNum
-	 * @param sheetName
-	 * @param errors
+	 * <p>{@link DBConfigItemDefinitionDetailEnum} に定義された各明細ヘッダ項目について、
+	 * 期待値と実際のセル値が一致するかを確認します。
+	 * 
+	 * @param detailHeaderRow 対象の明細ヘッダ行
+	 * @param rowNum          行番号（エラーメッセージ用、1起点）
+	 * @param sheetName       シート名（エラーメッセージ用）
+	 * @param errors          エラー格納リスト
 	 */
 	private static void validateDetailHeader(Row detailHeaderRow, int rowNum, String sheetName,
 			List<ExcelParseError> errors) {
@@ -248,11 +306,11 @@ public class DbConfigItemDefinitionParseExcel extends AbstractParseTool {
 	}
 
 	/**
-	 * Excelファイルをバイト配列として読み取る
+	 * 指定されたファイルソースからExcelファイルをバイト配列として読み込みます。
 	 * 
-	 * @param source
-	 * @return
-	 * @throws Exception
+	 * @param source Excelファイルの入力ソース
+	 * @return Excelファイルの内容を表すバイト配列
+	 * @throws Exception 入力ストリームの読み込み中にIO例外が発生した場合
 	 */
 	private byte[] readExcelBytes(FileSource source) throws Exception {
 		try (InputStream is = source.getInputStream()) {

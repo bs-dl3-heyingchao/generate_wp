@@ -11,10 +11,10 @@ import com.neusoft.bsdl.wptool.core.service.ParseExcelUtils;
 public class WpCodeGeneratorTest {
 
     public static void main(String[] args) throws Exception {
-        File outputDir = new File("target/output");
+        File outputDir = new File("target/output/", System.currentTimeMillis() + "");
         FileSource source = new LocalFileSource(args[0]);
         WPContext context = WPContext.create();
-        WpCodeGenerator codeGenerator = new WpCodeGenerator(context);
+        WPCodeGenerator1 codeGenerator = new WPCodeGenerator1(context);
         ScreenExcelContent screenExcelContent = ParseExcelUtils.parseScreenExcel(source);
         codeGenerator.generate(screenExcelContent, outputDir);
     }

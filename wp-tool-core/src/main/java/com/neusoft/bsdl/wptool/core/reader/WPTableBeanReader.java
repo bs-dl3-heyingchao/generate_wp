@@ -76,6 +76,12 @@ public class WPTableBeanReader extends AbstractExcelTableBeanReader {
                     fieldBean.setNotNull(!"TRUE".equalsIgnoreCase(nullEnable));
 
                     Map<String, String> others = new HashMap<>();
+                    // 長さ PRE
+                    others.put("WP_LEN_PRE", excelUtil.getCellStringValue(sheet, 5, row).trim());
+                    // 長さ S
+                    others.put("WP_LEN_S", excelUtil.getCellStringValue(sheet, 6, row).trim());
+                    // 長さ B
+                    others.put("WP_LEN_B", excelUtil.getCellStringValue(sheet, 7, row).trim());
                     // データ型(WP)
                     others.put("WP_TYPE", excelUtil.getCellStringValue(sheet, 9, row).trim());
 //                    others.put("WP_LEN", excelUtil.getCellStringValue(sheet, 10, row).trim());

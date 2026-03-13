@@ -1,7 +1,7 @@
-package com.neusoft.bsdl.wptool.validator.service.impl;
+package com.neusoft.bsdl.wptool.core.service.impl;
 
-import com.neusoft.bsdl.wptool.validator.model.MessageDefinition;
-import com.neusoft.bsdl.wptool.validator.service.IWPMessageLoaderService;
+import com.neusoft.bsdl.wptool.core.model.MessageDefinition;
+import com.neusoft.bsdl.wptool.core.service.IWPMessageLoaderService;
 
 /**
  * メッセージ情報ロードツールクラス

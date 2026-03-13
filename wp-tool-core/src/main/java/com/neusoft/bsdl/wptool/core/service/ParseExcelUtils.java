@@ -53,6 +53,7 @@ public class ParseExcelUtils {
 				CommonConstant.SCREEN_FUNC_SPECIFICATION_SHEET.SHEET_NAME,
 				CommonConstant.SCREEN_VALIDATION_SHEET.SHEET_NAME,
 				CommonConstant.CSV_LAYOUT_SHEET.SHEET_NAME, CommonConstant.DB_CONFIG_SHEET.SHEET_NAME));
+		
 		List<String> sheetNames = getSheetNames(source.getInputStream());
 		// シートリストが存在しない場合、異常終了
 		if (sheetNames.isEmpty()) {

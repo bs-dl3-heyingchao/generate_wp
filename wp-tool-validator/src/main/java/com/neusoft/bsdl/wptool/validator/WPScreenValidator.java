@@ -10,23 +10,23 @@ import java.util.stream.Collectors;
 import org.apache.commons.collections.CollectionUtils;
 import org.apache.commons.lang3.StringUtils;
 
+import com.neusoft.bsdl.wptool.core.context.WPContext;
 import com.neusoft.bsdl.wptool.core.exception.WPCheckException;
 import com.neusoft.bsdl.wptool.core.model.DBConfigDefinition;
 import com.neusoft.bsdl.wptool.core.model.ExcelSheetContent;
+import com.neusoft.bsdl.wptool.core.model.MessageDefinition;
 import com.neusoft.bsdl.wptool.core.model.ScreenDefinition;
 import com.neusoft.bsdl.wptool.core.model.ScreenDefinitionTargetData;
 import com.neusoft.bsdl.wptool.core.model.ScreenExcelContent;
 import com.neusoft.bsdl.wptool.core.model.ScreenItemDescriptionResult;
 import com.neusoft.bsdl.wptool.core.model.ScreenValidation;
+import com.neusoft.bsdl.wptool.core.service.impl.WPMessageLoaderService;
+import com.neusoft.bsdl.wptool.core.service.impl.WPTableSearchService;
 import com.neusoft.bsdl.wptool.validator.CommonConstant.SCREEN_DEFINITION_SHEET;
 import com.neusoft.bsdl.wptool.validator.CommonConstant.SCREEN_ITEM_DESCRIPTION_SHEET;
 import com.neusoft.bsdl.wptool.validator.CommonConstant.SCREEN_VALIDATION_SHEET;
-import com.neusoft.bsdl.wptool.validator.context.WPValidatorContext;
 import com.neusoft.bsdl.wptool.validator.enums.ItemDescriptionIOEnum;
-import com.neusoft.bsdl.wptool.validator.model.MessageDefinition;
 import com.neusoft.bsdl.wptool.validator.service.impl.MessageService;
-import com.neusoft.bsdl.wptool.validator.service.impl.WPMessageLoaderService;
-import com.neusoft.bsdl.wptool.validator.service.impl.WPTableSearchService;
 import com.neusoft.bsdl.wptool.validator.utils.CommonUtils;
 
 import cbai.util.db.define.TableBean;
@@ -34,9 +34,9 @@ import lombok.extern.slf4j.Slf4j;
 
 @Slf4j
 public class WPScreenValidator {
-	private WPValidatorContext context;
+	private WPContext context;
 
-	public WPScreenValidator(WPValidatorContext context) {
+	public WPScreenValidator(WPContext context) {
 		this.context = context;
 	}
 
@@ -143,8 +143,8 @@ public class WPScreenValidator {
 		if (!matcher.matches()) {
 			return false;
 		}
-
-		String prefixType = matcher.group(1); // "I" 或 "U"
+		// "I" 或 "U"
+		String prefixType = matcher.group(1); 
 
 		if (CommonConstant.DB_CONFIG_SHEET.STR_DB_OPERATION_INSERT_NAME.equals(operation)) {
 			return CommonConstant.DB_CONFIG_SHEET.STR_DB_OPERATION_INSERT_PREFIX.equals(prefixType);

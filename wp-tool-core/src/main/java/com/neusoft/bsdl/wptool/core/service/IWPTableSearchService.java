@@ -1,4 +1,4 @@
-package com.neusoft.bsdl.wptool.validator.service;
+package com.neusoft.bsdl.wptool.core.service;
 
 
 import cbai.util.db.define.FieldBean;

@@ -4,6 +4,52 @@ package com.neusoft.bsdl.wptool.core;
  * 共通定数定義
  */
 public interface CommonConstant {
+	/** dbQuery定義書 */
+	interface DBQUERY_SHEET {
+		// 解析開始行:ヘッダ
+		Integer START_POS_HEADER_INDEX = 5;
+		// 解析開始行:一覧
+		Integer START_POS_DETAIL_INDEX = 7;
+		// 解析開始行:データ
+		Integer START_POS_DATA_INDEX = 9;
+		//解析列番号
+		Integer COL_A = 0;
+		Integer COL_B = 1;
+		Integer COL_C = 2;
+		Integer COL_D = 3;
+		Integer COL_E = 4;
+		Integer COL_F = 5;
+		Integer COL_G = 6;
+		Integer COL_H = 7;
+		Integer COL_I = 8;
+		Integer COL_J = 9;
+		Integer COL_K = 10;
+		Integer COL_L = 11;
+		Integer COL_M = 12;
+		Integer COL_P = 15;
+		Integer COL_AB = 27;
+		Integer COL_AJ = 35;
+		Integer COL_AK = 36;
+		
+		String STR_TRUE = "TRUE";
+		
+		//解析説明文字
+		String STR_SHEET_NAME_MODIFY_HISTORY = "改版履歴";
+		String STR_SUMMARY = "概要";
+		String STR_SUMMARY_TABLE = "１．対象テーブル";
+		String STR_SUMMARY_TABLE_CONDITION = "２．対象テーブルの条件";
+		String STR_SUMMARY_JOIN_CONDITION = "3．結合条件";
+		String STR_SUMMARY_JOIN_CONDITION_METHOD = "結合方法";
+		String STR_SUMMARY_JOIN_CONDITION_TABLE = "対象テーブル";
+		String STR_SUMMARY_JOIN_CONDITION_ALIAS = "テーブル別名";
+		String STR_SUMMARY_JOIN_CONDITION_JOIN = "結合条件";
+		String STR_SUMMARY_SORT_CONDITION = "4．ソート条件";
+		String STR_SUMMARY_SUPPLEMENT = "5．補足";
+		String STR_QUERY_CONDITION = "dbQuery：検索条件";
+		String STR_QUERY_AGGREGATE_CONDITION = "dbQueryAggregate：集計関数の検索条件";
+		
+	}
+
 	/** 改版履歴 */
 	interface MODIFY_HISTORY_SHEET {
 		// シート名称
@@ -21,17 +67,17 @@ public interface CommonConstant {
 		// A列：論理名など
 		int COL_A = 0;
 		// J列：物理名など
-		int COL_J = 9; 
-		 // S列：CRUD
+		int COL_J = 9;
+		// S列：CRUD
 		int COL_CRUD = 18;
 		// U列：対象条件 / 入出力タイプ
-		int COL_U = 20; 
+		int COL_U = 20;
 		// BP列：対象条件のスコープの終了列
-		int COL_BP = 67; 
+		int COL_BP = 67;
 		// AB列：外部ファイルの項目名
-		int COL_AB = 27; 
+		int COL_AB = 27;
 		// AG列：外部ファイルの項目値
-		int COL_AG = 32; 
+		int COL_AG = 32;
 		// シート名称
 		String STR_JAVASCRIPT = "Javascript";
 		// シート名称

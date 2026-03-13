@@ -33,7 +33,7 @@ import cbai.util.template.CreateTemplateVelocity;
 import lombok.extern.slf4j.Slf4j;
 
 @Slf4j
-public class WPCodeGenerator1 {
+public class WPCodeGenerator {
     private final static String[][] ACTION_ARRAY = { { "検索", "SEARCH" }, { "登録", "INSERT" }, { "更新", "UPDATE" }, { "登録（更新）", "UPDATE" }, { "削除", "DELETE" }, { "新規", "CREATE" }, { "選択", "CHOICE" },
             { "クリア", "CLEAR" }, { "次へ", "NEXT" }, { "一覧画面へ", "LIST" }, { "戻る", "BACK" }, { "閉じる", "CLOSE" }, { "インポート", "IMPORT" }, { "エクスポート", "EXPORT" }, { "帳票出力", "EXPORT" }, { "追加", "ADDITION" },
             { "○○追加", "ADDITION" }, { "編集", "EDIT" }, { "確認", "PRE_PROPOSE" }, { "申請", "PROPOSE" }, { "○○申請", "PROPOSE" }, { "コピー", "COPY" }, { "複写", "COPY" }, { "失注", "LOST" }, { "再計算" },
@@ -50,7 +50,7 @@ public class WPCodeGenerator1 {
         morphemHelper = new MorphemHelper();
     }
 
-    public WPCodeGenerator1(WPContext context) {
+    public WPCodeGenerator(WPContext context) {
         this.context = context;
     }
 
@@ -90,7 +90,7 @@ public class WPCodeGenerator1 {
         replaceMap.put("gmId", screenExcelContent.getScreenId());
         replaceMap.put("gmIoId", screenExcelContent.getScreenId() + ioSuffix);
         replaceMap.put("gmName", screenExcelContent.getScreenName());
-        replaceMap.put("parentDir", screenExcelContent.getScreenId());
+//        replaceMap.put("parentDir", screenExcelContent.getScreenId());
 //        SR対象条件Bean dxtjBean = xxsjBean.対象条件;
 //        if (dxtjBean != null) {
 //            if (StringUtils.isNotEmpty(dxtjBean.対象データモデル)) {
@@ -184,13 +184,15 @@ public class WPCodeGenerator1 {
                     codePrefix = curGroupPrefix + codePrefix;
                     ioItem.level = "2";
                 }
-                if (itemBean.getLengthWP().matches("\\d+")) {
+                if ("DM".equalsIgnoreCase(itemBean.getLengthWP())) {
+                    // DM不设置【桁数】，使用默认值
+                } else if (itemBean.getLengthWP().matches("\\d+")) {
                     ioItem.length = itemBean.getLengthWP();
-                } else if (itemBean.getLength().matches("\\d+")) {
-                    ioItem.length = itemBean.getLength();
+                } else {
+                    writeWarnLog(subLogPrefix + "項番[{}] unkonw 桁数(WP) :{}", itemBean.getItemNo(), itemBean.getLengthWP());
                 }
 
-                // 備考 備考によりラベルが変更する可能性があるので、先に解析する必要があります
+                // 備考
                 setBiko(itemBean, ioItem);
 
                 if (hasValue(itemBean.getModelName()) /* && !tableFullName.endsWith("クエリ") */) {
@@ -431,30 +433,48 @@ public class WPCodeGenerator1 {
         }
         String[] bikoList = bikoText.split("\n");
         for (String biko : bikoList) {
-            if (biko.startsWith("fieldType")) {
+//            if (biko.startsWith("fieldType")) {
+//                biko = biko.replace("：", ":");
+//                if (biko.indexOf(":") != -1) {
+//                    String value = biko.substring(biko.indexOf(":") + 1);
+//                    if (ioItem.io_item_prop_list == null) {
+//                        ioItem.io_item_prop_list = new ArrayList<ItemProp>();
+//                    }
+//                    ioItem.io_item_prop_list.add(new ItemProp("fieldType", escapseXml(value)));
+//                }
+//            } else if (biko.startsWith("defaultFieldStyle")) {
+//                biko = biko.replace("：", ":");
+//                if (biko.indexOf(":") != -1) {
+//                    String value = biko.substring(biko.indexOf(":") + 1);
+//                    if (ioItem.io_item_prop_list == null) {
+//                        ioItem.io_item_prop_list = new ArrayList<ItemProp>();
+//                    }
+//                    ioItem.io_item_prop_list.add(new ItemProp("defaultFieldStyle", escapseXml(value)));
+//                }
+//            }            else 
+            if (biko.startsWith("ラベル付加")) {
                 biko = biko.replace("：", ":");
                 if (biko.indexOf(":") != -1) {
                     String value = biko.substring(biko.indexOf(":") + 1);
                     if (ioItem.io_item_prop_list == null) {
                         ioItem.io_item_prop_list = new ArrayList<ItemProp>();
                     }
-                    ioItem.io_item_prop_list.add(new ItemProp("fieldType", escapseXml(value)));
+                    // ラベル付加
+                    ioItem.io_item_prop_list.add(new ItemProp("labelAvailable", escapseXml(value)));
                 }
-            } else if (biko.startsWith("defaultFieldStyle")) {
+            } else if (biko.startsWith("ラベル式")) {
                 biko = biko.replace("：", ":");
                 if (biko.indexOf(":") != -1) {
                     String value = biko.substring(biko.indexOf(":") + 1);
                     if (ioItem.io_item_prop_list == null) {
                         ioItem.io_item_prop_list = new ArrayList<ItemProp>();
                     }
-                    ioItem.io_item_prop_list.add(new ItemProp("defaultFieldStyle", escapseXml(value)));
+                    // TODO: ラベル式：画面.汎用CD見出し
+                    // （未設定時、"汎用コード"を表示）
+                    ioItem.io_item_prop_list.add(new ItemProp("labelStatement", escapseXml(value)));
                 }
-            } else if (biko.startsWith("ラベル")) {
-                biko = biko.replace("：", ":");
-                if (biko.indexOf(":") != -1) {
-                    String value = biko.substring(biko.indexOf(":") + 1);
-                    ioItem.label = escapseXml(value);
-                }
+            } else {
+                writeWarnLog(logPrefix + "項番[{}] unkonw 備考:{}", itemBean.getItemNo(), biko);
             }
         }
         ioItem.description = escapseXml(bikoText);
@@ -471,20 +491,22 @@ public class WPCodeGenerator1 {
         return escapseXml(condition);
     }
 
-    private static final Pattern PARAM_PATTERN = Pattern.compile("@\\d+");
-
     private String getInitValue(String subLogPrefix, ScreenItemDescription itemBean) {
         String initValue = itemBean.getDefaultValue();
         if (!hasValue(initValue)) {
             return null;
         }
-        if (initValue.startsWith("受取パラメータ")) {
-            initValue = initValue.substring("受取パラメータ".length()).replaceAll("　", " ").trim();
-        } else if (initValue.startsWith("@") && initValue.contains("パラメータ")) {
-            Matcher m = PARAM_PATTERN.matcher(initValue);
-            if (m.find()) {
-                initValue = m.group();
-            }
+//        if (initValue.startsWith("受取パラメータ")) {
+//            initValue = initValue.substring("受取パラメータ".length()).replaceAll("　", " ").trim();
+//        } else if (initValue.startsWith("@") && initValue.contains("パラメータ")) {
+//            Matcher m = PARAM_PATTERN.matcher(initValue);
+//            if (m.find()) {
+//                initValue = m.group();
+//            }
+//        } 
+        if (initValue.startsWith("固定値：") || initValue.startsWith("固定値:")) {
+            initValue = initValue.replaceAll("　", " ").trim();
+            initValue = "'" + initValue.substring(4).trim() + "'";
         }
         return escapseXml(initValue);
     }
@@ -497,63 +519,70 @@ public class WPCodeGenerator1 {
         }
         Map<String, List<String>> map = parseDefineCell(itemBean, statement);
         if (!map.isEmpty()) {
+            if (map.containsKey("DM")) {
+                List<String> dmList = map.get("DM");
+                List<String> conditionList = map.get("条件");
+                List<String> valueList = map.get("値");
 
-            List<String> dmList = map.get("DM");
-            List<String> conditionList = map.get("条件");
-            List<String> valueList = map.get("値");
-
-            if (dmList == null || dmList.isEmpty()) {
-                writeWarnLog(subLogPrefix + "項番[{}] 加工式の【DM】が見つかりません", itemBean.getItemNo());
-                return "'" + escapseXml(statement) + "'";
-            }
-            String dm = dmList.get(0);
-
-            TableBean findedTableItem = context.getTableSearchService().findTableByFullName(dm);
-            if (findedTableItem == null) {
-                writeErrorLog(subLogPrefix + "項番[{}] 加工式の【DM】が見つかりません:{}", itemBean.getItemNo(), dm);
-                return "'" + escapseXml(statement) + "'";
-            }
-            String dmCodeResult = findedTableItem.getTableName();
-            String conditionResult = "";
-            if (conditionList == null || conditionList.isEmpty()) {
-                writeErrorLog(subLogPrefix + "項番[{}] 加工式の【条件】が見つかりません", itemBean.getItemNo());
-            } else {
-                StringBuffer sb = new StringBuffer();
-                for (String condition : conditionList) {
-                    condition = condition.replace("＝", "=");
-                    condition = condition.replace("かつ", " and ");
-                    condition = condition.replace("　", " ");
-                    condition = condition.replace("’", "'");
-                    sb.append(condition).append(" ");
+                if (dmList == null || dmList.isEmpty()) {
+                    writeWarnLog(subLogPrefix + "項番[{}] 加工式の【DM】が見つかりません", itemBean.getItemNo());
+                    return "'" + escapseXml(statement) + "'";
                 }
-                Matcher m = CONDTION_PATTERN.matcher(sb.toString().trim());
-                sb.setLength(0);
-                while (m.find()) {
-                    String filedFullName = m.group(1).trim();
-                    FieldBean fb = context.getTableSearchService().findFieldByFullName(findedTableItem.getTableFullName(), filedFullName);
-                    if (fb == null) {
-                        writeErrorLog(subLogPrefix + "項番[{}] 加工式の【条件】が見つかりません:{}", itemBean.getItemNo(), filedFullName);
-                        continue;
-                    }
-                    m.appendReplacement(sb, fb.getFieldName() + "=");
+                String dm = dmList.get(0);
+
+                TableBean findedTableItem = context.getTableSearchService().findTableByFullName(dm);
+                if (findedTableItem == null) {
+                    writeErrorLog(subLogPrefix + "項番[{}] 加工式の【DM】が見つかりません:{}", itemBean.getItemNo(), dm);
+                    return "'" + escapseXml(statement) + "'";
                 }
-                m.appendTail(sb);
-                conditionResult = sb.toString();
-            }
-            String valueResult = "";
-            if (valueList == null || valueList.isEmpty()) {
-                writeErrorLog(subLogPrefix + "項番[{}] 加工式の【値】が見つかりません", itemBean.getItemNo());
-            } else {
-                String value = valueList.get(0);
-                FieldBean fb = context.getTableSearchService().findFieldByFullName(findedTableItem.getTableFullName(), value);
-                if (fb == null) {
-                    writeErrorLog(subLogPrefix + "項番[{}] 加工式の【値】が見つかりません:{}", itemBean.getItemNo(), value);
+                String dmCodeResult = findedTableItem.getTableName();
+                String conditionResult = "";
+                if (conditionList == null || conditionList.isEmpty()) {
+                    writeErrorLog(subLogPrefix + "項番[{}] 加工式の【条件】が見つかりません", itemBean.getItemNo());
                 } else {
-                    valueResult = fb.getFieldName();
+                    StringBuffer sb = new StringBuffer();
+                    for (String condition : conditionList) {
+                        condition = condition.replace("＝", "=");
+                        condition = condition.replace("かつ", " and ");
+                        condition = condition.replace("　", " ");
+                        condition = condition.replace("’", "'");
+                        sb.append(condition).append(" ");
+                    }
+                    Matcher m = CONDTION_PATTERN.matcher(sb.toString().trim());
+                    sb.setLength(0);
+                    while (m.find()) {
+                        String filedFullName = m.group(1).trim();
+                        FieldBean fb = context.getTableSearchService().findFieldByFullName(findedTableItem.getTableFullName(), filedFullName);
+                        if (fb == null) {
+                            writeErrorLog(subLogPrefix + "項番[{}] 加工式の【条件】が見つかりません:{}", itemBean.getItemNo(), filedFullName);
+                            continue;
+                        }
+                        m.appendReplacement(sb, fb.getFieldName() + "=");
+                    }
+                    m.appendTail(sb);
+                    conditionResult = sb.toString();
                 }
+                String valueResult = "";
+                if (valueList == null || valueList.isEmpty()) {
+                    writeErrorLog(subLogPrefix + "項番[{}] 加工式の【値】が見つかりません", itemBean.getItemNo());
+                } else {
+                    String value = valueList.get(0);
+                    FieldBean fb = context.getTableSearchService().findFieldByFullName(findedTableItem.getTableFullName(), value);
+                    if (fb == null) {
+                        writeErrorLog(subLogPrefix + "項番[{}] 加工式の【値】が見つかりません:{}", itemBean.getItemNo(), value);
+                    } else {
+                        valueResult = fb.getFieldName();
+                    }
+                }
+                String newStatement = String.format("NAVAL(%s{%s}.%s, @NULL)", dmCodeResult, conditionResult, valueResult);
+                return escapseXml(newStatement);
+            } else if (map.containsKey("条件") && map.containsKey("設定値")) {
+                // TODO
+                /*
+                 * [条件] 画面.契約締結年月＜ 画面.業務日付-6ヶ月(年月) [設定値] true：契約締結年月に6ヶ月以上前の過去日付が指定されています。
+                 * false：@NULL
+                 */
             }
-            String newStatement = String.format("NAVAL(%s{%s}.%s, @NULL)", dmCodeResult, conditionResult, valueResult);
-            return escapseXml(newStatement);
         }
         if (statement.startsWith("@READONLY") || statement.startsWith("読み取り専用")) {
             return "@READONLY";

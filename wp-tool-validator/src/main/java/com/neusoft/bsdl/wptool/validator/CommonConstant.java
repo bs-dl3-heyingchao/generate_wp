@@ -16,7 +16,7 @@ public interface CommonConstant {
 	public static final String STR_WP_LEN_PRE = "WP_LEN_PRE";
 
 	// テーブル定義書のデータ型(WP)列の格納される長さ:S
-	public static final String STR_LEN_S = "LEN_S";
+	public static final String STR_WP_LEN_S = "WP_LEN_S";
 
 	// テーブル定義書のデータ型(WP)列の格納される長さ:PRE:B
 	public static final String STR_WP_LEN_B = "WP_LEN_B";

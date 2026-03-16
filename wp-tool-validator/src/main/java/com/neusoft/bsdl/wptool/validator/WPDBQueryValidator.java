@@ -89,10 +89,25 @@ public class WPDBQueryValidator {
 						// TODO:[長さ／データ型]SELECTするテーブルの情報(テーブル定義書)と一致していること。
 						if (!fieldBean.getOthers().get(CommonConstant.STR_WP_LEN_PRE).equals(entity.getLengthPre())) {
 							errors.add(sheetName + CommonConstant.MESSAGE_KUGIRI
-									+ MessageService.getMessage("error.db.query.column.length")
+									+ MessageService.getMessage("error.db.query.column.length.pre")
 											.replace("{0}", logicalName).replace("{1}", entity.getLengthPre())
-											.replace("{2}", fieldBean.getLen()));
+											.replace("{2}", fieldBean.getOthers().get(CommonConstant.STR_WP_LEN_PRE)));
 						}
+						//長さ:S
+						if (!fieldBean.getOthers().get(CommonConstant.STR_WP_LEN_S).equals(entity.getLengthS())) {
+							errors.add(sheetName + CommonConstant.MESSAGE_KUGIRI
+									+ MessageService.getMessage("error.db.query.column.length.s")
+											.replace("{0}", logicalName).replace("{1}", entity.getLengthS())
+											.replace("{2}", fieldBean.getOthers().get(CommonConstant.STR_WP_LEN_S)));
+						}
+						//長さ:B
+						if (!fieldBean.getOthers().get(CommonConstant.STR_WP_LEN_B).equals(entity.getLengthB())) {
+							errors.add(sheetName + CommonConstant.MESSAGE_KUGIRI
+									+ MessageService.getMessage("error.db.query.column.length.b")
+											.replace("{0}", logicalName).replace("{1}", entity.getLengthB())
+											.replace("{2}", fieldBean.getOthers().get(CommonConstant.STR_WP_LEN_B)));
+						}
+						
 						if (!fieldBean.getOthers().get(CommonConstant.STR_WP_TYPE).equals(entity.getDataTypeWP())) {
 							errors.add(sheetName + CommonConstant.MESSAGE_KUGIRI
 									+ MessageService.getMessage("error.db.query.column.type")

@@ -1,6 +1,8 @@
 package com.neusoft.bsdl.wptool.core.service;
 
 
+import java.util.List;
+
 import cbai.util.db.define.FieldBean;
 import cbai.util.db.define.TableBean;
 
@@ -8,6 +10,13 @@ import cbai.util.db.define.TableBean;
  * テーブル/フィールド定義を名前で検索するサービス。
  */
 public interface IWPTableSearchService {
+
+    /**
+     * すべてのテーブル定義を取得する。
+     * 
+     * @return すべてのテーブル定義のリスト
+     */
+    List<TableBean> listAll();
 
     /**
      * 論理名からテーブル定義を検索する。

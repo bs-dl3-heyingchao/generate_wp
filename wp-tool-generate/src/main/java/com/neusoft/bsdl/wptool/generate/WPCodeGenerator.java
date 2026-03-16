@@ -3,6 +3,7 @@ package com.neusoft.bsdl.wptool.generate;
 import java.io.File;
 import java.io.IOException;
 import java.util.ArrayList;
+import java.util.Arrays;
 import java.util.HashMap;
 import java.util.HashSet;
 import java.util.LinkedHashMap;
@@ -18,17 +19,21 @@ import org.apache.commons.text.StringEscapeUtils;
 import com.neusoft.bsdl.wptool.core.context.WPContext;
 import com.neusoft.bsdl.wptool.core.exception.WPException;
 import com.neusoft.bsdl.wptool.core.model.ExcelSheetContent;
+import com.neusoft.bsdl.wptool.core.model.ScreenDefinition;
 import com.neusoft.bsdl.wptool.core.model.ScreenExcelContent;
 import com.neusoft.bsdl.wptool.core.model.ScreenItemDescription;
 import com.neusoft.bsdl.wptool.core.model.ScreenItemDescriptionResult;
 import com.neusoft.bsdl.wptool.generate.model.ChoiceBean;
 import com.neusoft.bsdl.wptool.generate.model.IOItem;
 import com.neusoft.bsdl.wptool.generate.model.ItemProp;
+import com.neusoft.bsdl.wptool.generate.model.ItemPropMapping;
 
 import cbai.util.StringUtils;
 import cbai.util.db.define.FieldBean;
 import cbai.util.db.define.TableBean;
 import cbai.util.morphem.MorphemHelper;
+import cbai.util.sqlconvert.NormalSqlConverter;
+import cbai.util.sqlconvert.SqlConverterAbstract;
 import cbai.util.template.CreateTemplateVelocity;
 import lombok.extern.slf4j.Slf4j;
 
@@ -44,6 +49,7 @@ public class WPCodeGenerator {
     private WPContext context;
     private String logPrefix;
     private static MorphemHelper morphemHelper = null;
+    private final SqlConverterAbstract sqlConverter;
     static {
 //        helper = new MorphemHelper(WPDictCreator.getDictList());
         // TODO 做成项目用词典
@@ -52,6 +58,7 @@ public class WPCodeGenerator {
 
     public WPCodeGenerator(WPContext context) {
         this.context = context;
+        this.sqlConverter = new NormalSqlConverter(context.getTableSearchService().listAll());
     }
 
     public void generate(ScreenExcelContent screenExcelContent, File outputDir) throws IOException {
@@ -67,15 +74,15 @@ public class WPCodeGenerator {
         Map<String, Object> replaceMap = new HashMap<String, Object>();
         String ioSuffix = "";
         String subLogPrefix = "";
-        ExcelSheetContent<List<ScreenItemDescriptionResult>> result = (ExcelSheetContent<List<ScreenItemDescriptionResult>>) screenExcelContent.getSheetList().stream()
+        ExcelSheetContent<List<ScreenItemDescriptionResult>> excelSheetScreenItem = (ExcelSheetContent<List<ScreenItemDescriptionResult>>) screenExcelContent.getSheetList().stream()
                 .filter(s -> "画面項目説明書".equals(s.getSheetName())).findFirst().orElse(null);
-        if (result == null) {
+        if (excelSheetScreenItem == null) {
             throw new WPException("画面項目説明書シートが見つかりません");
         }
         List<ScreenItemDescriptionResult> list = null;
         if ("IO".equals(ioType)) {
             ioSuffix = "IO";
-            list = result.getContent();
+            list = excelSheetScreenItem.getContent();
             subLogPrefix = "画面項目説明書 ";
         } else if ("EXPORT".equals(ioType)) {
             ioSuffix = "EX";
@@ -91,51 +98,30 @@ public class WPCodeGenerator {
         replaceMap.put("gmIoId", screenExcelContent.getScreenId() + ioSuffix);
         replaceMap.put("gmName", screenExcelContent.getScreenName());
 //        replaceMap.put("parentDir", screenExcelContent.getScreenId());
-//        SR対象条件Bean dxtjBean = xxsjBean.対象条件;
-//        if (dxtjBean != null) {
-//            if (StringUtils.isNotEmpty(dxtjBean.対象データモデル)) {
-//                String[] array = dxtjBean.対象データモデル.split(" +");
-//                String gmDmName = array[0];
-//                String gmDmCode = "";
-//                if (array.length > 1) {
-//                    gmDmCode = array[1];
-//                } else {
-//                    FindedTableItem findedTableItem = sqlConvert.findTableItem(gmDmName, null);
-//                    if (findedTableItem.isFind()) {
-//                        TableBean tb = findedTableItem.getTableBean();
-//                        gmDmCode = tb.getTableName();
-//                    } else {
-//                        writeErrorLog(subLogPrefix + "対象条件DMが見つかりません:{}", gmDmName);
-//                    }
-//                }
-//                replaceMap.put("gmDmCode", gmDmCode);
-//                String gmIoCondition = dxtjBean.対象条件;
-//                if (StringUtils.isNotEmpty(gmIoCondition)) {
-//                    gmIoCondition = gmIoCondition.replace("(完全一致)", "");
+        ExcelSheetContent<ScreenDefinition> screenExcelScreenDefinition = (ExcelSheetContent<ScreenDefinition>) screenExcelContent.getSheetList().stream().filter(s -> "画面定義書".equals(s.getSheetName()))
+                .findFirst().orElse(null);
+        if (screenExcelScreenDefinition != null) {
+            ScreenDefinition dxtjBean = screenExcelScreenDefinition.getContent();
+            if (dxtjBean.getTargetModels() != null && !dxtjBean.getTargetModels().isEmpty()) {
+                String gmDmCode = dxtjBean.getTargetModels().get(0).getPhysicalName();
+                replaceMap.put("gmDmCode", gmDmCode);
+                // 対象条件
+                String gmIoCondition = dxtjBean.getTargetCondition();
+                if (StringUtils.isNotEmpty(gmIoCondition)) {
+                    gmIoCondition = gmIoCondition.replace("(完全一致)", "");
 //                    gmIoCondition = gmIoCondition.replace("パラメータ @", "@");
-//                    gmIoCondition = gmIoCondition.replace("＝", "=");
-//                    gmIoCondition = gmIoCondition.replace("かつ", " and ");
-//                    gmIoCondition = gmIoCondition.replace("　", " ");
-//                    gmIoCondition = gmIoCondition.replace("’", "'");
-//                    gmIoCondition = gmIoCondition.replace("’", "'");
-//                    gmIoCondition = gmIoCondition.replace("\n", " ");
-//                    Matcher m = CONDTION_PATTERN.matcher(gmIoCondition);
-//                    StringBuffer sb = new StringBuffer();
-//                    while (m.find()) {
-//                        String filedFullName = m.group(1).trim();
-//                        FieldBean fb = sqlConvert.getFieldFromDBName(gmDmName, filedFullName);
-//                        if (fb == null) {
-//                            writeErrorLog(subLogPrefix + "対象条件が見つかりません:{}.{}", gmDmName, filedFullName);
-//                            continue;
-//                        }
-//                        m.appendReplacement(sb, fb.getFieldName() + "=");
-//                    }
-//                    m.appendTail(sb);
-//                    gmIoCondition = sb.toString().trim();
-//                }
-//                replaceMap.put("gmIoCondition", escapseXml(gmIoCondition));
-//            }
-//        }
+                    gmIoCondition = gmIoCondition.replace("＝", "=");
+                    gmIoCondition = gmIoCondition.replace("かつ", " and ");
+                    gmIoCondition = gmIoCondition.replace("　", " ");
+                    gmIoCondition = gmIoCondition.replaceAll("\\. *", "\\.");
+                    gmIoCondition = gmIoCondition.replace("’", "'");
+                    gmIoCondition = gmIoCondition.replace("’", "'");
+                    gmIoCondition = gmIoCondition.replace("\n", " ");
+                    String gmIoConditionConvered = sqlConverter.convert(gmIoCondition);
+                    replaceMap.put("gmIoCondition", escapseXml(gmIoConditionConvered));
+                }
+            }
+        }
         Map<String, List<IOItem>> itemNameMap = new HashMap<String, List<IOItem>>();
         Set<String> codeSet = new HashSet<String>();
         List<IOItem> ioItemList = new ArrayList<>();
@@ -456,53 +442,40 @@ public class WPCodeGenerator {
     }
 
     private void setBiko(ScreenItemDescription itemBean, IOItem ioItem) {
-        String bikoText = itemBean.getRemarks();// itemBean.備考;
+        String bikoText = itemBean.getRemarks(); // itemBean.備考;
         if (!hasValue(bikoText)) {
             return;
         }
-        String[] bikoList = bikoText.split("\n");
-        for (String biko : bikoList) {
-//            if (biko.startsWith("fieldType")) {
-//                biko = biko.replace("：", ":");
-//                if (biko.indexOf(":") != -1) {
-//                    String value = biko.substring(biko.indexOf(":") + 1);
-//                    if (ioItem.io_item_prop_list == null) {
-//                        ioItem.io_item_prop_list = new ArrayList<ItemProp>();
-//                    }
-//                    ioItem.io_item_prop_list.add(new ItemProp("fieldType", escapseXml(value)));
-//                }
-//            } else if (biko.startsWith("defaultFieldStyle")) {
-//                biko = biko.replace("：", ":");
-//                if (biko.indexOf(":") != -1) {
-//                    String value = biko.substring(biko.indexOf(":") + 1);
-//                    if (ioItem.io_item_prop_list == null) {
-//                        ioItem.io_item_prop_list = new ArrayList<ItemProp>();
-//                    }
-//                    ioItem.io_item_prop_list.add(new ItemProp("defaultFieldStyle", escapseXml(value)));
-//                }
-//            }            else 
-            if (biko.startsWith("ラベル付加")) {
-                biko = biko.replace("：", ":");
-                if (biko.indexOf(":") != -1) {
-                    String value = biko.substring(biko.indexOf(":") + 1);
-                    if (ioItem.io_item_prop_list == null) {
-                        ioItem.io_item_prop_list = new ArrayList<ItemProp>();
-                    }
-                    // ラベル付加
-                    ioItem.io_item_prop_list.add(new ItemProp("labelAvailable", escapseXml(value)));
-                }
-            } else if (biko.startsWith("ラベル式")) {
-                biko = biko.replace("：", ":");
-                if (biko.indexOf(":") != -1) {
-                    String value = biko.substring(biko.indexOf(":") + 1);
-                    if (ioItem.io_item_prop_list == null) {
-                        ioItem.io_item_prop_list = new ArrayList<ItemProp>();
-                    }
+        List<ItemPropMapping> ioItemPropDefine = Arrays.asList(//
+                new ItemPropMapping("ラベル付加", "labelAvailable"), //
+                new ItemPropMapping("ラベル式", "labelStatement"), //
+                new ItemPropMapping("ラベル文字", "labelText", (s) -> {
                     // TODO: ラベル式：画面.汎用CD見出し
                     // （未設定時、"汎用コード"を表示）
-                    ioItem.io_item_prop_list.add(new ItemProp("labelStatement", escapseXml(value)));
+                    return s;
+                }), //
+                new ItemPropMapping("タイプ", "fieldType"), //
+                new ItemPropMapping("アクション履歴なし", "noHistory"), //
+                new ItemPropMapping("スタイル", "fieldStyle"), //
+                new ItemPropMapping("行番号表示", "lineNumber"));
+        String[] bikoList = bikoText.split("\n");
+        for (String biko : bikoList) {
+            boolean matched = false;
+            for (ItemPropMapping mapping : ioItemPropDefine) {
+                if (biko.startsWith(mapping.propLabel)) {
+                    biko = biko.replace("：", ":");
+                    if (biko.indexOf(":") != -1) {
+                        String value = biko.substring(biko.indexOf(":") + 1);
+                        if (ioItem.io_item_prop_list == null) {
+                            ioItem.io_item_prop_list = new ArrayList<ItemProp>();
+                        }
+                        ioItem.io_item_prop_list.add(new ItemProp(mapping.propKey, escapseXml(mapping.apply(value))));
+                        matched = true;
+                    }
+                    continue;
                 }
-            } else {
+            }
+            if (!matched) {
                 writeWarnLog(logPrefix + "項番[{}] unkonw 備考:{}", itemBean.getItemNo(), biko);
             }
         }

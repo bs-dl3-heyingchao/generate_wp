@@ -2,6 +2,7 @@ package com.neusoft.bsdl.wptool.generate;
 
 import java.io.File;
 import java.io.IOException;
+import java.lang.reflect.InvocationTargetException;
 import java.util.ArrayList;
 import java.util.Arrays;
 import java.util.HashMap;
@@ -23,11 +24,14 @@ import com.neusoft.bsdl.wptool.core.model.ScreenDefinition;
 import com.neusoft.bsdl.wptool.core.model.ScreenExcelContent;
 import com.neusoft.bsdl.wptool.core.model.ScreenItemDescription;
 import com.neusoft.bsdl.wptool.core.model.ScreenItemDescriptionResult;
+import com.neusoft.bsdl.wptool.core.model.ScreenValidation;
+import com.neusoft.bsdl.wptool.core.model.ScreenValidationAction;
 import com.neusoft.bsdl.wptool.generate.model.ChoiceBean;
 import com.neusoft.bsdl.wptool.generate.model.IOItem;
 import com.neusoft.bsdl.wptool.generate.model.ItemProp;
 import com.neusoft.bsdl.wptool.generate.model.ItemPropMapping;
 
+import cbai.util.BeanUtil;
 import cbai.util.StringUtils;
 import cbai.util.db.define.FieldBean;
 import cbai.util.db.define.TableBean;
@@ -72,32 +76,7 @@ public class WPCodeGenerator {
     @SuppressWarnings("unchecked")
     public Map<String, Object> getIoReplaceMap(ScreenExcelContent screenExcelContent, String ioType) {
         Map<String, Object> replaceMap = new HashMap<String, Object>();
-        String ioSuffix = "";
-        String subLogPrefix = "";
-        ExcelSheetContent<List<ScreenItemDescriptionResult>> excelSheetScreenItem = (ExcelSheetContent<List<ScreenItemDescriptionResult>>) screenExcelContent.getSheetList().stream()
-                .filter(s -> "画面項目説明書".equals(s.getSheetName())).findFirst().orElse(null);
-        if (excelSheetScreenItem == null) {
-            throw new WPException("画面項目説明書シートが見つかりません");
-        }
-        List<ScreenItemDescriptionResult> list = null;
-        if ("IO".equals(ioType)) {
-            ioSuffix = "IO";
-            list = excelSheetScreenItem.getContent();
-            subLogPrefix = "画面項目説明書 ";
-        } else if ("EXPORT".equals(ioType)) {
-            ioSuffix = "EX";
-            subLogPrefix = "画面項目説明書 (エクスポート) ";
-            throw new WPException("エクスポートIOの生成はまだ実装されていません");
-        } else {
-            throw new WPException("不明なIOタイプ: " + ioType);
-        }
-        this.logPrefix = String.format("[%s:%s] ", screenExcelContent.getScreenId(), screenExcelContent.getScreenName());
-
-        replaceMap.put("io_type", ioType);
-        replaceMap.put("gmId", screenExcelContent.getScreenId());
-        replaceMap.put("gmIoId", screenExcelContent.getScreenId() + ioSuffix);
-        replaceMap.put("gmName", screenExcelContent.getScreenName());
-//        replaceMap.put("parentDir", screenExcelContent.getScreenId());
+        // 画面定義書
         ExcelSheetContent<ScreenDefinition> screenExcelScreenDefinition = (ExcelSheetContent<ScreenDefinition>) screenExcelContent.getSheetList().stream().filter(s -> "画面定義書".equals(s.getSheetName()))
                 .findFirst().orElse(null);
         if (screenExcelScreenDefinition != null) {
@@ -122,12 +101,40 @@ public class WPCodeGenerator {
                 }
             }
         }
+
+        // 画面項目説明書
+        String ioSuffix = "";
+        String subLogPrefix = "";
         Map<String, List<IOItem>> itemNameMap = new HashMap<String, List<IOItem>>();
         Set<String> codeSet = new HashSet<String>();
         List<IOItem> ioItemList = new ArrayList<>();
         int groupIndex = 0;
         boolean isInGroup = false;
         String curGroupPrefix = "";
+        ExcelSheetContent<List<ScreenItemDescriptionResult>> excelSheetScreenItem = (ExcelSheetContent<List<ScreenItemDescriptionResult>>) screenExcelContent.getSheetList().stream()
+                .filter(s -> "画面項目説明書".equals(s.getSheetName())).findFirst().orElse(null);
+        if (excelSheetScreenItem == null) {
+            throw new WPException("画面項目説明書シートが見つかりません");
+        }
+        List<ScreenItemDescriptionResult> list = null;
+        if ("IO".equals(ioType)) {
+            ioSuffix = "IO";
+            list = excelSheetScreenItem.getContent();
+            subLogPrefix = "画面項目説明書 ";
+        } else if ("EXPORT".equals(ioType)) {
+            ioSuffix = "EX";
+            subLogPrefix = "画面項目説明書 (エクスポート) ";
+            throw new WPException("エクスポートIOの生成はまだ実装されていません");
+        } else {
+            throw new WPException("不明なIOタイプ: " + ioType);
+        }
+        this.logPrefix = String.format("[%s:%s] ", screenExcelContent.getScreenId(), screenExcelContent.getScreenName());
+
+        replaceMap.put("io_type", ioType);
+        replaceMap.put("gmId", screenExcelContent.getScreenId());
+        replaceMap.put("gmIoId", screenExcelContent.getScreenId() + ioSuffix);
+        replaceMap.put("gmName", screenExcelContent.getScreenName());
+//        replaceMap.put("parentDir", screenExcelContent.getScreenId());
         for (ScreenItemDescriptionResult itemGroup : list) {
             curGroupPrefix = "";
             isInGroup = false;
@@ -292,109 +299,133 @@ public class WPCodeGenerator {
                 }
             }
         }
-//        if (xxsjBean.画面チェック仕様書 != null && xxsjBean.画面チェック仕様書.listチェックItemMap != null) {
-//            Map<String, Integer> actionIndexMap = new HashMap<String, Integer>();
-//            xxsjBean.画面チェック仕様書.listチェックItemMap.forEach((key, value) -> {
-//                if (key.contains("IO")) {
-//                    value.forEach((checkItem) -> {
-//                        IOItem ioItem = new IOItem();
-//                        ioItem.io_code = xxsjBean.画面ID;
-//                        ioItem.name = escapseXml(checkItem.チェックアクション.trim().replace("\n", "／") + " " + checkItem.チェック名);
-//                        ioItem.is_visible = "false";
-//                        ioItem.item_type = "C";
-//                        String codePrefix = "C_";
-//                        String[] actions = checkItem.チェックアクション.trim().split("\n");
-////                      if (actions.length == 1 && itemNameMap.containsKey(actions[0])) {
-////                          String action = actions[0];
-////                          if (!actionIndexMap.containsKey(action)) {
-////                              actionIndexMap.put(action, 0);
-////                          }
-////                          List<IOItem> actionItems = itemNameMap.get(action);
-////                          for (IOItem item : actionItems) {
-////                              if ("A".equals(item.item_type) && item.code.startsWith("A_")) {
-////                                  int index = actionIndexMap.get(action) + 1;
-////                                  String code = item.code.substring(2) + "_"
-////                                          + StringUtils.leftPad(String.valueOf(index), 2, '0');
-////                                  actionIndexMap.put(action, index);
-////                                  ioItem.code = code;
-////                                  break;
-////                              }
-////                          }
-////                      } else
-//                        StringBuilder actionConditionSb = new StringBuilder();
-//                        if (actions.length > 0) {
-//                            String actionKey = StringUtils.join(actions, "_");
-//                            if (!actionIndexMap.containsKey(actionKey)) {
-//                                actionIndexMap.put(actionKey, 0);
-//                            }
-//                            StringBuilder sb = new StringBuilder();
-//                            for (String action : actions) {
-//                                List<IOItem> actionItems = itemNameMap.get(action);
-//                                String name = "";
-//                                if (actionItems != null) {
-//                                    for (IOItem item : actionItems) {
-//                                        if ("A".equals(item.item_type) && item.code != null && item.code.startsWith("A_")) {
-//                                            name = item.code.substring(2);
-//                                            break;
-//                                        }
-//                                    }
-//                                }
-//                                if (sb.length() > 0) {
-//                                    sb.append("_");
-//                                }
-//                                if (StringUtils.isEmpty(name)) {
-//                                    name = action;
-//                                }
-//                                sb.append(name);
-//                                if (actionConditionSb.length() > 0) {
-//                                    actionConditionSb.append(" OR ");
-//                                }
-//                                actionConditionSb.append(String.format("@ACTION = '%s'", "A_" + name));
-//                            }
-//                            String code = sb.toString();
-//                            int index = actionIndexMap.get(actionKey) + 1;
-//                            code = code + "_" + StringUtils.leftPad(String.valueOf(index), 2, '0');
-//                            actionIndexMap.put(actionKey, index);
-//                            ioItem.code = code;
-//                        }
-//                        if (StringUtils.isEmpty(ioItem.code)) {
-//                            String action = "IO";
-//                            if (!actionIndexMap.containsKey(action)) {
-//                                actionIndexMap.put(action, 0);
-//                            }
-//                            int index = actionIndexMap.get(action) + 1;
-//                            String code = action + "_" + StringUtils.leftPad(String.valueOf(index), 2, '0');
-//                            actionIndexMap.put(action, index);
-//                            ioItem.code = code;
-//                        }
-//                        ioItem.code = codePrefix + ioItem.code;
-//                        if (StringUtils.isNotEmpty(checkItem.メッセージID)) {
-//                            ioItem.msg_code_ng = checkItem.メッセージID;
-//                        }
-//                        ioItem.description = escapseXml(checkItem.仕様説明);
-//                        StringBuilder sb = new StringBuilder();
-//                        sb.append(String.format("IF( %s ,\n", actionConditionSb.toString()));
-//                        if (checkItem.仕様説明.contains("<チェック条件>")) {
-//                            String checkCondtion = checkItem.仕様説明.substring(checkItem.仕様説明.indexOf("<チェック条件>") + "<チェック条件>".length());
-//                            checkCondtion = checkCondtion.replace("\n", " ");
-//                            sb.append(String.format("      IF((%s),\n", checkCondtion));
-//                        } else if (checkItem.仕様説明.contains("(＜チェック条件＞")) {
-//                            String checkCondtion = checkItem.仕様説明.substring(checkItem.仕様説明.indexOf("(＜チェック条件＞") + "(＜チェック条件＞".length());
-//                            checkCondtion = checkCondtion.replace("\n", " ");
-//                            sb.append(String.format("      IF((%s),\n", checkCondtion));
-//                        } else {
-//                            sb.append(String.format("      IF((%s),\n", "XXXXXXXX"));
-//                        }
-//                        sb.append(String.format("          @FALSE,\n"));
-//                        sb.append(String.format("          @TRUE),\n"));
-//                        sb.append(String.format("@TRUE)"));
-//                        ioItem.condition = escapseXml(sb.toString());
-//                        ioItem.is_disable = "true";
-//                        ioItemList.add(ioItem);
-//                    });
+
+        // 画面チェック仕様書
+        ExcelSheetContent<List<ScreenValidation>> excelSheetScreenValidation = (ExcelSheetContent<List<ScreenValidation>>) screenExcelContent.getSheetList().stream()
+                .filter(s -> "画面チェック仕様書".equals(s.getSheetName())).findFirst().orElse(null);
+        if (excelSheetScreenValidation == null) {
+            throw new WPException("画面チェック仕様書シートが見つかりません");
+        }
+        if (excelSheetScreenValidation.getContent() != null && !excelSheetScreenValidation.getContent().isEmpty()) {
+            Map<String, Integer> actionIndexMap = new HashMap<String, Integer>();
+            for (ScreenValidation checkItem : excelSheetScreenValidation.getContent()) {
+                if ("BP".equalsIgnoreCase(checkItem.getBizWarining())) {
+                    // TODO BP Check
+                    continue;
+                } else if ("ワーニング".equalsIgnoreCase(checkItem.getBizWarining())) {
+                    // TODO ワーニング Check ?
+                    continue;
+                }
+                IOItem ioItem = new IOItem();
+                ioItem.io_code = screenExcelContent.getScreenId();
+//                ioItem.name = escapseXml(checkItem.チェックアクション.trim().replace("\n", "／") + " " + checkItem.チェック名);
+                ioItem.name = escapseXml(checkItem.getValidationName());
+                ioItem.is_visible = "false";
+                ioItem.item_type = "C";
+                String codePrefix = "C_";
+                List<ScreenValidationAction> actions = checkItem.getValidationActions();
+                StringBuilder actionConditionSb = new StringBuilder();
+                if (actions.size() > 0) {
+                    String actionKey = actions.stream().filter(a -> a.isHasChecked()).map(a -> a.getActionName()).reduce((a, b) -> a + "_" + b).orElse("");
+                    if (!actionIndexMap.containsKey(actionKey)) {
+                        actionIndexMap.put(actionKey, 0);
+                    }
+                    StringBuilder sb = new StringBuilder();
+                    for (ScreenValidationAction action : actions) {
+                        List<IOItem> actionItems = itemNameMap.get(action.getActionName());
+                        String name = "";
+                        if (actionItems != null) {
+                            for (IOItem item : actionItems) {
+                                if ("A".equals(item.item_type) && item.code != null && item.code.startsWith("A_")) {
+                                    name = item.code.substring(2);
+                                    break;
+                                }
+                            }
+                        }
+                        if (sb.length() > 0) {
+                            sb.append("_");
+                        }
+                        if (StringUtils.isEmpty(name)) {
+                            name = action.getActionName();
+                        }
+                        sb.append(name);
+                        if (actionConditionSb.length() > 0) {
+                            actionConditionSb.append(" OR ");
+                        }
+                        actionConditionSb.append(String.format("@ACTION = '%s'", "A_" + name));
+                    }
+                    String code = sb.toString();
+                    int index = actionIndexMap.get(actionKey) + 1;
+                    code = code + "_" + StringUtils.leftPad(String.valueOf(index), 2, '0');
+                    actionIndexMap.put(actionKey, index);
+                    ioItem.code = code;
+                }
+                if (StringUtils.isEmpty(ioItem.code)) {
+                    String action = "IO";
+                    if (!actionIndexMap.containsKey(action)) {
+                        actionIndexMap.put(action, 0);
+                    }
+                    int index = actionIndexMap.get(action) + 1;
+                    String code = action + "_" + StringUtils.leftPad(String.valueOf(index), 2, '0');
+                    actionIndexMap.put(action, index);
+                    ioItem.code = code;
+                }
+                ioItem.code = codePrefix + ioItem.code;
+                if (StringUtils.isNotEmpty(checkItem.getMessageId())) {
+                    ioItem.msg_code_ng = checkItem.getMessageId();
+                    StringBuilder paramSb = new StringBuilder();
+                    for (int i = 1; i <= 5; i++) {
+                        String param = null;
+                        try {
+                            param = BeanUtils.getProperty(checkItem, "parameter" + i);
+                        } catch (IllegalAccessException | InvocationTargetException | NoSuchMethodException e) {
+                            log.error(logPrefix + "Failed to get parameter{} for check item: {}", i, checkItem.getValidationName(), e);
+                            break;
+                        }
+                        if (StringUtils.isEmpty(param)) {
+                            break;
+                        }
+                        if (i > 1) {
+                            paramSb.append(",");
+                        }
+                        if (param.startsWith("画面.") || param.startsWith("画面．")) {
+                            String itemName = param.substring(3);
+                            List<IOItem> actionItems = itemNameMap.get(itemName);
+                            if (actionItems != null && !actionItems.isEmpty()) {
+                                param = actionItems.get(0).code;
+                            }
+                        } else {
+                            param = "'" + param + "'";
+                        }
+                        paramSb.append(param);
+                    }
+                    if (paramSb.length() > 0) {
+                        ioItem.msg_param_ng = escapseXml(paramSb.toString());
+                    }
+                }
+                ioItem.description = escapseXml(checkItem.getValidationRule());
+                // TODO: 解析チェック仕様中的语义，转成加工式
+//                StringBuilder sb = new StringBuilder();
+//                sb.append(String.format("IF( %s ,\n", actionConditionSb.toString()));
+//                if (checkItem.仕様説明.contains("<チェック条件>")) {
+//                    String checkCondtion = checkItem.仕様説明.substring(checkItem.仕様説明.indexOf("<チェック条件>") + "<チェック条件>".length());
+//                    checkCondtion = checkCondtion.replace("\n", " ");
+//                    sb.append(String.format("      IF((%s),\n", checkCondtion));
+//                } else if (checkItem.仕様説明.contains("(＜チェック条件＞")) {
+//                    String checkCondtion = checkItem.仕様説明.substring(checkItem.仕様説明.indexOf("(＜チェック条件＞") + "(＜チェック条件＞".length());
+//                    checkCondtion = checkCondtion.replace("\n", " ");
+//                    sb.append(String.format("      IF((%s),\n", checkCondtion));
+//                } else {
+//                    sb.append(String.format("      IF((%s),\n", "XXXXXXXX"));
 //                }
-//            });
-//        }
+//                sb.append(String.format("          @FALSE,\n"));
+//                sb.append(String.format("          @TRUE),\n"));
+//                sb.append(String.format("@TRUE)"));
+//                ioItem.condition = escapseXml(sb.toString());
+                ioItem.is_disable = "true";
+                ioItemList.add(ioItem);
+            }
+        }
         replaceMap.put("ioItemList", ioItemList);
         return replaceMap;
     }

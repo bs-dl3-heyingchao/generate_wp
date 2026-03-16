@@ -11,7 +11,7 @@ import com.neusoft.bsdl.wptool.core.service.ParseExcelUtils;
 public class WpCodeGeneratorTest {
 
     public static void main(String[] args) throws Exception {
-        File outputDir = new File("target/output/", System.currentTimeMillis() + "");
+        File outputDir = new File("target/output/io", System.currentTimeMillis() + "");
         FileSource source = new LocalFileSource(args[0]);
         WPContext context = WPContext.create();
         WPCodeGenerator codeGenerator = new WPCodeGenerator(context);

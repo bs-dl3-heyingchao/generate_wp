@@ -68,12 +68,10 @@ public class WPScreenValidator {
 				validateScreenValidation(sheetName, validList, errors);
 			} else if (CommonConstant.PARSE_SHEET_NAME.BP_SHEET.equals(sheetName)) {
 				// BP定義書
-
 			} else if (sheetName.indexOf(CommonConstant.PARSE_SHEET_NAME.DB_CONFIG_SHEET) != -1) {
 				// DB設定定義書
 				DBConfigDefinition validObj = (DBConfigDefinition) sheet.getContent();
 				validateDBConfigDefinition(sheetName, validObj, errors);
-
 			}
 		}
 		// エラーが存在する場合、例外をスローする
@@ -118,20 +116,18 @@ public class WPScreenValidator {
 			// 項目名は、テーブル定義書の項目名を記載していること。
 			if (!Objects.isNull(ｔableContent)) {
 				item.getDetails().forEach(detail -> {
-					if (!ｔableContent.getFieldList().stream()
-							.anyMatch(column -> StringUtils.equals(column.getFieldFullName(), detail.getLogicalName()))) {
+					if (!ｔableContent.getFieldList().stream().anyMatch(
+							column -> StringUtils.equals(column.getFieldFullName(), detail.getLogicalName()))) {
 						// テーブル定義書の該当項目が存在しない場合、エラーとする
 						errors.add(sheetName + CommonConstant.MESSAGE_KUGIRI
 								+ MessageService.getMessage("error.db.config.logicalName.exits")
-										.replace("{0}", detail.getLogicalName())
-										.replace("{1}", item.getDataModel()));
+										.replace("{0}", detail.getLogicalName()).replace("{1}", item.getDataModel()));
 					}
 				});
-			}else {
+			} else {
 				// テーブル定義書の該当項目が存在しない場合、エラーとする
 				errors.add(sheetName + CommonConstant.MESSAGE_KUGIRI
-						+ MessageService.getMessage("error.db.config.table.exits")
-								.replace("{0}", item.getDataModel()));
+						+ MessageService.getMessage("error.db.config.table.exits").replace("{0}", item.getDataModel()));
 			}
 
 		});
@@ -173,7 +169,8 @@ public class WPScreenValidator {
 	 */
 	public static boolean isValidName(String name) {
 		return true;
-		//return name != null && !name.isEmpty() && CommonConstant.DB_CONFIG_SHEET.PATTERN_NAME.matcher(name).matches();
+		// return name != null && !name.isEmpty() &&
+		// CommonConstant.DB_CONFIG_SHEET.PATTERN_NAME.matcher(name).matches();
 	}
 
 	/**

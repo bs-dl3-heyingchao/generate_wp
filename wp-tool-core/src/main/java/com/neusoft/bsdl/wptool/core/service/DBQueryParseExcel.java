@@ -23,328 +23,412 @@ import com.neusoft.bsdl.wptool.core.model.DBQuerySummary;
 import lombok.extern.slf4j.Slf4j;
 
 /**
- * DBクエリ定義書の解析ツール（支持多级表头 + 动态解析概要与SQL条件）
+ * DBクエリ定義書（Excel形式）を解析し、構造化されたモデルに変換するためのツールクラス。
  */
 @Slf4j
 public class DBQueryParseExcel extends AbstractParseTool {
 
-    public DBQuerySheetContent parseSpecSheet(FileSource source, String sheetName, List<ExcelParseError> errors)
-            throws Exception {
-        byte[] excelBytes = readExcelBytes(source);
+	/**
+	 * 指定されたExcelファイルソースから、指定シート名のDBクエリ定義情報を解析し、
+	 * {@link DBQuerySheetContent} オブジェクトとして返却します。
+	 * 
+	 * <p>解析フロー：
+	 * <ol>
+	 *   <li>明細ヘッダのバリデーション</li>
+	 *   <li>主ヘッダ（テーブル名・ID）の抽出</li>
+	 *   <li>明細データ（カラム定義）の読み込み</li>
+	 *   <li>「概要」セクションの解析</li>
+	 *   <li>「dbQuery：検索条件」「dbQueryAggregate：集計関数の検索条件」のSQLブロック抽出</li>
+	 * </ol>
+	 * 
+	 * @param source  解析対象のExcelファイルソース
+	 * @param sheetName 解析対象のシート名
+	 * @param errors  解析中に発生したエラーを格納するリスト（null不可）
+	 * @return 解析結果の {@link DBQuerySheetContent} オブジェクト。エラー発生時は null
+	 * @throws Exception Excelの読み込みまたは解析中に予期せぬ例外が発生した場合
+	 */
+	public DBQuerySheetContent parseSpecSheet(FileSource source, String sheetName, List<ExcelParseError> errors)
+			throws Exception {
+		byte[] excelBytes = readExcelBytes(source);
 
-        try (Workbook workbook = WorkbookFactory.create(new ByteArrayInputStream(excelBytes))) {
-            Sheet sheet = workbook.getSheet(sheetName);
+		try (Workbook workbook = WorkbookFactory.create(new ByteArrayInputStream(excelBytes))) {
+			DBQuerySheetContent content = new DBQuerySheetContent();
+			Sheet sheet = workbook.getSheet(sheetName);
+			content.setSheetName(sheetName);
+			// 明細ヘッダ情報のバリデーションチェック
+			validateDetailHeaders(sheet, errors);
+			if (!errors.isEmpty()) {
+				return null;
+			}
 
-            // 明細ヘッダ情報のバリデーションチェック
-            validateDetailHeaders(sheet, errors);
-            if (!errors.isEmpty()) {
-                return null;
-            }
+			// 主ヘッダ情報の解析（第6行）
+			Row mainHeaderRow = sheet.getRow(DBQUERY_SHEET.START_POS_HEADER_INDEX);
+			if (mainHeaderRow == null) {
+				errors.add(new ExcelParseError(sheetName, DBQUERY_SHEET.START_POS_HEADER_INDEX + 1, 1,
+						"dbQuery定義書のヘッダ行が見つかりません。"));
+				return null;
+			}
+			
+			// テーブル名称
+			content.setTableName(getCellValue(mainHeaderRow, DBQUERY_SHEET.COL_C).trim());
+			// テーブルID
+			content.setTableId(getCellValue(mainHeaderRow, DBQUERY_SHEET.COL_G).trim());
 
-            // 主ヘッダ情報の解析（第6行）
-            Row mainHeaderRow = sheet.getRow(DBQUERY_SHEET.START_POS_HEADER_INDEX);
-            if (mainHeaderRow == null) {
-                errors.add(new ExcelParseError(sheetName, DBQUERY_SHEET.START_POS_HEADER_INDEX + 1, 1,
-                        "dbQuery定義書のヘッダ行が見つかりません。"));
-                return null;
-            }
+			// 明細データを解析し、概要の開始行を算出する
+			int summaryStartRow = -1;
+			List<DBQueryEntity> entities = new ArrayList<>();
+			for (int rowIdx = DBQUERY_SHEET.START_POS_DATA_INDEX; rowIdx <= sheet.getLastRowNum(); rowIdx++) {
+				Row row = sheet.getRow(rowIdx);
+				if (row == null)
+					continue;
+				String cell0 = getCellValue(row, DBQUERY_SHEET.COL_A).trim();
+				if (DBQUERY_SHEET.STR_SUMMARY.equals(cell0)) {
+					summaryStartRow = rowIdx;
+					break;
+				}
+				DBQueryEntity entity = parseEntityRow(row);
+				if (entity != null && !StringUtils.isEmpty(entity.getPhysicalName())) {
+					entities.add(entity);
+				}
+			}
+			content.setQueryEntities(entities);
 
-            DBQuerySheetContent content = new DBQuerySheetContent();
-            content.setTableName(getCellValue(mainHeaderRow, DBQUERY_SHEET.COL_C).trim());
-            content.setTableId(getCellValue(mainHeaderRow, DBQUERY_SHEET.COL_G).trim());
+			// 概要コンテンツを解析する
+			content.setSummary(parseSummary(sheet, summaryStartRow));
 
-            // === 第一步：解析明细数据，并记录“概要”起始行 ===
-            int summaryStartRow = -1;
-            List<DBQueryEntity> entities = new ArrayList<>();
-            for (int rowIdx = DBQUERY_SHEET.START_POS_DATA_INDEX; rowIdx <= sheet.getLastRowNum(); rowIdx++) {
-                Row row = sheet.getRow(rowIdx);
-                if (row == null) continue;
+			// dbQuery：検索条件の解析
+			int queryCondStart = findSectionTitle(sheet, DBQUERY_SHEET.STR_QUERY_CONDITION,
+					summaryStartRow != -1 ? summaryStartRow + 1 : DBQUERY_SHEET.START_POS_DATA_INDEX);
+			if (queryCondStart != -1) {
+				content.setQueryCondition(parseSqlBlock(sheet, queryCondStart));
+			}
 
-                String cell0 = getCellValue(row, 0).trim();
-                if (DBQUERY_SHEET.STR_SUMMARY.equals(cell0)) {
-                    summaryStartRow = rowIdx; 
-                    break;
-                }
+			// dbQueryAggregate：集計関数の検索条件の解析
+			int aggregateStart = findSectionTitle(sheet, DBQUERY_SHEET.STR_QUERY_AGGREGATE_CONDITION,
+					queryCondStart != -1 ? queryCondStart + 1
+							: (summaryStartRow != -1 ? summaryStartRow + 1 : DBQUERY_SHEET.START_POS_DATA_INDEX));
+			if (aggregateStart != -1) {
+				content.setQueryAggregateCondition(parseSqlBlock(sheet, aggregateStart));
+			}
 
-                DBQueryEntity entity = parseEntityRow(row);
-                if (entity != null && !StringUtils.isEmpty(entity.getPhysicalName())) {
-                    entities.add(entity);
-                }
-            }
-            content.setQueryEntities(entities);
+			return content;
+		}
+	}
 
-            // 如果没找到“概要”，仍继续尝试解析其他部分（或报错）
-            if (summaryStartRow == -1) {
-                log.warn("「概要」セクションが見つかりません。");
-                // 可选：errors.add(...) 若必须存在
-            } else {
-                content.setSummary(parseSummary(sheet, summaryStartRow));
-            }
+	/**
+	 * 「概要」セクション（1．～5．）を解析し、{@link DBQuerySummary} オブジェクトを構築します。
+	 * 
+	 * <p>各サブセクション（1～5）はB列にタイトルが記載されており、
+	 * その直後の行から内容をB列から読み取ります。
+	 * 「3．結合条件」のみ、複数列（B～I列）にわたるテーブル構造を特殊処理で解析します。
+	 * 
+	 * <p>以下のいずれかの条件で解析を終了します：
+	 * <ul>
+	 *   <li>A列に「dbQuery：検索条件」が出現</li>
+	 *   <li>次のセクションタイトル（例: 「4．...」）が検出</li>
+	 * </ul>
+	 * 
+	 * @param sheet    解析対象のシート
+	 * @param startRow 「概要」ラベルが存在する行のインデックス（0起点）
+	 * @return 構築された {@link DBQuerySummary} オブジェクト
+	 */
+	private DBQuerySummary parseSummary(Sheet sheet, int startRow) {
+		DBQuerySummary summary = new DBQuerySummary();
+		int currentRow = startRow + 1;
+		while (currentRow <= sheet.getLastRowNum()) {
+			Row row = sheet.getRow(currentRow);
+			if (row == null) {
+				currentRow++;
+				continue;
+			}
+			// dbQuery：検索条件のセクションから飛び出す
+			String cellA = getCellValue(row, DBQUERY_SHEET.COL_A).trim();
+			if (cellA.equals(DBQUERY_SHEET.STR_QUERY_CONDITION)) {
+				break;
+			}
+			String cellB = getCellValue(row, DBQUERY_SHEET.COL_B).trim();
+			// 新しいタイトルの確認（1. ~ 5.）
+			if (isSectionHeader(cellB)) {
+				// 番号は大小文字を区別しない
+				String section = extractSectionNumber(cellB);
+				StringBuilder content = new StringBuilder();
+				int contentRow = currentRow + 1;
+				while (contentRow <= sheet.getLastRowNum()) {
+					Row contentRowObj = sheet.getRow(contentRow);
+					if (contentRowObj == null) break;
+					String line = getCellValue(contentRowObj, DBQUERY_SHEET.COL_B).trim();
+					String cellA1 = getCellValue(contentRowObj, DBQUERY_SHEET.COL_A).trim();
+					// 停止条件：新しいセクション、dbQuery：検索条件
+					if (isSectionHeader(line) || cellA1.equals(DBQUERY_SHEET.STR_QUERY_CONDITION)) {
+						break;
+					}
+					if (content.length() > 0) {
+						content.append(DBQUERY_SHEET.STR_CTRL);
+					}
+					content.append(line);
+					contentRow++;
+				}
+				switch (section) {
+				case "1":
+					summary.setTargetTable(content.toString());
+					break;
+				case "2":
+					summary.setTargetTableCondition(content.toString());
+					break;
+				case "4":
+					summary.setSortCondition(content.toString());
+					break;
+				case "5":
+					summary.setSupplement(content.toString());
+					break;
+				default:
+					break;
+				}
 
-            // === 第二步：查找并解析“dbQuery：検索条件” ===
-            int queryCondStart = findSectionTitle(sheet, "dbQuery：検索条件", 
-                    summaryStartRow != -1 ? summaryStartRow + 1 : DBQUERY_SHEET.START_POS_DATA_INDEX);
-            if (queryCondStart != -1) {
-                content.setQueryCondition(parseSqlBlock(sheet, queryCondStart));
-            }
+				// "3．結合条件"の解析（テーブル形式）
+				if ("3".equals(section)) {
+					DBQueryJoinCondition join = new DBQueryJoinCondition();
 
-            // === 第三步：查找并解析“dbQueryAggregate：...” ===
-            int aggregateStart = findSectionTitle(sheet, "dbQueryAggregate：集計関数の検索条件",
-                    queryCondStart != -1 ? queryCondStart + 1 : 
-                    (summaryStartRow != -1 ? summaryStartRow + 1 : DBQUERY_SHEET.START_POS_DATA_INDEX));
-            if (aggregateStart != -1) {
-                content.setQueryAggregateCondition(parseSqlBlock(sheet, aggregateStart));
-            }
+					StringBuilder methodBuilder = new StringBuilder();
+					StringBuilder tableBuilder = new StringBuilder();
+					StringBuilder aliasBuilder = new StringBuilder();
+					StringBuilder conditionBuilder = new StringBuilder();
 
-            return content;
-        }
-    }
+					int joinDataRow = currentRow + 2; // テーブルヘッダの次行から開始
 
-    /**
-     * 解析「概要」部分（从“概要”标题行开始）
-     * 
-     * 结构：
-     *   B列: "1．対象テーブル"
-     *   B列: "MTM5080_組織マスタ"        ← 内容（可能多行）
-     *   B列: ""
-     *   B列: "2．対象テーブルの条件"
-     *   B列: "画面検索条件に従う"
-     *   ...
-     */
-    /**
-     * 解析「概要」部分（动态读取 1.~5. 的多行内容）
-     */
-    private DBQuerySummary parseSummary(Sheet sheet, int startRow) {
-        DBQuerySummary summary = new DBQuerySummary();
-        int currentRow = startRow + 1; // 跳过“概要”标题行
+					while (joinDataRow <= sheet.getLastRowNum()) {
+						Row joinDataRowObj = sheet.getRow(joinDataRow);
+						if (joinDataRowObj == null)
+							break;
+						//結合方法（B列）
+						String method = getCellValue(joinDataRowObj, DBQUERY_SHEET.COL_B).trim();
+						//対象テーブル（C列）
+						String table = getCellValue(joinDataRowObj, DBQUERY_SHEET.COL_C).trim();
+						//テーブル別名（E列）
+						String alias = getCellValue(joinDataRowObj, DBQUERY_SHEET.COL_E).trim();
+						//結合条件（I列）※現在はI列固定だが、実際はF～K列を横断的に結合すべき
+						String condition = getCellValue(joinDataRowObj, DBQUERY_SHEET.COL_I).trim();
 
-        while (currentRow <= sheet.getLastRowNum()) {
-            Row row = sheet.getRow(currentRow);
-            String cellB = getCellValue(row, DBQUERY_SHEET.COL_B).trim();
+						// 空白行 → 終了
+						if (method.isEmpty() && table.isEmpty() && alias.isEmpty() && condition.isEmpty()) {
+							break;
+						}
 
-            // 遇到 dbQuery 大节，立即退出
-            if (cellB.startsWith("dbQuery")) {
-                break;
-            }
+						// 次のセクションタイトルがB列に出現 → 終了
+						if (!method.isEmpty() && isSectionHeader(method)) {
+							break;
+						}
 
-            // 检查是否是新的 section 标题（1. ~ 5.）
-            if (isSectionHeader(cellB)) {
-                // 解析 section 编号
-                String section = extractSectionNumber(cellB); // "1", "2", ..., "5"
+						// 最初の非空値のみを採用（method/table/alias）
+						if (!method.isEmpty() && methodBuilder.length() == 0)
+							methodBuilder.append(method);
+						if (!table.isEmpty() && tableBuilder.length() == 0)
+							tableBuilder.append(table);
+						if (!alias.isEmpty() && aliasBuilder.length() == 0)
+							aliasBuilder.append(alias);
 
-                // 从下一行开始读取内容块
-                StringBuilder content = new StringBuilder();
-                int contentRow = currentRow + 1;
+						// 結合条件は複数行を連結
+						if (!condition.isEmpty()) {
+							if (conditionBuilder.length() > 0) {
+								conditionBuilder.append(" ");
+							}
+							conditionBuilder.append(condition);
+						}
 
-                while (contentRow <= sheet.getLastRowNum()) {
-                    Row contentRowObj = sheet.getRow(contentRow);
-                    String line = getCellValue(contentRowObj, DBQUERY_SHEET.COL_B).trim();
+						joinDataRow++;
+					}
+					join.setMethod(methodBuilder.toString());
+					join.setTable(tableBuilder.toString());
+					join.setAlias(aliasBuilder.toString());
+					join.setCondition(conditionBuilder.toString());
+					summary.setJoinCondition(join);
+				}
 
-                    // 停止条件：空行 或 新的 section 标题 或 dbQuery
-                    if (line.isEmpty() || isSectionHeader(line) || line.startsWith("dbQuery")) {
-                        break;
-                    }
+				currentRow = contentRow;
+				continue;
+			}
+			currentRow++;
+		}
+		return summary;
+	}
 
-                    if (content.length() > 0) {
-                        content.append("\n");
-                    }
-                    content.append(line);
-                    contentRow++;
-                }
+	/**
+	 * 指定された文字列が「1．」～「5．」形式のセクションヘッダかどうかを判定します。
+	 * 半角・全角数字および句点（.／．）の組み合わせに対応しています。
+	 * 
+	 * @param text 判定対象の文字列
+	 * @return セクションヘッダにマッチする場合は true、それ以外は false
+	 */
+	private boolean isSectionHeader(String text) {
+		if (text == null || text.isEmpty())
+			return false;
+		// マッチング：半角数字 1-5 または 全角数字 １-５ + 全角/半角句点
+		return text.matches(DBQUERY_SHEET.MATCH_FROM_ONE_TO_FIVE);
+	}
 
-                // 设置到 summary
-                switch (section) {
-                    case "1":
-                        summary.setTargetTable(content.toString());
-                        break;
-                    case "2":
-                        summary.setTargetTableCondition(content.toString());
-                        break;
-                    case "4":
-                        summary.setSortCondition(content.toString());
-                        break;
-                    case "5":
-                        summary.setSupplement(content.toString());
-                        break;
-                    default:
-                        // 不处理
-                        break;
-                }
+	/**
+	 * 「1．対象テーブル」などのセクションヘッダ文字列から、先頭の数字（"1"～"5"）を抽出します。
+	 * 全角数字は半角に変換して返却します。
+	 * 
+	 * @param header セクションヘッダ文字列（例: "３．結合条件"）
+	 * @return 抽出したセクション番号（"1"～"5"）。不正な入力の場合は "1" を返す
+	 */
+	private String extractSectionNumber(String header) {
+		char c = header.charAt(0);
+		if (c >= '1' && c <= '5') {
+			return String.valueOf(c);
+		} else if (c >= '１' && c <= '５') {
+			return String.valueOf((char) (c - '１' + '1'));
+		}
+		return "1";
+	}
 
-                // 如果是 "3．結合条件"，特殊处理（多行结构化数据）
-                if ("3".equals(section)) {
-                    List<DBQueryJoinCondition> joins = new ArrayList<>();
-                    int joinRow = currentRow + 1;
-                    while (joinRow <= sheet.getLastRowNum()) {
-                        Row joinRowObj = sheet.getRow(joinRow);
-                        String checkLine = getCellValue(joinRowObj, DBQUERY_SHEET.COL_B).trim();
+	/**
+	 * 「dbQuery：検索条件」または「dbQueryAggregate：集計関数の検索条件」などのSQLブロックを解析し、
+	 * B列からSQL文を抽出して1つの文字列として返します。
+	 * 
+	 * <p>解析は指定開始行の次の行から開始され、以下のいずれかの条件で終了します：
+	 * <ul>
+	 *   <li>空行に到達（かつすでに内容を読み始めている場合）</li>
+	 *   <li>次のSQLセクション（例: {@code dbQueryAggregate：...}）がB列に出現</li>
+	 * </ul>
+	 * 
+	 * @param sheet         対象のExcelシート
+	 * @param startRowIndex セクションタイトルが存在する行のインデックス（0起点）
+	 * @return 抽出されたSQL文。各行の末尾には {@link DBQUERY_SHEET#STR_CTRL} が付加される。内容がない場合は空文字列。
+	 */
+	private String parseSqlBlock(Sheet sheet, int startRowIndex) {
+		StringBuilder sql = new StringBuilder();
+		boolean isStarted = false;
+		for (int i = startRowIndex + 1; i <= sheet.getLastRowNum(); i++) {
+			Row row = sheet.getRow(i);
+			if (row == null)
+				break;
+			String value = getCellValue(row, DBQUERY_SHEET.COL_B).trim();
+			// 次のSQLセクションで中断
+			if (value.startsWith(DBQUERY_SHEET.STR_QUERY_AGGREGATE_CONDITION)) {
+				break;
+			}
+			if (value.isEmpty()) {
+				if (isStarted)
+					break; // 内容読み取り中に空行 → 終了
+				else
+					continue; // まだ始まっていない → スキップ
+			}
 
-                        // 停止条件
-                        if (checkLine.isEmpty() || isSectionHeader(checkLine) || checkLine.startsWith("dbQuery")) {
-                            break;
-                        }
+			isStarted = true;
+			sql.append(value).append(DBQUERY_SHEET.STR_CTRL);
+		}
+		return sql.toString().trim();
+	}
 
-                        // 解析这一行的结合条件（B~E列）
-                        DBQueryJoinCondition join = parseJoinConditionFromContentRow(joinRowObj);
-                        if (join != null && !(isEmpty(join.getMethod()) && isEmpty(join.getTable()))) {
-                            joins.add(join);
-                        }
-                        joinRow++;
-                    }
+	/**
+	 * 指定されたシート内で、A列に指定されたタイトル文字列が完全一致する行のインデックスを検索します。
+	 * 検索は {@code fromRow} で指定された行から開始され、一致する最初の行番号（0起点）を返します。
+	 * 見つからない場合は {@code -1} を返します。
+	 * 
+	 * @param sheet   対象のExcelシート
+	 * @param title   検索するセクションタイトル（例: "dbQuery：検索条件"）
+	 * @param fromRow 検索を開始する行インデックス（0起点）
+	 * @return タイトルが見つかった行のインデックス。見つからない場合は -1
+	 */
+	private int findSectionTitle(Sheet sheet, String title, int fromRow) {
+		for (int i = fromRow; i <= sheet.getLastRowNum(); i++) {
+			Row row = sheet.getRow(i);
+			if (row != null && title.equals(getCellValue(row, DBQUERY_SHEET.COL_A).trim())) {
+				return i;
+			}
+		}
+		return -1;
+	}
 
-                    // 注意：你的 model 是单个对象，但这里可能是多个
-                    // 如果必须用单个，取第一个；否则建议改模型为 List
-                    if (!joins.isEmpty()) {
-                        // 临时方案：只取第一个（或合并？）
-                        summary.setJoinCondition(joins.get(0));
-                        // TODO: 建议将 DBQuerySummary.joinCondition 改为 List<DBQueryJoinCondition>
-                    }
-                }
+	/**
+	 * 明細データのヘッダ行（第9行・第10行）が仕様通りであるかを検証します。
+	 * 不一致がある場合、{@code errors} にエラー情報を追加します。
+	 * 
+	 * @param sheet  検証対象のシート
+	 * @param errors 検証エラーを格納するリスト（null不可）
+	 */
+	public static void validateDetailHeaders(Sheet sheet, List<ExcelParseError> errors) {
+		Row level0Row = sheet.getRow(DBQUERY_SHEET.START_POS_DETAIL_INDEX); // 第9行
+		Row level1Row = sheet.getRow(DBQUERY_SHEET.START_POS_DETAIL_INDEX + 1); // 第10行
 
-                // 跳过已处理的行
-                currentRow = contentRow; // 已经停在停止行（空行/新标题），外层会 +1
-                continue;
-            }
+		for (DBQueryHeaderEnum header : DBQueryHeaderEnum.values()) {
+			String expected = header.getDisplayName();
+			int colIndex = header.getColumnIndex();
+			int level = header.getLevel();
 
-            currentRow++;
-        }
+			Row targetRow = (level == 0) ? level0Row : level1Row;
+			String actual = "";
+			if (targetRow != null) {
+				actual = getCellValue(targetRow, colIndex).trim();
+			}
 
-        return summary;
-    }
-    
-    private boolean isSectionHeader(String text) {
-        if (text == null || text.isEmpty()) return false;
-        // 匹配：半角数字 1-5 或 全角数字 １-５ + 全角/半角句点
-        return text.matches("^[1-5１-５][．.].*");
-    }
-    
-    private String extractSectionNumber(String header) {
-        char c = header.charAt(0);
-        if (c >= '1' && c <= '5') {
-            return String.valueOf(c);
-        } else if (c >= '１' && c <= '５') {
-            return String.valueOf((char)(c - '１' + '1'));
-        }
-        return "1"; // fallback
-    }
-    private DBQueryJoinCondition parseJoinConditionFromContentRow(Row row) {
-        if (row == null) return null;
-        DBQueryJoinCondition join = new DBQueryJoinCondition();
-        join.setMethod(getCellValue(row, DBQUERY_SHEET.COL_B)); // B: 結合方法
-        join.setTable(getCellValue(row, DBQUERY_SHEET.COL_C));  // C: 対象テーブル
-        join.setAlias(getCellValue(row, DBQUERY_SHEET.COL_D));  // D: 別名
-        join.setCondition(getCellValue(row, DBQUERY_SHEET.COL_E)); // E: 結合条件
-        return join;
-    }
+			if (!expected.equals(actual)) {
+				int errorRow = (level == 0) ? DBQUERY_SHEET.START_POS_DETAIL_INDEX + 1
+						: DBQUERY_SHEET.START_POS_DETAIL_INDEX + 2;
+				errors.add(new ExcelParseError(sheet.getSheetName(), errorRow, colIndex + 1,
+						MessageService.getMessage("error.format.dbQuery.wrongColumn")));
+			}
+		}
+	}
 
-    private boolean isEmpty(String s) {
-        return s == null || s.trim().isEmpty();
-    }
-
-    /**
-     * 解析 SQL 块（如検索条件、集計条件）
-     */
-    private String parseSqlBlock(Sheet sheet, int titleRow) {
-        StringBuilder sql = new StringBuilder();
-        boolean started = false;
-
-        for (int i = titleRow + 1; i <= sheet.getLastRowNum(); i++) {
-            Row row = sheet.getRow(i);
-            if (row == null) break;
-
-            String value = getCellValue(row, 0).trim();
-
-            // 遇到下一节标题则停止
-            if (value.startsWith("dbQuery")) {
-                break;
-            }
-
-            if (value.isEmpty()) {
-                if (started) break; // 已开始且遇到空行 → 结束
-                else continue;      // 尚未开始 → 跳过
-            }
-
-            started = true;
-            sql.append(value).append("\n");
-        }
-
-        return sql.toString().trim();
-    }
-
-    /**
-     * 从指定行开始查找 section 标题
-     */
-    private int findSectionTitle(Sheet sheet, String title, int fromRow) {
-        for (int i = fromRow; i <= sheet.getLastRowNum(); i++) {
-            Row row = sheet.getRow(i);
-            if (row != null && title.equals(getCellValue(row, 0).trim())) {
-                return i;
-            }
-        }
-        return -1;
-    }
-
-    /**
-     * 明細のヘッダ情報のバリデーション（两级表头）
-     */
-    public static void validateDetailHeaders(Sheet sheet, List<ExcelParseError> errors) {
-        Row level0Row = sheet.getRow(DBQUERY_SHEET.START_POS_DETAIL_INDEX);       // 第9行
-        Row level1Row = sheet.getRow(DBQUERY_SHEET.START_POS_DETAIL_INDEX + 1);   // 第10行
-
-        for (DBQueryHeaderEnum header : DBQueryHeaderEnum.values()) {
-            String expected = header.getDisplayName();
-            int colIndex = header.getColumnIndex();
-            int level = header.getLevel();
-
-            Row targetRow = (level == 0) ? level0Row : level1Row;
-            String actual = "";
-            if (targetRow != null) {
-                actual = getCellValue(targetRow, colIndex).trim();
-            }
-
-            if (!expected.equals(actual)) {
-                int errorRow = (level == 0) ? DBQUERY_SHEET.START_POS_DETAIL_INDEX + 1
-                        : DBQUERY_SHEET.START_POS_DETAIL_INDEX + 2;
-                errors.add(new ExcelParseError(
-                        sheet.getSheetName(),
-                        errorRow,
-                        colIndex + 1,
-                        MessageService.getMessage("error.format.dbQuery.wrongColumn")
-                ));
-            }
-        }
-    }
-
-    /**
-     * 解析单行明细数据
-     */
-    private DBQueryEntity parseEntityRow(Row row) {
-        DBQueryEntity entity = new DBQueryEntity();
-        entity.setItemNo(getCellValue(row, DBQUERY_SHEET.COL_A));
-        entity.setPhysicalName(getCellValue(row, DBQUERY_SHEET.COL_B));
-        entity.setLogicalName(getCellValue(row, DBQUERY_SHEET.COL_C));
-        entity.setIsNullable(DBQUERY_SHEET.STR_TRUE.equalsIgnoreCase(getCellValue(row, DBQUERY_SHEET.COL_D)));
-        entity.setKeyGroup(getCellValue(row, DBQUERY_SHEET.COL_E));
-        entity.setLengthPre(getCellValue(row, DBQUERY_SHEET.COL_F));
-        entity.setLengthS(getCellValue(row, DBQUERY_SHEET.COL_G));
-        entity.setLengthB(getCellValue(row, DBQUERY_SHEET.COL_H));
-        entity.setDataTypeWP(getCellValue(row, DBQUERY_SHEET.COL_J));
-        entity.setDbDefineType(getCellValue(row, DBQUERY_SHEET.COL_K));
-        entity.setDbDefineLength(getCellValue(row, DBQUERY_SHEET.COL_L));
-        entity.setDbDefineDecimal(getCellValue(row, DBQUERY_SHEET.COL_M));
-        entity.setRemark(getCellValue(row, DBQUERY_SHEET.COL_P));
-        entity.setEncodeType(getCellValue(row, DBQUERY_SHEET.COL_AB));
-        entity.setResourceTableName(getCellValue(row, DBQUERY_SHEET.COL_AJ));
-        entity.setResourceColumnName(getCellValue(row, DBQUERY_SHEET.COL_AK));
-        return entity;
-    }
-
-    /**
-     * 读取文件字节
-     */
-    private byte[] readExcelBytes(FileSource source) throws Exception {
-        try (InputStream is = source.getInputStream()) {
-            return is.readAllBytes();
-        }
-    }
+	/**
+	 * 明細データの1行を解析し、{@link DBQueryEntity} オブジェクトにマッピングします。
+	 * 各カラムの位置は {@link DBQUERY_SHEET} 定数に基づいています。
+	 * 
+	 * @param row 解析対象のExcel行オブジェクト
+	 * @return 構築された {@link DBQueryEntity} オブジェクト
+	 */
+	private DBQueryEntity parseEntityRow(Row row) {
+		DBQueryEntity entity = new DBQueryEntity();
+		//項番
+		entity.setItemNo(getCellValue(row, DBQUERY_SHEET.COL_A));
+		//カラム名:物理名
+		entity.setPhysicalName(getCellValue(row, DBQUERY_SHEET.COL_B));
+		//カラム名:論理名
+		entity.setLogicalName(getCellValue(row, DBQUERY_SHEET.COL_C));
+		//NULL可
+		entity.setIsNullable(DBQUERY_SHEET.STR_TRUE.equalsIgnoreCase(getCellValue(row, DBQUERY_SHEET.COL_D)));
+		//キーグループ
+		entity.setKeyGroup(getCellValue(row, DBQUERY_SHEET.COL_E));
+		//長さ:PRE
+		entity.setLengthPre(getCellValue(row, DBQUERY_SHEET.COL_F));
+		//長さ:S
+		entity.setLengthS(getCellValue(row, DBQUERY_SHEET.COL_G));
+		//長さ:B
+		entity.setLengthB(getCellValue(row, DBQUERY_SHEET.COL_H));
+		//データ型(WP)
+		entity.setDataTypeWP(getCellValue(row, DBQUERY_SHEET.COL_J));
+		//DB定義:型
+		entity.setDbDefineType(getCellValue(row, DBQUERY_SHEET.COL_K));
+		//DB定義:桁数
+		entity.setDbDefineLength(getCellValue(row, DBQUERY_SHEET.COL_L));
+		//DB定義:小数桁
+		entity.setDbDefineDecimal(getCellValue(row, DBQUERY_SHEET.COL_M));
+		//備考
+		entity.setRemark(getCellValue(row, DBQUERY_SHEET.COL_P));
+		//使用文字種
+		entity.setEncodeType(getCellValue(row, DBQUERY_SHEET.COL_AB));
+		//取得元:テーブル名
+		entity.setResourceTableName(getCellValue(row, DBQUERY_SHEET.COL_AJ));
+		//取得元:カラム名
+		entity.setResourceColumnName(getCellValue(row, DBQUERY_SHEET.COL_AK));
+		
+		return entity;
+	}
+	
+	/**
+	 * 指定されたファイルソース（{@link FileSource}）からExcelファイルのバイトデータを読み込み、
+	 * バイト配列（{@code byte[]}}）として返します。
+	 * 
+	 * @param source Excelファイルの入力ソース
+	 * @return Excelファイルの内容を表すバイト配列
+	 * @throws Exception 入力ストリームの読み込み中にIO例外が発生した場合
+	 */
+	private byte[] readExcelBytes(FileSource source) throws Exception {
+		try (InputStream is = source.getInputStream()) {
+			return is.readAllBytes();
+		}
+	}
 }

@@ -34,6 +34,7 @@ public interface CommonConstant {
 		String STR_TRUE = "TRUE";
 		
 		//解析説明文字
+		String STR_CTRL= "\n";
 		String STR_SHEET_NAME_MODIFY_HISTORY = "改版履歴";
 		String STR_SUMMARY = "概要";
 		String STR_SUMMARY_TABLE = "１．対象テーブル";
@@ -48,6 +49,8 @@ public interface CommonConstant {
 		String STR_QUERY_CONDITION = "dbQuery：検索条件";
 		String STR_QUERY_AGGREGATE_CONDITION = "dbQueryAggregate：集計関数の検索条件";
 		
+		//1から5までの数字にマッチする正規表現
+		String MATCH_FROM_ONE_TO_FIVE = "^[1-5１-５][．.].*";
 	}
 
 	/** 改版履歴 */

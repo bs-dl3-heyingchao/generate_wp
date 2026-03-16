@@ -51,7 +51,6 @@ public interface CommonConstant {
 		
 		//1から5までの数字にマッチする正規表現
 		String MATCH_FROM_ONE_TO_FIVE = "^[1-5１-５][．.].*";
-		
 	}
 
 	/** 改版履歴 */

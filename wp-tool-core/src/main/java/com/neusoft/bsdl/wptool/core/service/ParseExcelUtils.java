@@ -58,6 +58,7 @@ public class ParseExcelUtils {
 			throw new WPParseExcelException(errors);
 		}
 		parseExcelContent.setQuerySheetContents(querySheetContents);
+		log.info("解析したdbQuery定義書の内容:{}", parseExcelContent.toString());
 		return parseExcelContent;
 	}
 

@@ -52,8 +52,9 @@ public class DBQueryParseExcel extends AbstractParseTool {
 		byte[] excelBytes = readExcelBytes(source);
 
 		try (Workbook workbook = WorkbookFactory.create(new ByteArrayInputStream(excelBytes))) {
+			DBQuerySheetContent content = new DBQuerySheetContent();
 			Sheet sheet = workbook.getSheet(sheetName);
-
+			content.setSheetName(sheetName);
 			// 明細ヘッダ情報のバリデーションチェック
 			validateDetailHeaders(sheet, errors);
 			if (!errors.isEmpty()) {
@@ -67,8 +68,7 @@ public class DBQueryParseExcel extends AbstractParseTool {
 						"dbQuery定義書のヘッダ行が見つかりません。"));
 				return null;
 			}
-
-			DBQuerySheetContent content = new DBQuerySheetContent();
+			
 			// テーブル名称
 			content.setTableName(getCellValue(mainHeaderRow, DBQUERY_SHEET.COL_C).trim());
 			// テーブルID

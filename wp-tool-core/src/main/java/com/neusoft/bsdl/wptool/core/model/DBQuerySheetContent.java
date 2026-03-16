@@ -6,6 +6,8 @@ import lombok.Data;
 
 @Data
 public class DBQuerySheetContent {
+	/**シート名称*/
+	private String sheetName;
 	/**テーブル名称*/
 	private String tableName;
 	/**テーブルID*/

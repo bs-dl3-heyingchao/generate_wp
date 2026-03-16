@@ -9,6 +9,24 @@ public interface CommonConstant {
 	// エラーメッセージの区切り
 	public static final String MESSAGE_KUGIRI = " : ";
 
+	// テーブル定義書のデータ型(WP)列の格納されるKEY
+	public static final String STR_WP_TYPE = "WP_TYPE";
+
+	// キーグループは1の場合、プライマリーキーとする
+	public static final String GROUP_KEY = "1";
+
+	/** dbQuery定義書 */
+	interface DBQUERY_SHEET {
+		// TODO:[テーブル名称] WPネーミング規約にそった名称を記載していること。
+		Pattern PATTERN_TABLE_NAME = Pattern.compile(
+				"^[\\u4E00-\\u9FFF\\u3040-\\u309F\\u30A0-\\u30FF\\u30FC_]*(_|)[\\u4E00-\\u9FFF\\u3040-\\u309F\\u30A0-\\u30FF\\u30FC_]*$");
+		// TODO:[テーブルID] WPネーミング規約にそった名称を記載していること。
+		Pattern PATTERN_TABLE_ID = Pattern.compile("^[A-Z]{1}_[A-Z]{3}[0-9]{4}_[0-9]{4}$", Pattern.CASE_INSENSITIVE);
+		
+		//文字列：BOOL
+		String STR_BOOL="BOOL";
+	}
+
 	/** 解析対象シート名称 */
 	interface PARSE_SHEET_NAME {
 		// 画面定義書
@@ -66,8 +84,6 @@ public interface CommonConstant {
 		String STR_RADIO_BUTTON = "ラジオボタン";
 		// 文字列：複数選択チェックボックス
 		String STR_DUPLICATE_CHECKBOX = "複数選択チェックボックス";
-		// 文字列：テーブル定義書のデータ型(WP)列の格納されるKEY
-		String STR_WP_TYPE = "WP_TYPE";
 		// 文字列：選択リストの配列
 		String[] ARR_SELECT_LIST = { "[DM]", "[条件]", "[値]", "[名称]", "[ソート順]", "[ソートタイプ]" };
 	}
@@ -97,6 +113,7 @@ public interface CommonConstant {
 		Pattern PATTERN_OPERATION_CODE = Pattern.compile("^[A-Z0-9]{9}_([IU])[0-9]{3}$", Pattern.CASE_INSENSITIVE);
 
 		// TODO： [名前]WPネーミング規約 例：汎用テーブル詳細_登録 (日本語と半角アンダーバーを許可)
-		Pattern PATTERN_NAME =  Pattern.compile("^[\\u4E00-\\u9FFF\\u3040-\\u309F\\u30A0-\\u30FF\\u30FC_]*(_|)[\\u4E00-\\u9FFF\\u3040-\\u309F\\u30A0-\\u30FF\\u30FC_]*$");
+		Pattern PATTERN_NAME = Pattern.compile(
+				"^[\\u4E00-\\u9FFF\\u3040-\\u309F\\u30A0-\\u30FF\\u30FC_]*(_|)[\\u4E00-\\u9FFF\\u3040-\\u309F\\u30A0-\\u30FF\\u30FC_]*$");
 	}
 }

@@ -174,6 +174,12 @@ public class WPCodeGenerator {
                 } else {
                     writeErrorLog(subLogPrefix + "項番[{}] unkonw I/O :{}", itemBean.getItemNo(), io);
                 }
+                if ("○".equalsIgnoreCase(itemBean.getRequired())) {
+                    ioItem.is_require = "true";
+                } else {
+                    ioItem.is_require = "false";
+                }
+
                 if (display != null && display.contains("非表示")) {
                     ioItem.is_visible = "false";
                     codePrefix = "H_";
@@ -184,14 +190,37 @@ public class WPCodeGenerator {
                     codePrefix = curGroupPrefix + codePrefix;
                     ioItem.level = "2";
                 }
-                if ("DM".equalsIgnoreCase(itemBean.getLengthWP())) {
-                    // DM不设置【桁数】，使用默认值
-                } else if (itemBean.getLengthWP().matches("\\d+")) {
-                    ioItem.length = itemBean.getLengthWP();
-                } else {
-                    writeWarnLog(subLogPrefix + "項番[{}] unkonw 桁数(WP) :{}", itemBean.getItemNo(), itemBean.getLengthWP());
+                if (hasValue(itemBean.getLengthWP())) {
+                    if ("DM".equalsIgnoreCase(itemBean.getLengthWP())) {
+                        // DM不设置【桁数】，使用默认值
+                    } else if (itemBean.getLengthWP().matches("\\d+")) {
+                        ioItem.length = itemBean.getLengthWP();
+                    } else {
+                        writeWarnLog(subLogPrefix + "項番[{}] unkonw 桁数(WP) :{}", itemBean.getItemNo(), itemBean.getLengthWP());
+                    }
                 }
 
+                // ソート順
+                if (hasValue(itemBean.getSorted())) {
+                    String[] sorted = itemBean.getSorted().split("\n");
+                    if (sorted.length == 2) {
+                        ioItem.sort_key = sorted[0].trim();
+                        String sortType = sorted[1].trim();
+                        if ("昇順".equals(sortType)) {
+                            ioItem.sort_type = "A";
+                        } else if ("降順".equals(sortType)) {
+                            ioItem.sort_type = "D";
+                        } else {
+                            writeWarnLog(subLogPrefix + "項番[{}] ソート順の形式が不正なソートタイプです:{}", itemBean.getItemNo(), sortType);
+                        }
+                    } else {
+                        writeWarnLog(subLogPrefix + "項番[{}] ソート順の形式が不正です:{}", itemBean.getItemNo(), itemBean.getSorted());
+                    }
+                }
+
+                if (hasValue(itemBean.getFormat())) {
+                    ioItem.format = itemBean.getFormat();
+                }
                 // 備考
                 setBiko(itemBean, ioItem);
 
@@ -522,7 +551,7 @@ public class WPCodeGenerator {
             if (map.containsKey("DM")) {
                 List<String> dmList = map.get("DM");
                 List<String> conditionList = map.get("条件");
-                List<String> valueList = map.get("値");
+                List<String> valueList = map.get("項目");
 
                 if (dmList == null || dmList.isEmpty()) {
                     writeWarnLog(subLogPrefix + "項番[{}] 加工式の【DM】が見つかりません", itemBean.getItemNo());
@@ -569,7 +598,7 @@ public class WPCodeGenerator {
                     String value = valueList.get(0);
                     FieldBean fb = context.getTableSearchService().findFieldByFullName(findedTableItem.getTableFullName(), value);
                     if (fb == null) {
-                        writeErrorLog(subLogPrefix + "項番[{}] 加工式の【値】が見つかりません:{}", itemBean.getItemNo(), value);
+                        writeErrorLog(subLogPrefix + "項番[{}] 加工式の【項目】が見つかりません:{}", itemBean.getItemNo(), value);
                     } else {
                         valueResult = fb.getFieldName();
                     }
@@ -613,7 +642,7 @@ public class WPCodeGenerator {
         List<String> conditionList = map.get("条件");
         List<String> valueList = map.get("値");
         List<String> labelList = map.get("名称");
-        List<String> orderList = map.get("表示順");
+        List<String> orderList = map.get("ソート順");
         if (dmList == null || dmList.isEmpty()) {
             writeWarnLog(subLogPrefix + "項番[{}] 選択リストの【DM】が見つかりません", itemBean.getItemNo());
             return choiceInfo;
@@ -677,14 +706,14 @@ public class WPCodeGenerator {
                     try {
                         BeanUtils.setProperty(choiceInfo, "nameDmItemCode" + (i + 1), fb.getFieldName());
                     } catch (Exception e) {
-                        writeErrorLog(subLogPrefix + "項番[{}] 選択リスのの【名称】設定エラー", itemBean.getItemNo(), label, e);
+                        writeErrorLog(subLogPrefix + "項番[{}] 選択リスの【名称】設定エラー", itemBean.getItemNo(), label, e);
                     }
                 }
             }
         }
 
         if (orderList == null || orderList.isEmpty()) {
-            writeErrorLog(subLogPrefix + "項番[{}] 選択リストの【表示順】が見つかりません", itemBean.getItemNo());
+            writeErrorLog(subLogPrefix + "項番[{}] 選択リストの【ソート順】が見つかりません", itemBean.getItemNo());
         } else {
             for (int i = 0; i < orderList.size(); i++) {
                 String order = orderList.get(i);

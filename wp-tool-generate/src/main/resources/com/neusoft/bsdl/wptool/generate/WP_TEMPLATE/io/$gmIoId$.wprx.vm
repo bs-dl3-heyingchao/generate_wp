@@ -10,7 +10,7 @@
 #end
     <is-disable>false</is-disable>
     <creator>eclipse</creator>
-    <create-time>2026-03-01 10:49:10.0</create-time>
+    <create-time>2026-04-01 00:00:00.0</create-time>
     <io-parts-list/>
     <io-item-list>
 #foreach($item in $!{ioItemList})
@@ -30,6 +30,9 @@
         <min-length>0</min-length>
         <max-length>0</max-length>
         <max-ByteSize>0</max-ByteSize>
+#if($item.format)
+        <format>$!{item.format}</format>
+#end
 #if($item.default_value)
         <default-value>$!{item.default_value}</default-value>
 #end
@@ -46,7 +49,10 @@
         <condition>$!{item.condition}</condition>
 #end
         <level>$!{item.level}</level>
-        <sort-key>0</sort-key>
+        <sort-key>$!{item.sort_key}</sort-key>
+#if($item.sort_type)
+        <sort-type>$!{item.sort_type}</sort-type>
+#end
 #if($item.dm_code)
         <dm-code>$!{item.dm_code}</dm-code>
 #end
@@ -94,7 +100,7 @@
         <description>$!{item.description}</description>
 #end
         <creator>eclipse</creator>
-        <create-time>2026-03-01 10:49:10.0</create-time>
+        <create-time>2026-04-01 00:00:00.0</create-time>
 #if($item.io_item_prop_list)
         <io-item-prop-list>
 #foreach($itemProp in $!{item.io_item_prop_list})

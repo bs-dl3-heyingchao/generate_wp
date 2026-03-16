@@ -1,11 +1,11 @@
 <?xml version = "1.0"  encoding = "UTF-8" ?>
   <dm>
-    <tool-version>2.5.3.0</tool-version>
+    <tool-version>2.7.0.0</tool-version>
     <code>${dmId}</code>
     <name>${dmName}</name>
     <is-disable>false</is-disable>
     <creator>eclipse</creator>
-    <create-time>2022-04-28 10:49:10.0</create-time>
+    <create-time>2026-04-01 00:00:00.0</create-time>
     <dm-item-list>
 #foreach($item in $!{dmItemList})
       <dm-item>
@@ -20,7 +20,7 @@
         <data-type>$!{item.data_type}</data-type>
         <is-disable>$!{item.is_disable}</is-disable>
         <creator>eclipse</creator>
-        <create-time>2022-04-28 10:49:10.0</create-time>
+        <create-time>2026-04-01 00:00:00.0</create-time>
         <dm-item-prop-list/>
       </dm-item>
 #end

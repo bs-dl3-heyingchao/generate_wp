@@ -85,4 +85,9 @@ public class WPTableSearchService implements IWPTableSearchService {
         return tableBean.getFieldList().stream().filter(fieldBean -> fieldName.equals(fieldBean.getFieldName())).findFirst().orElse(null);
     }
 
+    @Override
+    public List<TableBean> listAll() {
+        return tableMap.values().stream().toList();
+    }
+
 }

@@ -20,9 +20,9 @@ import com.neusoft.bsdl.wptool.core.model.ScreenDefinition;
 import com.neusoft.bsdl.wptool.core.model.ScreenDefinitionProcessingTarget;
 import com.neusoft.bsdl.wptool.core.model.ScreenDefinitionTargetData;
 
-import lombok.extern.slf4j.Slf4j;
-
-@Slf4j
+/**
+ * 画面定義書のコンテンツの解析ツール
+ */
 public class ScreenDefinitionParseExcel {
 
 	public ScreenDefinition parseSpecSheet(FileSource source, String sheetName, List<ExcelParseError> errors)
@@ -51,7 +51,6 @@ public class ScreenDefinitionParseExcel {
 			}).sheet(sheetName).doRead();
 
 			ParseResult result = new ParseResult();
-			log.info("allRows.size():{},allRows:{}", allRows.size(), allRows);
 
 			// 対象データモデル
 			parseBlock(allRows, ScreenDefinitionParseSectionEnum.TARGET_MODEL.getSectionName(), result,

@@ -97,13 +97,17 @@ public class ScreenValidationParseExcel extends AbstractParseTool {
 				errors.add(new ExcelParseError(sheet.getSheetName(),
 						SCREEN_VALIDATION_SHEET.START_POS_HEADER_INDEX + header.getLevel() + 1, colIndex + 1,
 						MessageService.getMessage("error.format.validation.wrongColumn")));
-				break; // 或 continue，根据需求
+				break;
 			}
 		}
 	}
 
 	/**
-	 * 读取チェックアクション列名（位于 START_POS_INDEX + 1 行，即第4行）
+	 * 读取チェックアクション列名（位于 START_POS_INDEX + 1 行，即第4行，index=50~78，间隔2列）
+	 * @param excelBytes
+	 * @param sheetName
+	 * @return
+	 * @throws Exception
 	 */
 	private List<String> readActionColumnNames(byte[] excelBytes, String sheetName) throws Exception {
 		List<String> names = new ArrayList<>();
@@ -125,8 +129,12 @@ public class ScreenValidationParseExcel extends AbstractParseTool {
 		return names;
 	}
 
+	
 	/**
-	 * 从 Map 构建 ScreenValidation 对象
+	 * ScreenValidationを作成する
+	 * @param rowMap
+	 * @param actionNames
+	 * @return
 	 */
 	private ScreenValidation buildScreenValidation(Map<Integer, String> rowMap, List<String> actionNames) {
 		ScreenValidation v = new ScreenValidation();
@@ -168,6 +176,9 @@ public class ScreenValidationParseExcel extends AbstractParseTool {
 
 	/**
 	 * 判断项番是否有效（非空且为数字）
+	 * 
+	 * @param itemNo 項番文字列
+	 * @return 有効な項番の場合はtrue、そうでない場合はfalse
 	 */
 	private boolean isValidItemNo(String itemNo) {
 		if (itemNo == null || itemNo.trim().isEmpty()) {

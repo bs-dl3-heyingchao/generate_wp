@@ -1,6 +1,6 @@
 #Type entity
 type_1=io
-io_path=io/$parentDir$
+io_path=io
 
 #Type dm
 type_2=dm

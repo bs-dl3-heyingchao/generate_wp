@@ -18,13 +18,15 @@ public class IOItem {
 	public String min_length = "0";
 	public String max_length = "0";
 	public String max_ByteSize = "0";
+	public String format;
 	public String level = "1";
 	public String sort_key = "0";
+	public String sort_type;
 	public String dm_code;
 	public String dm_item_code;
 	public String is_disable = "false";
 	public String creator = "eclipse";;
-	public String create_time = "2022-04-28 00:00:00.0";
+	public String create_time = "2025-04-01 00:00:00.0";
 	public String default_value;
 	public String statement;
 	public String condition;

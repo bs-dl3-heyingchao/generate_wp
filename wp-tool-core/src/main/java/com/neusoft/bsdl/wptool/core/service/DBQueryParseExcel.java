@@ -396,7 +396,7 @@ public class DBQueryParseExcel extends AbstractParseTool {
 		entity.setLengthPre(getCellValue(row, DBQUERY_SHEET.COL_F));
 		//長さ:S
 		entity.setLengthS(getCellValue(row, DBQUERY_SHEET.COL_G));
-		//長さ:B
+		//TODO：長さ:B エクセル数式があります、確認要
 		entity.setLengthB(getCellValue(row, DBQUERY_SHEET.COL_H));
 		//データ型(WP)
 		entity.setDataTypeWP(getCellValue(row, DBQUERY_SHEET.COL_J));

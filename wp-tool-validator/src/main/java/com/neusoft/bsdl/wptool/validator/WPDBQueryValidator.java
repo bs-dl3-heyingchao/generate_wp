@@ -87,7 +87,7 @@ public class WPDBQueryValidator {
 						FieldBean fieldBean = fieldList.stream()
 								.filter(field -> field.getFieldFullName().equals(logicalName)).findFirst().orElse(null);
 						// TODO:[長さ／データ型]SELECTするテーブルの情報(テーブル定義書)と一致していること。
-						if (!fieldBean.getLen().equals(entity.getLengthPre())) {
+						if (!fieldBean.getOthers().get(CommonConstant.STR_WP_LEN_PRE).equals(entity.getLengthPre())) {
 							errors.add(sheetName + CommonConstant.MESSAGE_KUGIRI
 									+ MessageService.getMessage("error.db.query.column.length")
 											.replace("{0}", logicalName).replace("{1}", entity.getLengthPre())

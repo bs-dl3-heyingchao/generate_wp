@@ -12,6 +12,15 @@ public interface CommonConstant {
 	// テーブル定義書のデータ型(WP)列の格納されるKEY
 	public static final String STR_WP_TYPE = "WP_TYPE";
 
+	// テーブル定義書のデータ型(WP)列の格納される長さ:PRE
+	public static final String STR_WP_LEN_PRE = "WP_LEN_PRE";
+
+	// テーブル定義書のデータ型(WP)列の格納される長さ:S
+	public static final String STR_LEN_S = "LEN_S";
+
+	// テーブル定義書のデータ型(WP)列の格納される長さ:PRE:B
+	public static final String STR_WP_LEN_B = "WP_LEN_B";
+
 	// キーグループは1の場合、プライマリーキーとする
 	public static final String GROUP_KEY = "1";
 
@@ -22,9 +31,9 @@ public interface CommonConstant {
 				"^[\\u4E00-\\u9FFF\\u3040-\\u309F\\u30A0-\\u30FF\\u30FC_]*(_|)[\\u4E00-\\u9FFF\\u3040-\\u309F\\u30A0-\\u30FF\\u30FC_]*$");
 		// TODO:[テーブルID] WPネーミング規約にそった名称を記載していること。
 		Pattern PATTERN_TABLE_ID = Pattern.compile("^[A-Z]{1}_[A-Z]{3}[0-9]{4}_[0-9]{4}$", Pattern.CASE_INSENSITIVE);
-		
-		//文字列：BOOL
-		String STR_BOOL="BOOL";
+
+		// 文字列：BOOL
+		String STR_BOOL = "BOOL";
 	}
 
 	/** 解析対象シート名称 */

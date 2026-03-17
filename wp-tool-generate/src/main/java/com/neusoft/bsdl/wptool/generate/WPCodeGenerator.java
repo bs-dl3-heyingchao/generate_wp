@@ -31,7 +31,6 @@ import com.neusoft.bsdl.wptool.generate.model.IOItem;
 import com.neusoft.bsdl.wptool.generate.model.ItemProp;
 import com.neusoft.bsdl.wptool.generate.model.ItemPropMapping;
 
-import cbai.util.BeanUtil;
 import cbai.util.StringUtils;
 import cbai.util.db.define.FieldBean;
 import cbai.util.db.define.TableBean;
@@ -80,6 +79,7 @@ public class WPCodeGenerator {
         ExcelSheetContent<ScreenDefinition> screenExcelScreenDefinition = (ExcelSheetContent<ScreenDefinition>) screenExcelContent.getSheetList().stream().filter(s -> "画面定義書".equals(s.getSheetName()))
                 .findFirst().orElse(null);
         if (screenExcelScreenDefinition != null) {
+            this.logPrefix = String.format("[%s:%s %s] ", screenExcelContent.getScreenId(), screenExcelContent.getScreenName(), screenExcelScreenDefinition.getSheetName());
             ScreenDefinition dxtjBean = screenExcelScreenDefinition.getContent();
             if (dxtjBean.getTargetModels() != null && !dxtjBean.getTargetModels().isEmpty()) {
                 String gmDmCode = dxtjBean.getTargetModels().get(0).getPhysicalName();
@@ -104,7 +104,6 @@ public class WPCodeGenerator {
 
         // 画面項目説明書
         String ioSuffix = "";
-        String subLogPrefix = "";
         Map<String, List<IOItem>> itemNameMap = new HashMap<String, List<IOItem>>();
         Set<String> codeSet = new HashSet<String>();
         List<IOItem> ioItemList = new ArrayList<>();
@@ -120,15 +119,13 @@ public class WPCodeGenerator {
         if ("IO".equals(ioType)) {
             ioSuffix = "IO";
             list = excelSheetScreenItem.getContent();
-            subLogPrefix = "画面項目説明書 ";
         } else if ("EXPORT".equals(ioType)) {
             ioSuffix = "EX";
-            subLogPrefix = "画面項目説明書 (エクスポート) ";
             throw new WPException("エクスポートIOの生成はまだ実装されていません");
         } else {
             throw new WPException("不明なIOタイプ: " + ioType);
         }
-        this.logPrefix = String.format("[%s:%s] ", screenExcelContent.getScreenId(), screenExcelContent.getScreenName());
+        this.logPrefix = String.format("[%s:%s %s] ", screenExcelContent.getScreenId(), screenExcelContent.getScreenName(), excelSheetScreenItem.getSheetName());
 
         replaceMap.put("io_type", ioType);
         replaceMap.put("gmId", screenExcelContent.getScreenId());
@@ -165,7 +162,7 @@ public class WPCodeGenerator {
                     codePrefix = "G" + groupIndex + "_";
                     curGroupPrefix = "G" + groupIndex + "_";
                 } else {
-                    writeErrorLog(subLogPrefix + "項番[{}] unkonw I/O :{}", itemBean.getItemNo(), io);
+                    writeErrorLog("項番[{}] unkonw I/O :{}", itemBean.getItemNo(), io);
                 }
                 if ("○".equalsIgnoreCase(itemBean.getRequired())) {
                     ioItem.is_require = "true";
@@ -189,7 +186,7 @@ public class WPCodeGenerator {
                     } else if (itemBean.getLengthWP().matches("\\d+")) {
                         ioItem.length = itemBean.getLengthWP();
                     } else {
-                        writeWarnLog(subLogPrefix + "項番[{}] unkonw 桁数(WP) :{}", itemBean.getItemNo(), itemBean.getLengthWP());
+                        writeWarnLog("項番[{}] unkonw 桁数(WP) :{}", itemBean.getItemNo(), itemBean.getLengthWP());
                     }
                 }
 
@@ -204,10 +201,10 @@ public class WPCodeGenerator {
                         } else if ("降順".equals(sortType)) {
                             ioItem.sort_type = "D";
                         } else {
-                            writeWarnLog(subLogPrefix + "項番[{}] ソート順の形式が不正なソートタイプです:{}", itemBean.getItemNo(), sortType);
+                            writeWarnLog("項番[{}] ソート順の形式が不正なソートタイプです:{}", itemBean.getItemNo(), sortType);
                         }
                     } else {
-                        writeWarnLog(subLogPrefix + "項番[{}] ソート順の形式が不正です:{}", itemBean.getItemNo(), itemBean.getSorted());
+                        writeWarnLog("項番[{}] ソート順の形式が不正です:{}", itemBean.getItemNo(), itemBean.getSorted());
                     }
                 }
 
@@ -234,11 +231,11 @@ public class WPCodeGenerator {
                             ioItem.code = fb.getFieldName();
                         } else {
                             ioItem.dm_item_code = fieldFullName;
-                            writeErrorLog(subLogPrefix + "項番[{}] テーブル項目が見つかりません:{}.{}", itemBean.getItemNo(), tableFullName, fieldFullName);
+                            writeErrorLog("項番[{}] テーブル項目が見つかりません:{}.{}", itemBean.getItemNo(), tableFullName, fieldFullName);
                         }
                     } else {
                         ioItem.dm_code = tableFullName;
-                        writeErrorLog(subLogPrefix + "項番[{}] テーブルが見つかりません:{}", itemBean.getItemNo(), tableFullName);
+                        writeErrorLog("項番[{}] テーブルが見つかりません:{}", itemBean.getItemNo(), tableFullName);
                     }
                 } else {
                     if ("A".equals(ioItem.item_type)) {
@@ -283,13 +280,13 @@ public class WPCodeGenerator {
                     }
                 }
                 // 初期値
-                ioItem.default_value = getInitValue(subLogPrefix, itemBean);
+                ioItem.default_value = getInitValue(itemBean);
                 // 加工式
-                ioItem.statement = getStatement(subLogPrefix, itemBean);
+                ioItem.statement = getStatement(itemBean);
                 // 選択リスト
-                ioItem.choiceInfo = getChoiceInfo(subLogPrefix, itemBean);
+                ioItem.choiceInfo = getChoiceInfo(itemBean);
                 // 表示条件
-                ioItem.condition = getCondition(subLogPrefix, itemBean);
+                ioItem.condition = getCondition(itemBean);
                 ioItemList.add(ioItem);
                 if (StringUtils.isNotEmpty(ioItem.name)) {
                     if (!itemNameMap.containsKey(ioItem.name)) {
@@ -303,10 +300,9 @@ public class WPCodeGenerator {
         // 画面チェック仕様書
         ExcelSheetContent<List<ScreenValidation>> excelSheetScreenValidation = (ExcelSheetContent<List<ScreenValidation>>) screenExcelContent.getSheetList().stream()
                 .filter(s -> "画面チェック仕様書".equals(s.getSheetName())).findFirst().orElse(null);
-        if (excelSheetScreenValidation == null) {
-            throw new WPException("画面チェック仕様書シートが見つかりません");
-        }
         if (excelSheetScreenValidation.getContent() != null && !excelSheetScreenValidation.getContent().isEmpty()) {
+            this.logPrefix = String.format("[%s:%s %s] ", screenExcelContent.getScreenId(), screenExcelContent.getScreenName(), excelSheetScreenValidation.getSheetName());
+
             Map<String, Integer> actionIndexMap = new HashMap<String, Integer>();
             for (ScreenValidation checkItem : excelSheetScreenValidation.getContent()) {
                 if ("BP".equalsIgnoreCase(checkItem.getBizWarining())) {
@@ -379,7 +375,7 @@ public class WPCodeGenerator {
                         try {
                             param = BeanUtils.getProperty(checkItem, "parameter" + i);
                         } catch (IllegalAccessException | InvocationTargetException | NoSuchMethodException e) {
-                            log.error(logPrefix + "Failed to get parameter{} for check item: {}", i, checkItem.getValidationName(), e);
+                            writeErrorLog("Failed to get parameter{} for check item: {}", i, checkItem.getValidationName());
                             break;
                         }
                         if (StringUtils.isEmpty(param)) {
@@ -507,7 +503,7 @@ public class WPCodeGenerator {
                 }
             }
             if (!matched) {
-                writeWarnLog(logPrefix + "項番[{}] unkonw 備考:{}", itemBean.getItemNo(), biko);
+                writeWarnLog( "項番[{}] unkonw 備考:{}", itemBean.getItemNo(), biko);
             }
         }
         ioItem.description = escapseXml(bikoText);
@@ -515,7 +511,7 @@ public class WPCodeGenerator {
 
     private static final Pattern CONDTION_PATTERN = Pattern.compile("([^　 =]+) *=");
 
-    private String getCondition(String subLogPrefix, ScreenItemDescription itemBean) {
+    private String getCondition(ScreenItemDescription itemBean) {
         // 表示条件
         String condition = itemBean.getDisplayCondition();
         if (!hasValue(condition)) {
@@ -524,7 +520,7 @@ public class WPCodeGenerator {
         return escapseXml(condition);
     }
 
-    private String getInitValue(String subLogPrefix, ScreenItemDescription itemBean) {
+    private String getInitValue(ScreenItemDescription itemBean) {
         String initValue = itemBean.getDefaultValue();
         if (!hasValue(initValue)) {
             return null;
@@ -544,7 +540,7 @@ public class WPCodeGenerator {
         return escapseXml(initValue);
     }
 
-    private String getStatement(String subLogPrefix, ScreenItemDescription itemBean) {
+    private String getStatement(ScreenItemDescription itemBean) {
         // 加工式
         String statement = itemBean.getProcessingRule();
         if (!hasValue(statement)) {
@@ -558,20 +554,20 @@ public class WPCodeGenerator {
                 List<String> valueList = map.get("項目");
 
                 if (dmList == null || dmList.isEmpty()) {
-                    writeWarnLog(subLogPrefix + "項番[{}] 加工式の【DM】が見つかりません", itemBean.getItemNo());
+                    writeWarnLog("項番[{}] 加工式の【DM】が見つかりません", itemBean.getItemNo());
                     return "'" + escapseXml(statement) + "'";
                 }
                 String dm = dmList.get(0);
 
                 TableBean findedTableItem = context.getTableSearchService().findTableByFullName(dm);
                 if (findedTableItem == null) {
-                    writeErrorLog(subLogPrefix + "項番[{}] 加工式の【DM】が見つかりません:{}", itemBean.getItemNo(), dm);
+                    writeErrorLog("項番[{}] 加工式の【DM】が見つかりません:{}", itemBean.getItemNo(), dm);
                     return "'" + escapseXml(statement) + "'";
                 }
                 String dmCodeResult = findedTableItem.getTableName();
                 String conditionResult = "";
                 if (conditionList == null || conditionList.isEmpty()) {
-                    writeErrorLog(subLogPrefix + "項番[{}] 加工式の【条件】が見つかりません", itemBean.getItemNo());
+                    writeErrorLog("項番[{}] 加工式の【条件】が見つかりません", itemBean.getItemNo());
                 } else {
                     StringBuffer sb = new StringBuffer();
                     for (String condition : conditionList) {
@@ -587,7 +583,7 @@ public class WPCodeGenerator {
                         String filedFullName = m.group(1).trim();
                         FieldBean fb = context.getTableSearchService().findFieldByFullName(findedTableItem.getTableFullName(), filedFullName);
                         if (fb == null) {
-                            writeErrorLog(subLogPrefix + "項番[{}] 加工式の【条件】が見つかりません:{}", itemBean.getItemNo(), filedFullName);
+                            writeErrorLog("項番[{}] 加工式の【条件】が見つかりません:{}", itemBean.getItemNo(), filedFullName);
                             continue;
                         }
                         m.appendReplacement(sb, fb.getFieldName() + "=");
@@ -597,12 +593,12 @@ public class WPCodeGenerator {
                 }
                 String valueResult = "";
                 if (valueList == null || valueList.isEmpty()) {
-                    writeErrorLog(subLogPrefix + "項番[{}] 加工式の【値】が見つかりません", itemBean.getItemNo());
+                    writeErrorLog("項番[{}] 加工式の【値】が見つかりません", itemBean.getItemNo());
                 } else {
                     String value = valueList.get(0);
                     FieldBean fb = context.getTableSearchService().findFieldByFullName(findedTableItem.getTableFullName(), value);
                     if (fb == null) {
-                        writeErrorLog(subLogPrefix + "項番[{}] 加工式の【項目】が見つかりません:{}", itemBean.getItemNo(), value);
+                        writeErrorLog("項番[{}] 加工式の【項目】が見つかりません:{}", itemBean.getItemNo(), value);
                     } else {
                         valueResult = fb.getFieldName();
                     }
@@ -623,7 +619,7 @@ public class WPCodeGenerator {
         return "'" + escapseXml(statement) + "'";
     }
 
-    private ChoiceBean getChoiceInfo(String subLogPrefix, ScreenItemDescription itemBean) {
+    private ChoiceBean getChoiceInfo(ScreenItemDescription itemBean) {
         String selectList = itemBean.getSelectList();// itemBean.選択リスト;
         if (!hasValue(selectList)) {
             return null;
@@ -648,14 +644,14 @@ public class WPCodeGenerator {
         List<String> labelList = map.get("名称");
         List<String> orderList = map.get("ソート順");
         if (dmList == null || dmList.isEmpty()) {
-            writeWarnLog(subLogPrefix + "項番[{}] 選択リストの【DM】が見つかりません", itemBean.getItemNo());
+            writeWarnLog("項番[{}] 選択リストの【DM】が見つかりません", itemBean.getItemNo());
             return choiceInfo;
         }
         String dm = dmList.get(0);
 
         TableBean findedTableItem = context.getTableSearchService().findTableByFullName(dm);
         if (findedTableItem == null) {
-            writeErrorLog(subLogPrefix + "項番[{}] 選択リストの【DM】が見つかりません:{}", itemBean.getItemNo(), dm);
+            writeErrorLog("項番[{}] 選択リストの【DM】が見つかりません:{}", itemBean.getItemNo(), dm);
             return choiceInfo;
         }
         if (choiceInfo == null) {
@@ -663,7 +659,7 @@ public class WPCodeGenerator {
         }
         choiceInfo.dmCode = findedTableItem.getTableName();
         if (conditionList == null || conditionList.isEmpty()) {
-            writeErrorLog(subLogPrefix + "項番[{}] 選択リストの【条件】が見つかりません", itemBean.getItemNo());
+            writeErrorLog("項番[{}] 選択リストの【条件】が見つかりません", itemBean.getItemNo());
         } else {
             StringBuffer sb = new StringBuffer();
             for (String condition : conditionList) {
@@ -679,7 +675,7 @@ public class WPCodeGenerator {
                 String filedFullName = m.group(1).trim();
                 FieldBean fb = context.getTableSearchService().findFieldByFullName(findedTableItem.getTableFullName(), filedFullName);
                 if (fb == null) {
-                    writeErrorLog(subLogPrefix + "項番[{}] 選択リストの【条件】が見つかりません:{}", itemBean.getItemNo(), filedFullName);
+                    writeErrorLog("項番[{}] 選択リストの【条件】が見つかりません:{}", itemBean.getItemNo(), filedFullName);
                     continue;
                 }
                 m.appendReplacement(sb, fb.getFieldName() + "=");
@@ -688,36 +684,36 @@ public class WPCodeGenerator {
             choiceInfo.condition = sb.toString();
         }
         if (valueList == null || valueList.isEmpty()) {
-            writeErrorLog(subLogPrefix + "項番[{}] 選択リストの【値】が見つかりません", itemBean.getItemNo());
+            writeErrorLog("項番[{}] 選択リストの【値】が見つかりません", itemBean.getItemNo());
         } else {
             String value = valueList.get(0);
             FieldBean fb = context.getTableSearchService().findFieldByFullName(findedTableItem.getTableFullName(), value);
             if (fb == null) {
-                writeErrorLog(subLogPrefix + "項番[{}] 選択リストの【値】が見つかりません:{}", itemBean.getItemNo(), value);
+                writeErrorLog("項番[{}] 選択リストの【値】が見つかりません:{}", itemBean.getItemNo(), value);
             } else {
                 choiceInfo.valueDmItemCode = fb.getFieldName();
             }
         }
         if (labelList == null || labelList.isEmpty()) {
-            writeErrorLog(subLogPrefix + "項番[{}] 選択リストの【名称】が見つかりません", itemBean.getItemNo());
+            writeErrorLog("項番[{}] 選択リストの【名称】が見つかりません", itemBean.getItemNo());
         } else {
             for (int i = 0; i < labelList.size(); i++) {
                 String label = labelList.get(i);
                 FieldBean fb = context.getTableSearchService().findFieldByFullName(findedTableItem.getTableFullName(), label);
                 if (fb == null) {
-                    writeErrorLog(subLogPrefix + "項番[{}] 選択リストの【名称】が見つかりません:{}", itemBean.getItemNo(), label);
+                    writeErrorLog("項番[{}] 選択リストの【名称】が見つかりません:{}", itemBean.getItemNo(), label);
                 } else {
                     try {
                         BeanUtils.setProperty(choiceInfo, "nameDmItemCode" + (i + 1), fb.getFieldName());
                     } catch (Exception e) {
-                        writeErrorLog(subLogPrefix + "項番[{}] 選択リスの【名称】設定エラー", itemBean.getItemNo(), label, e);
+                        writeErrorLog("項番[{}] 選択リスの【名称】設定エラー", itemBean.getItemNo(), label, e);
                     }
                 }
             }
         }
 
         if (orderList == null || orderList.isEmpty()) {
-            writeErrorLog(subLogPrefix + "項番[{}] 選択リストの【ソート順】が見つかりません", itemBean.getItemNo());
+            writeErrorLog("項番[{}] 選択リストの【ソート順】が見つかりません", itemBean.getItemNo());
         } else {
             for (int i = 0; i < orderList.size(); i++) {
                 String order = orderList.get(i);
@@ -730,17 +726,17 @@ public class WPCodeGenerator {
                 String orderLabel = order.replace("（昇順）", "").replace("（降順）", "").trim();
                 FieldBean fb = context.getTableSearchService().findFieldByFullName(findedTableItem.getTableFullName(), orderLabel);
                 if (fb == null) {
-                    writeErrorLog(subLogPrefix + "項番[{}] 選択リストの【表示順】が見つかりません:{}", itemBean.getItemNo(), order);
+                    writeErrorLog("項番[{}] 選択リストの【表示順】が見つかりません:{}", itemBean.getItemNo(), order);
                 } else {
                     try {
                         BeanUtils.setProperty(choiceInfo, "sortDmItemCode" + (i + 1), fb.getFieldName());
                     } catch (Exception e) {
-                        writeErrorLog(subLogPrefix + "項番[{}] 選択リストの【表示順】設定エラー", itemBean.getItemNo(), order, e);
+                        writeErrorLog("項番[{}] 選択リストの【表示順】設定エラー", itemBean.getItemNo(), order, e);
                     }
                     try {
                         BeanUtils.setProperty(choiceInfo, "sortType" + (i + 1), orderType);
                     } catch (Exception e) {
-                        writeErrorLog(subLogPrefix + "項番[{}] 選択リストの【表示順】設定エラー", itemBean.getItemNo(), order, e);
+                        writeErrorLog("項番[{}] 選択リストの【表示順】設定エラー", itemBean.getItemNo(), order, e);
                     }
                 }
             }
@@ -757,7 +753,7 @@ public class WPCodeGenerator {
             if (line.startsWith("[")) {
                 line = line.substring(1);
                 if (line.indexOf("]") == -1) {
-                    writeErrorLog("項番[{}] 選択リストの解析失敗、「】」が見つかりません:{}", itemBean.getItemNo(), defineValue);
+                    writeErrorLog("項番[{}] 選択リストの解析失敗、「]」が見つかりません:{}", itemBean.getItemNo(), defineValue);
                     return map;
                 }
                 String key = line.substring(0, line.indexOf("]"));

@@ -1,5 +1,7 @@
 package com.neusoft.bsdl.wptool.core.model;
 
+import java.util.List;
+
 import lombok.Data;
 
 /**
@@ -14,7 +16,7 @@ public class DBQuerySummary {
 	private String targetTableCondition;
 	
 	/**3．結合条件*/
-	private DBQueryJoinCondition joinCondition;
+	private List<DBQueryJoinCondition> joinCondition;
 	
 	/**4．ソート条件*/
 	private String sortCondition;

@@ -30,6 +30,18 @@ public class AiSupportApiService {
 
 	/** 外部AIサポートAPIアクセス用のBearerトークン。設定ファイルから読み込みます。 */
 	public static final String TOKEN = ConfigService.getConfig("wp-tool.ai.support.token");
+	/**
+	 * 共通で使用する{@link ObjectMapper}インスタンス。
+	 * <p>
+	 * 次の設定を適用しています：
+	 * <ul>
+	 * <li>未知のプロパティを無視してエラーとしない（{@code FAIL_ON_UNKNOWN_PROPERTIES = false}）</li>
+	 * </ul>
+	 * このインスタンスは不変（immutable）かつスレッドセーフです。アプリケーション全体で再利用可能です。
+	 * </p>
+	 */
+	public static final ObjectMapper MAPPER = new ObjectMapper()
+			.configure(com.fasterxml.jackson.databind.DeserializationFeature.FAIL_ON_UNKNOWN_PROPERTIES, false);
 
 	/**
 	 * 指定されたファイルをAIサポート外部APIに送信し、構造化されたJSONレスポンスを取得します。
@@ -65,21 +77,19 @@ public class AiSupportApiService {
 		HttpResponse<String> response = client.send(request, HttpResponse.BodyHandlers.ofString());
 
 		// JSONレスポンスをオブジェクトに変換
-		ObjectMapper mapper = new ObjectMapper();
-		AiSupportApiResponse apiResponse = mapper.readValue(response.body(), AiSupportApiResponse.class);
+		AiSupportApiResponse apiResponse = MAPPER.readValue(response.body(), AiSupportApiResponse.class);
 
 		// 応答データ内の binaryCodeJson を整形：タブ文字（\t）を4つの半角スペースに置換
 		apiResponse.getData().forEach(fileData -> {
 			String escapedJson = fileData.getBinaryCodeJson();
-			ObjectMapper escapedMapper = new ObjectMapper();
 			try {
 				// JSON文字列をJsonNodeにパース
-				JsonNode node = escapedMapper.readTree(escapedJson);
+				JsonNode node = MAPPER.readTree(escapedJson);
 				// JsonNodeを整形済みJSON文字列に変換し、\\t（JSONエスケープされたタブ）をスペースに置換
 				// 注意: writeValueAsString() により、元の\tはJSON内で "\\t" として出力されるため、
 				// "\\t"（2文字：バックスラッシュ + t）を置換対象とする
-				String prettyJson = escapedMapper.writerWithDefaultPrettyPrinter().writeValueAsString(node)
-						.replace("\\t", "    ");
+				String prettyJson = MAPPER.writerWithDefaultPrettyPrinter().writeValueAsString(node).replace("\\t",
+						"    ");
 				fileData.setBinaryCodeJson(prettyJson);
 			} catch (JsonProcessingException e) {
 				e.printStackTrace();

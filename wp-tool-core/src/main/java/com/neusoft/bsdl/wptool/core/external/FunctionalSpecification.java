@@ -13,7 +13,7 @@ import lombok.Data;
  * </p>
  */
 @Data
-public class FileData {
+public class FunctionalSpecification  {
 
     /**
      * 元となった入力ファイルのファイル名。

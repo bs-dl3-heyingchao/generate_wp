@@ -35,12 +35,12 @@ public class AiSupportApiResponse {
     /**
      * 構造化されたファイルデータのリスト。
      * <p>
-     * 各 {@link FileData} オブジェクトは、入力ファイル（例: Markdown設計書）から抽出・変換された
+     * 各 {@link FunctionalSpecification} オブジェクトは、入力ファイル（例: Markdown設計書）から抽出・変換された
      * 構造化JSONデータ（{@code binaryCodeJson}）やメタ情報を保持します。
      * 複数ファイルを一度に処理可能な場合、複数の要素が含まれます。
      * </p>
      */
-    private List<FileData> data;
+    private List<FunctionalSpecification> data;
 
     /**
      * レスポンス生成時刻（Unixエポック時間、ミリ秒単位）。

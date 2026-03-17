@@ -17,7 +17,6 @@ import java.util.regex.Pattern;
 import org.apache.commons.beanutils.BeanUtils;
 import org.apache.commons.text.StringEscapeUtils;
 
-import com.neusoft.bsdl.wptool.core.context.WPContext;
 import com.neusoft.bsdl.wptool.core.exception.WPException;
 import com.neusoft.bsdl.wptool.core.model.ExcelSheetContent;
 import com.neusoft.bsdl.wptool.core.model.ScreenDefinition;
@@ -34,9 +33,6 @@ import com.neusoft.bsdl.wptool.generate.model.ItemPropMapping;
 import cbai.util.StringUtils;
 import cbai.util.db.define.FieldBean;
 import cbai.util.db.define.TableBean;
-import cbai.util.morphem.MorphemHelper;
-import cbai.util.sqlconvert.NormalSqlConverter;
-import cbai.util.sqlconvert.SqlConverterAbstract;
 import cbai.util.template.CreateTemplateVelocity;
 import lombok.extern.slf4j.Slf4j;
 
@@ -49,19 +45,11 @@ public class WPCodeGenerator {
             { "○○保管", "STORAGE" }, { "作業指示", "WORK" }, { "出荷指示", "SHIPPING" } };
 
     private final static CreateTemplateVelocity createTemplate = new CreateTemplateVelocity("com.neusoft.bsdl.wptool.generate.WP_TEMPLATE", true);
-    private WPContext context;
+    private WPGenerateContext context;
     private String logPrefix;
-    private static MorphemHelper morphemHelper = null;
-    private final SqlConverterAbstract sqlConverter;
-    static {
-//        helper = new MorphemHelper(WPDictCreator.getDictList());
-        // TODO 做成项目用词典
-        morphemHelper = new MorphemHelper();
-    }
 
-    public WPCodeGenerator(WPContext context) {
+    public WPCodeGenerator(WPGenerateContext context) {
         this.context = context;
-        this.sqlConverter = new NormalSqlConverter(context.getTableSearchService().listAll());
     }
 
     public void generate(ScreenExcelContent screenExcelContent, File outputDir) throws IOException {
@@ -96,7 +84,7 @@ public class WPCodeGenerator {
                     gmIoCondition = gmIoCondition.replace("’", "'");
                     gmIoCondition = gmIoCondition.replace("’", "'");
                     gmIoCondition = gmIoCondition.replace("\n", " ");
-                    String gmIoConditionConvered = sqlConverter.convert(gmIoCondition);
+                    String gmIoConditionConvered = context.getSqlConverter().convert(gmIoCondition);
                     replaceMap.put("gmIoCondition", escapseXml(gmIoConditionConvered));
                 }
             }
@@ -242,7 +230,7 @@ public class WPCodeGenerator {
                         ioItem.code = getActionIoCode(itemBean.getItemName(), ioItem.label);
                     }
                     if (StringUtils.isEmpty(ioItem.code)) {
-                        String id = morphemHelper.getRomaFromKanji(itemBean.getItemName()).toUpperCase();
+                        String id = context.getMorphemHelper().getRomaFromKanji(itemBean.getItemName()).toUpperCase();
                         ioItem.code = id;
                     }
                 }
@@ -503,7 +491,7 @@ public class WPCodeGenerator {
                 }
             }
             if (!matched) {
-                writeWarnLog( "項番[{}] unkonw 備考:{}", itemBean.getItemNo(), biko);
+                writeWarnLog("項番[{}] unkonw 備考:{}", itemBean.getItemNo(), biko);
             }
         }
         ioItem.description = escapseXml(bikoText);

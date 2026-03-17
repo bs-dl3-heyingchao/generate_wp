@@ -14,7 +14,7 @@ public class WpCodeGeneratorTest {
         File outputDir = new File("target/output/io", System.currentTimeMillis() + "");
         FileSource source = new LocalFileSource(args[0]);
         WPContext context = WPContext.create();
-        WPCodeGenerator codeGenerator = new WPCodeGenerator(context);
+        WPCodeGenerator codeGenerator = new WPCodeGenerator(new WPGenerateContext(context));
         ScreenExcelContent screenExcelContent = ParseExcelUtils.parseScreenExcel(source);
         codeGenerator.generate(screenExcelContent, outputDir);
     }

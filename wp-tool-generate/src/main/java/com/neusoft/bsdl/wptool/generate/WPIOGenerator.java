@@ -41,18 +41,22 @@ public class WPIOGenerator extends WPAbstractGenerator<ScreenExcelContent> {
             { "RECALCULATION" }, { "引当要求", "RESERVE" }, { "照会", "QUERY" }, { "○○照会", "QUERY" }, { "状況", "STATUS" }, { "受領", "RECEIPT" }, { "○○受領", "RECEIPT" }, { "保管", "STORAGE" },
             { "○○保管", "STORAGE" }, { "作業指示", "WORK" }, { "出荷指示", "SHIPPING" } };
 
+    public enum IOType {
+        IO, EXPORT
+    }
+
     /**
      * IOタイプ（IO/EXPORT）
      */
-    private String ioType = "IO";
+    private IOType ioType = IOType.IO;
 
     public WPIOGenerator(WPGenerateContext context) {
         super(context);
     }
 
-    public WPIOGenerator(WPGenerateContext context, String ioType) {
+    public WPIOGenerator(WPGenerateContext context, IOType ioType) {
         super(context);
-        this.ioType = ioType;
+        this.ioType = ioType == null ? IOType.IO : ioType;
     }
 
     @Override
@@ -105,18 +109,20 @@ public class WPIOGenerator extends WPAbstractGenerator<ScreenExcelContent> {
             throw new WPException("画面項目説明書シートが見つかりません");
         }
         List<ScreenItemDescriptionResult> list = null;
-        if ("IO".equals(ioType)) {
+        switch (ioType) {
+        case IO:
             ioSuffix = "IO";
             list = excelSheetScreenItem.getContent();
-        } else if ("EXPORT".equals(ioType)) {
+            break;
+        case EXPORT:
             ioSuffix = "EX";
             throw new WPException("エクスポートIOの生成はまだ実装されていません");
-        } else {
+        default:
             throw new WPException("不明なIOタイプ: " + ioType);
         }
         this.logPrefix = String.format("[%s:%s %s] ", screenExcelContent.getScreenId(), screenExcelContent.getScreenName(), excelSheetScreenItem.getSheetName());
 
-        replaceMap.put("io_type", ioType);
+        replaceMap.put("io_type", ioType.name());
         replaceMap.put("gmId", screenExcelContent.getScreenId());
         replaceMap.put("gmIoId", screenExcelContent.getScreenId() + ioSuffix);
         replaceMap.put("gmName", screenExcelContent.getScreenName());
@@ -389,7 +395,7 @@ public class WPIOGenerator extends WPAbstractGenerator<ScreenExcelContent> {
                     }
                 }
                 ioItem.description = escapseXml(checkItem.getValidationRule());
-                // TODO: 解析チェック仕様中的语义，转成加工式
+                // TODO: 解析チェック仕様中的语義，转成加工式
 //                StringBuilder sb = new StringBuilder();
 //                sb.append(String.format("IF( %s ,\n", actionConditionSb.toString()));
 //                if (checkItem.仕様説明.contains("<チェック条件>")) {

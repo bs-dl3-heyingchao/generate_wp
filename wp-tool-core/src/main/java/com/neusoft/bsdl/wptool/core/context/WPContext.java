@@ -20,7 +20,7 @@ public class WPContext {
 		return messageLoaderService;
 	}
 
-	private WPContext(IWPTableSearchService tableSearchService, IWPMessageLoaderService messageLoaderService) {
+	protected WPContext(IWPTableSearchService tableSearchService, IWPMessageLoaderService messageLoaderService) {
 		this.tableSearchService = tableSearchService;
 		this.messageLoaderService = messageLoaderService;
 	}

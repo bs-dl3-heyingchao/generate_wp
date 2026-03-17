@@ -35,6 +35,7 @@ public interface CommonConstant {
 		
 		//解析説明文字
 		String STR_CTRL= "\n";
+		String STR_METHOD_JUDGMENT_CONTAIN= "結合";
 		String STR_SHEET_NAME_MODIFY_HISTORY = "改版履歴";
 		String STR_SUMMARY = "概要";
 		String STR_SUMMARY_TABLE = "１．対象テーブル";

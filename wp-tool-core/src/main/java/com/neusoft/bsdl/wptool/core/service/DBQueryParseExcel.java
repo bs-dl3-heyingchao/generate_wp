@@ -222,18 +222,19 @@ public class DBQueryParseExcel extends AbstractParseTool {
 							continue;
 						}
 
-						//  結合条件対象行
+						// 結合条件対象行
 						if (isJoinMethod(method)) {
 							// 新的连接条件开始
 							currentJoin = new DBQueryJoinCondition();
 							currentJoin.setMethod(method);
 							currentJoin.setTable(table);
 							currentJoin.setAlias(alias);
-							currentJoin.setCondition(condition); 
+							currentJoin.setCondition(condition);
 							joinConditions.add(currentJoin);
 						} else {
 							if (currentJoin != null && !condition.isEmpty()) {
-								currentJoin.setCondition(currentJoin.getCondition() + DBQUERY_SHEET.STR_CTRL + condition);
+								currentJoin
+										.setCondition(currentJoin.getCondition() + DBQUERY_SHEET.STR_CTRL + condition);
 							}
 						}
 						joinDataRow++;
@@ -252,11 +253,12 @@ public class DBQueryParseExcel extends AbstractParseTool {
 
 	/**
 	 * 結合条件対象行の判断
-	 * @param method　結合方法
-	 * @return　判断結果
+	 * 
+	 * @param method 結合方法
+	 * @return 判断結果
 	 */
 	private boolean isJoinMethod(String method) {
-		return !StringUtils.isBlank(method)?method.contains("結合") : Boolean.FALSE.booleanValue();
+		return !StringUtils.isBlank(method) ? method.contains(DBQUERY_SHEET.STR_METHOD_JUDGMENT_CONTAIN) : Boolean.FALSE.booleanValue();
 	}
 
 	/**

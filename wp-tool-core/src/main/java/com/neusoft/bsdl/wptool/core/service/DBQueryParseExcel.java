@@ -29,21 +29,22 @@ import lombok.extern.slf4j.Slf4j;
 public class DBQueryParseExcel extends AbstractParseTool {
 
 	/**
-	 * 指定されたExcelファイルソースから、指定シート名のDBクエリ定義情報を解析し、
-	 * {@link DBQuerySheetContent} オブジェクトとして返却します。
+	 * 指定されたExcelファイルソースから、指定シート名のDBクエリ定義情報を解析し、 {@link DBQuerySheetContent}
+	 * オブジェクトとして返却します。
 	 * 
-	 * <p>解析フロー：
+	 * <p>
+	 * 解析フロー：
 	 * <ol>
-	 *   <li>明細ヘッダのバリデーション</li>
-	 *   <li>主ヘッダ（テーブル名・ID）の抽出</li>
-	 *   <li>明細データ（カラム定義）の読み込み</li>
-	 *   <li>「概要」セクションの解析</li>
-	 *   <li>「dbQuery：検索条件」「dbQueryAggregate：集計関数の検索条件」のSQLブロック抽出</li>
+	 * <li>明細ヘッダのバリデーション</li>
+	 * <li>主ヘッダ（テーブル名・ID）の抽出</li>
+	 * <li>明細データ（カラム定義）の読み込み</li>
+	 * <li>「概要」セクションの解析</li>
+	 * <li>「dbQuery：検索条件」「dbQueryAggregate：集計関数の検索条件」のSQLブロック抽出</li>
 	 * </ol>
 	 * 
-	 * @param source  解析対象のExcelファイルソース
+	 * @param source    解析対象のExcelファイルソース
 	 * @param sheetName 解析対象のシート名
-	 * @param errors  解析中に発生したエラーを格納するリスト（null不可）
+	 * @param errors    解析中に発生したエラーを格納するリスト（null不可）
 	 * @return 解析結果の {@link DBQuerySheetContent} オブジェクト。エラー発生時は null
 	 * @throws Exception Excelの読み込みまたは解析中に予期せぬ例外が発生した場合
 	 */
@@ -68,7 +69,7 @@ public class DBQueryParseExcel extends AbstractParseTool {
 						"dbQuery定義書のヘッダ行が見つかりません。"));
 				return null;
 			}
-			
+
 			// テーブル名称
 			content.setTableName(getCellValue(mainHeaderRow, DBQUERY_SHEET.COL_C).trim());
 			// テーブルID
@@ -118,14 +119,15 @@ public class DBQueryParseExcel extends AbstractParseTool {
 	/**
 	 * 「概要」セクション（1．～5．）を解析し、{@link DBQuerySummary} オブジェクトを構築します。
 	 * 
-	 * <p>各サブセクション（1～5）はB列にタイトルが記載されており、
-	 * その直後の行から内容をB列から読み取ります。
+	 * <p>
+	 * 各サブセクション（1～5）はB列にタイトルが記載されており、 その直後の行から内容をB列から読み取ります。
 	 * 「3．結合条件」のみ、複数列（B～I列）にわたるテーブル構造を特殊処理で解析します。
 	 * 
-	 * <p>以下のいずれかの条件で解析を終了します：
+	 * <p>
+	 * 以下のいずれかの条件で解析を終了します：
 	 * <ul>
-	 *   <li>A列に「dbQuery：検索条件」が出現</li>
-	 *   <li>次のセクションタイトル（例: 「4．...」）が検出</li>
+	 * <li>A列に「dbQuery：検索条件」が出現</li>
+	 * <li>次のセクションタイトル（例: 「4．...」）が検出</li>
 	 * </ul>
 	 * 
 	 * @param sheet    解析対象のシート
@@ -155,7 +157,8 @@ public class DBQueryParseExcel extends AbstractParseTool {
 				int contentRow = currentRow + 1;
 				while (contentRow <= sheet.getLastRowNum()) {
 					Row contentRowObj = sheet.getRow(contentRow);
-					if (contentRowObj == null) break;
+					if (contentRowObj == null)
+						break;
 					String line = getCellValue(contentRowObj, DBQUERY_SHEET.COL_B).trim();
 					String cellA1 = getCellValue(contentRowObj, DBQUERY_SHEET.COL_A).trim();
 					// 停止条件：新しいセクション、dbQuery：検索条件
@@ -185,63 +188,59 @@ public class DBQueryParseExcel extends AbstractParseTool {
 					break;
 				}
 
-				// "3．結合条件"の解析（テーブル形式）
+				// TODO:"3．結合条件"の解析（テーブル形式）
 				if ("3".equals(section)) {
-					DBQueryJoinCondition join = new DBQueryJoinCondition();
-
-					StringBuilder methodBuilder = new StringBuilder();
-					StringBuilder tableBuilder = new StringBuilder();
-					StringBuilder aliasBuilder = new StringBuilder();
-					StringBuilder conditionBuilder = new StringBuilder();
-
-					int joinDataRow = currentRow + 2; // テーブルヘッダの次行から開始
+					List<DBQueryJoinCondition> joinConditions = new ArrayList<>();
+					DBQueryJoinCondition currentJoin = null;
+					// 結合条件のデータ行
+					int joinDataRow = currentRow + 2;
 
 					while (joinDataRow <= sheet.getLastRowNum()) {
 						Row joinDataRowObj = sheet.getRow(joinDataRow);
-						if (joinDataRowObj == null)
-							break;
-						//結合方法（B列）
+						if (joinDataRowObj == null) {
+							joinDataRow++;
+							continue;
+						}
+						// 結合方法
 						String method = getCellValue(joinDataRowObj, DBQUERY_SHEET.COL_B).trim();
-						//対象テーブル（C列）
+						// 対象テーブル
 						String table = getCellValue(joinDataRowObj, DBQUERY_SHEET.COL_C).trim();
-						//テーブル別名（E列）
+						// テーブル別名
 						String alias = getCellValue(joinDataRowObj, DBQUERY_SHEET.COL_E).trim();
-						//結合条件（I列）※現在はI列固定だが、実際はF～K列を横断的に結合すべき
+						// TODO:結合条件
 						String condition = getCellValue(joinDataRowObj, DBQUERY_SHEET.COL_I).trim();
 
-						// 空白行 → 終了
-						if (method.isEmpty() && table.isEmpty() && alias.isEmpty() && condition.isEmpty()) {
-							break;
-						}
-
-						// 次のセクションタイトルがB列に出現 → 終了
+						// 4．ソート条件というセクションを判断する
 						if (!method.isEmpty() && isSectionHeader(method)) {
 							break;
 						}
 
-						// 最初の非空値のみを採用（method/table/alias）
-						if (!method.isEmpty() && methodBuilder.length() == 0)
-							methodBuilder.append(method);
-						if (!table.isEmpty() && tableBuilder.length() == 0)
-							tableBuilder.append(table);
-						if (!alias.isEmpty() && aliasBuilder.length() == 0)
-							aliasBuilder.append(alias);
-
-						// 結合条件は複数行を連結
-						if (!condition.isEmpty()) {
-							if (conditionBuilder.length() > 0) {
-								conditionBuilder.append(" ");
-							}
-							conditionBuilder.append(condition);
+						// 空白行の判断
+						if (method.isEmpty() && table.isEmpty() && alias.isEmpty() && condition.isEmpty()) {
+							// 允许空行作为分隔，但不中断（可选：遇到连续空行才中断）
+							joinDataRow++;
+							continue;
 						}
 
+						// 結合条件対象行
+						if (isJoinMethod(method)) {
+							// 新的连接条件开始
+							currentJoin = new DBQueryJoinCondition();
+							currentJoin.setMethod(method);
+							currentJoin.setTable(table);
+							currentJoin.setAlias(alias);
+							currentJoin.setCondition(condition);
+							joinConditions.add(currentJoin);
+						} else {
+							if (currentJoin != null && !condition.isEmpty()) {
+								currentJoin
+										.setCondition(currentJoin.getCondition() + DBQUERY_SHEET.STR_CTRL + condition);
+							}
+						}
 						joinDataRow++;
 					}
-					join.setMethod(methodBuilder.toString());
-					join.setTable(tableBuilder.toString());
-					join.setAlias(aliasBuilder.toString());
-					join.setCondition(conditionBuilder.toString());
-					summary.setJoinCondition(join);
+
+					summary.setJoinCondition(joinConditions);
 				}
 
 				currentRow = contentRow;
@@ -253,8 +252,17 @@ public class DBQueryParseExcel extends AbstractParseTool {
 	}
 
 	/**
-	 * 指定された文字列が「1．」～「5．」形式のセクションヘッダかどうかを判定します。
-	 * 半角・全角数字および句点（.／．）の組み合わせに対応しています。
+	 * 結合条件対象行の判断
+	 * 
+	 * @param method 結合方法
+	 * @return 判断結果
+	 */
+	private boolean isJoinMethod(String method) {
+		return !StringUtils.isBlank(method) ? method.contains(DBQUERY_SHEET.STR_METHOD_JUDGMENT_CONTAIN) : Boolean.FALSE.booleanValue();
+	}
+
+	/**
+	 * 指定された文字列が「1．」～「5．」形式のセクションヘッダかどうかを判定します。 半角・全角数字および句点（.／．）の組み合わせに対応しています。
 	 * 
 	 * @param text 判定対象の文字列
 	 * @return セクションヘッダにマッチする場合は true、それ以外は false
@@ -267,8 +275,7 @@ public class DBQueryParseExcel extends AbstractParseTool {
 	}
 
 	/**
-	 * 「1．対象テーブル」などのセクションヘッダ文字列から、先頭の数字（"1"～"5"）を抽出します。
-	 * 全角数字は半角に変換して返却します。
+	 * 「1．対象テーブル」などのセクションヘッダ文字列から、先頭の数字（"1"～"5"）を抽出します。 全角数字は半角に変換して返却します。
 	 * 
 	 * @param header セクションヘッダ文字列（例: "３．結合条件"）
 	 * @return 抽出したセクション番号（"1"～"5"）。不正な入力の場合は "1" を返す
@@ -287,10 +294,11 @@ public class DBQueryParseExcel extends AbstractParseTool {
 	 * 「dbQuery：検索条件」または「dbQueryAggregate：集計関数の検索条件」などのSQLブロックを解析し、
 	 * B列からSQL文を抽出して1つの文字列として返します。
 	 * 
-	 * <p>解析は指定開始行の次の行から開始され、以下のいずれかの条件で終了します：
+	 * <p>
+	 * 解析は指定開始行の次の行から開始され、以下のいずれかの条件で終了します：
 	 * <ul>
-	 *   <li>空行に到達（かつすでに内容を読み始めている場合）</li>
-	 *   <li>次のSQLセクション（例: {@code dbQueryAggregate：...}）がB列に出現</li>
+	 * <li>空行に到達（かつすでに内容を読み始めている場合）</li>
+	 * <li>次のSQLセクション（例: {@code dbQueryAggregate：...}）がB列に出現</li>
 	 * </ul>
 	 * 
 	 * @param sheet         対象のExcelシート
@@ -323,9 +331,8 @@ public class DBQueryParseExcel extends AbstractParseTool {
 	}
 
 	/**
-	 * 指定されたシート内で、A列に指定されたタイトル文字列が完全一致する行のインデックスを検索します。
-	 * 検索は {@code fromRow} で指定された行から開始され、一致する最初の行番号（0起点）を返します。
-	 * 見つからない場合は {@code -1} を返します。
+	 * 指定されたシート内で、A列に指定されたタイトル文字列が完全一致する行のインデックスを検索します。 検索は {@code fromRow}
+	 * で指定された行から開始され、一致する最初の行番号（0起点）を返します。 見つからない場合は {@code -1} を返します。
 	 * 
 	 * @param sheet   対象のExcelシート
 	 * @param title   検索するセクションタイトル（例: "dbQuery：検索条件"）
@@ -343,8 +350,7 @@ public class DBQueryParseExcel extends AbstractParseTool {
 	}
 
 	/**
-	 * 明細データのヘッダ行（第9行・第10行）が仕様通りであるかを検証します。
-	 * 不一致がある場合、{@code errors} にエラー情報を追加します。
+	 * 明細データのヘッダ行（第9行・第10行）が仕様通りであるかを検証します。 不一致がある場合、{@code errors} にエラー情報を追加します。
 	 * 
 	 * @param sheet  検証対象のシート
 	 * @param errors 検証エラーを格納するリスト（null不可）
@@ -374,50 +380,50 @@ public class DBQueryParseExcel extends AbstractParseTool {
 	}
 
 	/**
-	 * 明細データの1行を解析し、{@link DBQueryEntity} オブジェクトにマッピングします。
-	 * 各カラムの位置は {@link DBQUERY_SHEET} 定数に基づいています。
+	 * 明細データの1行を解析し、{@link DBQueryEntity} オブジェクトにマッピングします。 各カラムの位置は
+	 * {@link DBQUERY_SHEET} 定数に基づいています。
 	 * 
 	 * @param row 解析対象のExcel行オブジェクト
 	 * @return 構築された {@link DBQueryEntity} オブジェクト
 	 */
 	private DBQueryEntity parseEntityRow(Row row) {
 		DBQueryEntity entity = new DBQueryEntity();
-		//項番
+		// 項番
 		entity.setItemNo(getCellValue(row, DBQUERY_SHEET.COL_A));
-		//カラム名:物理名
+		// カラム名:物理名
 		entity.setPhysicalName(getCellValue(row, DBQUERY_SHEET.COL_B));
-		//カラム名:論理名
+		// カラム名:論理名
 		entity.setLogicalName(getCellValue(row, DBQUERY_SHEET.COL_C));
-		//NULL可
+		// NULL可
 		entity.setIsNullable(DBQUERY_SHEET.STR_TRUE.equalsIgnoreCase(getCellValue(row, DBQUERY_SHEET.COL_D)));
-		//キーグループ
+		// キーグループ
 		entity.setKeyGroup(getCellValue(row, DBQUERY_SHEET.COL_E));
-		//長さ:PRE
+		// 長さ:PRE
 		entity.setLengthPre(getCellValue(row, DBQUERY_SHEET.COL_F));
-		//長さ:S
+		// 長さ:S
 		entity.setLengthS(getCellValue(row, DBQUERY_SHEET.COL_G));
-		//長さ:B
+		// TODO：長さ:B エクセル数式があります、確認要
 		entity.setLengthB(getCellValue(row, DBQUERY_SHEET.COL_H));
-		//データ型(WP)
+		// データ型(WP)
 		entity.setDataTypeWP(getCellValue(row, DBQUERY_SHEET.COL_J));
-		//DB定義:型
+		// DB定義:型
 		entity.setDbDefineType(getCellValue(row, DBQUERY_SHEET.COL_K));
-		//DB定義:桁数
+		// DB定義:桁数
 		entity.setDbDefineLength(getCellValue(row, DBQUERY_SHEET.COL_L));
-		//DB定義:小数桁
+		// DB定義:小数桁
 		entity.setDbDefineDecimal(getCellValue(row, DBQUERY_SHEET.COL_M));
-		//備考
+		// 備考
 		entity.setRemark(getCellValue(row, DBQUERY_SHEET.COL_P));
-		//使用文字種
+		// 使用文字種
 		entity.setEncodeType(getCellValue(row, DBQUERY_SHEET.COL_AB));
-		//取得元:テーブル名
+		// 取得元:テーブル名
 		entity.setResourceTableName(getCellValue(row, DBQUERY_SHEET.COL_AJ));
-		//取得元:カラム名
+		// 取得元:カラム名
 		entity.setResourceColumnName(getCellValue(row, DBQUERY_SHEET.COL_AK));
-		
+
 		return entity;
 	}
-	
+
 	/**
 	 * 指定されたファイルソース（{@link FileSource}）からExcelファイルのバイトデータを読み込み、
 	 * バイト配列（{@code byte[]}}）として返します。

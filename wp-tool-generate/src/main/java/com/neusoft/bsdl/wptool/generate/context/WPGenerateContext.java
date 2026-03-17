@@ -1,4 +1,4 @@
-package com.neusoft.bsdl.wptool.generate;
+package com.neusoft.bsdl.wptool.generate.context;
 
 import com.neusoft.bsdl.wptool.core.context.WPContext;
 
@@ -8,6 +8,7 @@ import cbai.util.sqlconvert.SqlConverterAbstract;
 
 public class WPGenerateContext extends WPContext {
     private MorphemHelper morphemHelper;
+
     public MorphemHelper getMorphemHelper() {
         return morphemHelper;
     }

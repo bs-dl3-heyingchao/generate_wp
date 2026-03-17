@@ -1,7 +1,5 @@
 package com.neusoft.bsdl.wptool.generate;
 
-import java.io.File;
-import java.io.IOException;
 import java.lang.reflect.InvocationTargetException;
 import java.util.ArrayList;
 import java.util.Arrays;
@@ -15,7 +13,6 @@ import java.util.regex.Matcher;
 import java.util.regex.Pattern;
 
 import org.apache.commons.beanutils.BeanUtils;
-import org.apache.commons.text.StringEscapeUtils;
 
 import com.neusoft.bsdl.wptool.core.exception.WPException;
 import com.neusoft.bsdl.wptool.core.model.ExcelSheetContent;
@@ -25,6 +22,7 @@ import com.neusoft.bsdl.wptool.core.model.ScreenItemDescription;
 import com.neusoft.bsdl.wptool.core.model.ScreenItemDescriptionResult;
 import com.neusoft.bsdl.wptool.core.model.ScreenValidation;
 import com.neusoft.bsdl.wptool.core.model.ScreenValidationAction;
+import com.neusoft.bsdl.wptool.generate.context.WPGenerateContext;
 import com.neusoft.bsdl.wptool.generate.model.ChoiceBean;
 import com.neusoft.bsdl.wptool.generate.model.IOItem;
 import com.neusoft.bsdl.wptool.generate.model.ItemProp;
@@ -33,35 +31,38 @@ import com.neusoft.bsdl.wptool.generate.model.ItemPropMapping;
 import cbai.util.StringUtils;
 import cbai.util.db.define.FieldBean;
 import cbai.util.db.define.TableBean;
-import cbai.util.template.CreateTemplateVelocity;
 import lombok.extern.slf4j.Slf4j;
 
 @Slf4j
-public class WPCodeGenerator {
+public class WPIOGenerator extends WPAbstractGenerator<ScreenExcelContent> {
     private final static String[][] ACTION_ARRAY = { { "検索", "SEARCH" }, { "登録", "INSERT" }, { "更新", "UPDATE" }, { "登録（更新）", "UPDATE" }, { "削除", "DELETE" }, { "新規", "CREATE" }, { "選択", "CHOICE" },
             { "クリア", "CLEAR" }, { "次へ", "NEXT" }, { "一覧画面へ", "LIST" }, { "戻る", "BACK" }, { "閉じる", "CLOSE" }, { "インポート", "IMPORT" }, { "エクスポート", "EXPORT" }, { "帳票出力", "EXPORT" }, { "追加", "ADDITION" },
             { "○○追加", "ADDITION" }, { "編集", "EDIT" }, { "確認", "PRE_PROPOSE" }, { "申請", "PROPOSE" }, { "○○申請", "PROPOSE" }, { "コピー", "COPY" }, { "複写", "COPY" }, { "失注", "LOST" }, { "再計算" },
             { "RECALCULATION" }, { "引当要求", "RESERVE" }, { "照会", "QUERY" }, { "○○照会", "QUERY" }, { "状況", "STATUS" }, { "受領", "RECEIPT" }, { "○○受領", "RECEIPT" }, { "保管", "STORAGE" },
             { "○○保管", "STORAGE" }, { "作業指示", "WORK" }, { "出荷指示", "SHIPPING" } };
 
-    private final static CreateTemplateVelocity createTemplate = new CreateTemplateVelocity("com.neusoft.bsdl.wptool.generate.WP_TEMPLATE", true);
-    private WPGenerateContext context;
-    private String logPrefix;
+    /**
+     * IOタイプ（IO/EXPORT）
+     */
+    private String ioType = "IO";
 
-    public WPCodeGenerator(WPGenerateContext context) {
-        this.context = context;
+    public WPIOGenerator(WPGenerateContext context) {
+        super(context);
     }
 
-    public void generate(ScreenExcelContent screenExcelContent, File outputDir) throws IOException {
-        createIO(screenExcelContent, outputDir);
+    public WPIOGenerator(WPGenerateContext context, String ioType) {
+        super(context);
+        this.ioType = ioType;
     }
 
-    public void createIO(ScreenExcelContent screenExcelContent, File outputDir) throws IOException {
-        createTemplate.create(outputDir, getIoReplaceMap(screenExcelContent, "IO"), "io");
+    @Override
+    public String[] getTemplateNames() {
+        return new String[] { "io" };
     }
 
     @SuppressWarnings("unchecked")
-    public Map<String, Object> getIoReplaceMap(ScreenExcelContent screenExcelContent, String ioType) {
+    @Override
+    public Map<String, Object> getReplaceMap(ScreenExcelContent screenExcelContent) {
         Map<String, Object> replaceMap = new HashMap<String, Object>();
         // 画面定義書
         ExcelSheetContent<ScreenDefinition> screenExcelScreenDefinition = (ExcelSheetContent<ScreenDefinition>) screenExcelContent.getSheetList().stream().filter(s -> "画面定義書".equals(s.getSheetName()))
@@ -412,25 +413,7 @@ public class WPCodeGenerator {
         }
         replaceMap.put("ioItemList", ioItemList);
         return replaceMap;
-    }
 
-    private boolean hasValue(String value) {
-        return StringUtils.isNotEmpty(value) && !"－".equals(value) && !"ー".equals(value) && !"-".equals(value);
-    }
-
-    private String escapseXml(String xml) {
-        return StringEscapeUtils.escapeXml11(xml);
-    }
-
-    private void writeErrorLog(String format, Object... arguments) {
-        log.error(logPrefix + format, arguments);
-    }
-
-    private void writeWarnLog(String format, Object... arguments) {
-        log.warn(logPrefix + format, arguments);
-//        if (logger != null) {
-//            logger.warn(logPrefix + format, arguments);
-//        }
     }
 
     private String getActionIoCode(final String name, final String label) {
@@ -760,5 +743,4 @@ public class WPCodeGenerator {
         }
         return map;
     }
-
 }

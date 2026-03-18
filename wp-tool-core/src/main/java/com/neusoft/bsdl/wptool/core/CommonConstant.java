@@ -6,6 +6,10 @@ package com.neusoft.bsdl.wptool.core;
 public interface CommonConstant {
 	/** セッション項目一覧 */
 	interface SESSION_MANAGEMENT_SHEET {
+		// 解析列番号
+		Integer COL_B = 1;
+		Integer COL_C = 2;
+		Integer COL_E = 4;
 		// 解析説明文字:システム項目
 		String STR_SIKAKU = "■";
 		String STR_TYPE_SYSTEM_FIELD = "システム項目";
@@ -153,5 +157,10 @@ public interface CommonConstant {
 		Integer START_POS_DETAIL_INDEX = 8;
 		// 解析開始行:データ
 		Integer START_POS_DATA_INDEX = 9;
+	}
+
+	interface PROCESSING_FUNCTION_SPECIFICATION_SHEET {
+		// シート名称
+		String SHEET_NAME = "処理機能記述書";
 	}
 }

@@ -19,6 +19,7 @@ import com.neusoft.bsdl.wptool.core.model.DBConfigDefinition;
 import com.neusoft.bsdl.wptool.core.model.DBQueryExcelContent;
 import com.neusoft.bsdl.wptool.core.model.DBQuerySheetContent;
 import com.neusoft.bsdl.wptool.core.model.ExcelSheetContent;
+import com.neusoft.bsdl.wptool.core.model.ProcessingFuncSpecification;
 import com.neusoft.bsdl.wptool.core.model.ScreenDefinition;
 import com.neusoft.bsdl.wptool.core.model.ScreenExcelContent;
 import com.neusoft.bsdl.wptool.core.model.ScreenFuncSpecification;
@@ -43,10 +44,10 @@ public class ParseExcelUtils {
 		List<DBQuerySheetContent> querySheetContents = new ArrayList<>();
 		// エラー結果
 		List<ExcelParseError> errors = Lists.newArrayList();
-		
+
 		for (String sheetName : sheetNames) {
-			//改修履歴シートは解析対象外
-			if(CommonConstant.DBQUERY_SHEET.STR_SHEET_NAME_MODIFY_HISTORY.equals(sheetName)) {
+			// 改修履歴シートは解析対象外
+			if (CommonConstant.DBQUERY_SHEET.STR_SHEET_NAME_MODIFY_HISTORY.equals(sheetName)) {
 				continue;
 			}
 			DBQueryParseExcel parseExcel = new DBQueryParseExcel();
@@ -134,8 +135,14 @@ public class ParseExcelUtils {
 				excelSheetContent.setSheetName(sheetName);
 				excelSheetContent.setContent(contents);
 				sheetList.add(excelSheetContent);
+			} else if (sheetName.equals(CommonConstant.PROCESSING_FUNCTION_SPECIFICATION_SHEET.SHEET_NAME)) {
+				ProcessingFuncSpecificationParseExcel parseExcel = new ProcessingFuncSpecificationParseExcel();
+				ProcessingFuncSpecification contents  = parseExcel.parseSpecSheet(source, sheetName, errors);
+				ExcelSheetContent<ProcessingFuncSpecification> excelSheetContent = new ExcelSheetContent<>();
+				excelSheetContent.setSheetName(sheetName);
+				excelSheetContent.setContent(contents);
+				sheetList.add(excelSheetContent);
 			}
-
 		}
 		// エラーが存在の場合、異常終了
 		if (!CollectionUtils.isEmpty(errors)) {

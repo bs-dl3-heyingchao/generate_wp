@@ -7,31 +7,29 @@ import java.util.HashMap;
 import java.util.List;
 import java.util.Map;
 
-import com.neusoft.bsdl.wptool.core.context.WPContext;
+import com.neusoft.bsdl.wptool.generate.context.WPGenerateContext;
 import com.neusoft.bsdl.wptool.generate.model.DmItem;
 
 import cbai.util.StringUtils;
 import cbai.util.db.define.FieldBean;
 import cbai.util.db.define.TableBean;
-import cbai.util.template.CreateTemplateVelocity;
 
-public class WPCommonDMGenerator {
-    private final static CreateTemplateVelocity createTemplate = new CreateTemplateVelocity("com.neusoft.bsdl.wptool.generate.WP_TEMPLATE", true);
-    private WPContext context;
+public class WPCommonDMGenerator extends WPAbstractGenerator<TableBean> {
 
-    public WPCommonDMGenerator(WPContext context) {
-        this.context = context;
+    public WPCommonDMGenerator(WPGenerateContext context) {
+        super(context);
     }
 
-    public void generate(File outputDir) throws IOException {
+    public void generateAll(File outputDir) throws IOException {
         List<TableBean> tableList = context.getTableSearchService().listAll();
 
         for (TableBean tb : tableList) {
-            createTemplate.create(outputDir, getDmReplaceMap(tb), "dm");
+            generate(tb, outputDir);
         }
     }
 
-    public Map<String, Object> getDmReplaceMap(TableBean tableBean) {
+    @Override
+    public Map<String, Object> getReplaceMap(TableBean tableBean) {
         Map<String, Object> replaceMap = new HashMap<>();
         replaceMap.put("dmId", tableBean.getTableName());
         replaceMap.put("dmName", tableBean.getTableFullName());
@@ -65,4 +63,10 @@ public class WPCommonDMGenerator {
         replaceMap.put("dmItemList", dmList);
         return replaceMap;
     }
+
+    @Override
+    public String[] getTemplateNames() {
+        return new String[] { "dm" };
+    }
+
 }

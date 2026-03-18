@@ -9,6 +9,7 @@ import java.util.LinkedHashMap;
 import java.util.List;
 import java.util.Map;
 import java.util.Set;
+import java.util.function.Function;
 import java.util.regex.Matcher;
 import java.util.regex.Pattern;
 
@@ -35,11 +36,11 @@ import lombok.extern.slf4j.Slf4j;
 
 @Slf4j
 public class WPIOGenerator extends WPAbstractGenerator<ScreenExcelContent> {
-    private final static String[][] ACTION_ARRAY = { { "検索", "SEARCH" }, { "登録", "INSERT" }, { "更新", "UPDATE" }, { "登録（更新）", "UPDATE" }, { "削除", "DELETE" }, { "新規", "CREATE" }, { "選択", "CHOICE" },
-            { "クリア", "CLEAR" }, { "次へ", "NEXT" }, { "一覧画面へ", "LIST" }, { "戻る", "BACK" }, { "閉じる", "CLOSE" }, { "インポート", "IMPORT" }, { "エクスポート", "EXPORT" }, { "帳票出力", "EXPORT" }, { "追加", "ADDITION" },
-            { "○○追加", "ADDITION" }, { "編集", "EDIT" }, { "確認", "PRE_PROPOSE" }, { "申請", "PROPOSE" }, { "○○申請", "PROPOSE" }, { "コピー", "COPY" }, { "複写", "COPY" }, { "失注", "LOST" }, { "再計算" },
-            { "RECALCULATION" }, { "引当要求", "RESERVE" }, { "照会", "QUERY" }, { "○○照会", "QUERY" }, { "状況", "STATUS" }, { "受領", "RECEIPT" }, { "○○受領", "RECEIPT" }, { "保管", "STORAGE" },
-            { "○○保管", "STORAGE" }, { "作業指示", "WORK" }, { "出荷指示", "SHIPPING" } };
+//    private final static String[][] ACTION_ARRAY = { { "検索", "SEARCH" }, { "登録", "INSERT" }, { "更新", "UPDATE" }, { "登録（更新）", "UPDATE" }, { "削除", "DELETE" }, { "新規", "CREATE" }, { "選択", "CHOICE" },
+//            { "クリア", "CLEAR" }, { "次へ", "NEXT" }, { "一覧画面へ", "LIST" }, { "戻る", "BACK" }, { "閉じる", "CLOSE" }, { "インポート", "IMPORT" }, { "エクスポート", "EXPORT" }, { "帳票出力", "EXPORT" }, { "追加", "ADDITION" },
+//            { "○○追加", "ADDITION" }, { "編集", "EDIT" }, { "確認", "PRE_PROPOSE" }, { "申請", "PROPOSE" }, { "○○申請", "PROPOSE" }, { "コピー", "COPY" }, { "複写", "COPY" }, { "失注", "LOST" }, { "再計算" },
+//            { "RECALCULATION" }, { "引当要求", "RESERVE" }, { "照会", "QUERY" }, { "○○照会", "QUERY" }, { "状況", "STATUS" }, { "受領", "RECEIPT" }, { "○○受領", "RECEIPT" }, { "保管", "STORAGE" },
+//            { "○○保管", "STORAGE" }, { "作業指示", "WORK" }, { "出荷指示", "SHIPPING" } };
 
     public enum IOType {
         IO, EXPORT
@@ -62,6 +63,72 @@ public class WPIOGenerator extends WPAbstractGenerator<ScreenExcelContent> {
     @Override
     public String[] getTemplateNames() {
         return new String[] { "io" };
+    }
+
+    private static final Pattern[] GM_ITEM_PATTERN_LIST = new Pattern[] { Pattern.compile("[\\S&&[^.]]+\\.[\\S&&[^.]]+"), Pattern.compile("[\\S&&[^.,=><]]+\\.[\\S&&[^.,=<>]]+"),
+            Pattern.compile("[\\S&&[^(.,=><]]+\\.[\\S&&[^).,=<>]]+") };
+
+    private String convertGmName2Id(Map<String, List<IOItem>> itemNameMap, String content) {
+        content = content.replaceAll("\t", " ");
+        content = content.replaceAll("．", ".");
+        content = content.replaceAll("　", " ");
+        content = content.replaceAll("＜", "<");
+        content = content.replaceAll("＞", ">");
+        content = content.replaceAll("＝", "=");
+        for (Pattern pattern : GM_ITEM_PATTERN_LIST) {
+            Matcher matcher = pattern.matcher(content);
+            StringBuilder sb = new StringBuilder();
+            while (matcher.find()) {
+                String item = matcher.group().trim();
+                String[] temp = item.split("\\.");
+                if (!temp[0].equals("画面")) {
+                    continue;
+                }
+                System.out.println(item);
+                if (itemNameMap.containsKey(temp[1])) {
+                    String code = itemNameMap.get(temp[1]).get(0).code;
+                    if (code != null) {
+                        matcher.appendReplacement(sb, code);
+                    }
+                }
+            }
+            matcher.appendTail(sb);
+            content = sb.toString();
+        }
+        return content;
+    }
+
+    public static void main(String[] args) {
+        String content = "画面.汎用コード（更新前情報）<>@NULL";
+        Pattern[] GM_ITEM_PATTERN_LIST = new Pattern[] { Pattern.compile("[\\S&&[^.]]+\\.[\\S&&[^.]]+"), Pattern.compile("[\\S&&[^.,=><]]+\\.[\\S&&[^.,=<>]]+"),
+                Pattern.compile("[\\S&&[^(.,=><]]+\\.[\\S&&[^).,=<>]]+") };
+        content = content.replaceAll("\t", " ");
+        content = content.replaceAll("．", ".");
+        content = content.replaceAll("　", " ");
+        content = content.replaceAll("＜", "<");
+        content = content.replaceAll("＞", ">");
+        content = content.replaceAll("＝", "=");
+
+        for (Pattern pattern : GM_ITEM_PATTERN_LIST) {
+            Matcher matcher = pattern.matcher(content);
+            StringBuffer sb = new StringBuffer();
+            while (matcher.find()) {
+                String item = matcher.group().trim();
+                String[] temp = item.split("\\.");
+                if (!temp[0].equals("画面")) {
+                    continue;
+                }
+                System.out.println(item);
+//                String fullName = getFieldNameFromFullName(temp[0], temp[1], true, aliaseMap);
+//                if (fullName.contains("$")) {
+//                    fullName = fullName.replace("$", "\\$");
+//                }
+//                matcher.appendReplacement(sb, "AAAAAAAAAA");
+            }
+//            matcher.appendTail(sb);
+//            content = sb.toString();
+        }
+//        System.out.println(content);
     }
 
     @SuppressWarnings("unchecked")
@@ -207,7 +274,7 @@ public class WPIOGenerator extends WPAbstractGenerator<ScreenExcelContent> {
                     ioItem.format = itemBean.getFormat();
                 }
                 // 備考
-                setBiko(itemBean, ioItem);
+                setBiko(itemBean, ioItem, itemNameMap);
 
                 if (hasValue(itemBean.getModelName()) /* && !tableFullName.endsWith("クエリ") */) {
                     // 対象テーブル情報
@@ -233,13 +300,13 @@ public class WPIOGenerator extends WPAbstractGenerator<ScreenExcelContent> {
                         writeErrorLog("項番[{}] テーブルが見つかりません:{}", itemBean.getItemNo(), tableFullName);
                     }
                 } else {
-                    if ("A".equals(ioItem.item_type)) {
-                        ioItem.code = getActionIoCode(itemBean.getItemName(), ioItem.label);
-                    }
-                    if (StringUtils.isEmpty(ioItem.code)) {
-                        String id = context.getMorphemHelper().getRomaFromKanji(itemBean.getItemName()).toUpperCase();
-                        ioItem.code = id;
-                    }
+//                    if ("A".equals(ioItem.item_type)) {
+//                        ioItem.code = getActionIoCode(itemBean.getItemName(), ioItem.label);
+//                    }
+//                    if (StringUtils.isEmpty(ioItem.code)) {
+                    String id = context.getMorphemHelper().getRomaFromKanji(itemBean.getItemName()).toUpperCase();
+                    ioItem.code = id;
+//                    }
                 }
                 if (!"DM".equals(itemBean.getAttributeWP())) {
                     if (StringUtils.isNotEmpty(itemBean.getAttributeWP()) && itemBean.getAttributeWP().length() > 1) {
@@ -281,11 +348,13 @@ public class WPIOGenerator extends WPAbstractGenerator<ScreenExcelContent> {
                 // 選択リスト
                 ioItem.choiceInfo = getChoiceInfo(itemBean);
                 // 表示条件
-                ioItem.condition = getCondition(itemBean);
+                ioItem.condition = getCondition(itemBean, itemNameMap);
                 ioItemList.add(ioItem);
                 if (StringUtils.isNotEmpty(ioItem.name)) {
                     if (!itemNameMap.containsKey(ioItem.name)) {
                         itemNameMap.put(ioItem.name, new ArrayList<IOItem>());
+                    } else {
+                        writeWarnLog("項番[{}] 項目名 '{}' が重複しています。", itemBean.getItemNo(), ioItem.name);
                     }
                     itemNameMap.get(ioItem.name).add(ioItem);
                 }
@@ -362,6 +431,7 @@ public class WPIOGenerator extends WPAbstractGenerator<ScreenExcelContent> {
                     ioItem.code = code;
                 }
                 ioItem.code = codePrefix + ioItem.code;
+
                 if (StringUtils.isNotEmpty(checkItem.getMessageId())) {
                     ioItem.msg_code_ng = checkItem.getMessageId();
                     StringBuilder paramSb = new StringBuilder();
@@ -422,42 +492,18 @@ public class WPIOGenerator extends WPAbstractGenerator<ScreenExcelContent> {
 
     }
 
-    private String getActionIoCode(final String name, final String label) {
-        String[] texts = new String[] { name, label };
-        for (String text : texts) {
-            if (StringUtils.isEmpty(text)) {
-                continue;
-            }
-            for (String[] actionInfo : ACTION_ARRAY) {
-                if (text.equals(actionInfo[0])) {
-                    return (String) actionInfo[1];
-                } else if (actionInfo[0].startsWith("○○")) {
-                    if (text.endsWith(actionInfo[0].substring(2))) {
-                        return (String) actionInfo[1];
-                    }
-                } else if (actionInfo[0].endsWith("○○")) {
-                    if (text.startsWith(actionInfo[0].substring(0, actionInfo[0].length() - 2))) {
-                        return (String) actionInfo[1];
-                    }
-                }
-            }
-        }
-        return null;
-    }
-
-    private void setBiko(ScreenItemDescription itemBean, IOItem ioItem) {
+    private void setBiko(ScreenItemDescription itemBean, IOItem ioItem, Map<String, List<IOItem>> itemNameMap) {
         String bikoText = itemBean.getRemarks(); // itemBean.備考;
         if (!hasValue(bikoText)) {
             return;
         }
+        Function<String, String> nameConverter = (s) -> {
+            return convertGmName2Id(itemNameMap, s);
+        };
         List<ItemPropMapping> ioItemPropDefine = Arrays.asList(//
                 new ItemPropMapping("ラベル付加", "labelAvailable"), //
-                new ItemPropMapping("ラベル式", "labelStatement"), //
-                new ItemPropMapping("ラベル文字", "labelText", (s) -> {
-                    // TODO: ラベル式：画面.汎用CD見出し
-                    // （未設定時、"汎用コード"を表示）
-                    return s;
-                }), //
+                new ItemPropMapping("ラベル式", "labelStatement", nameConverter), //
+                new ItemPropMapping("ラベル文字", "labelText", nameConverter), //
                 new ItemPropMapping("タイプ", "fieldType"), //
                 new ItemPropMapping("アクション履歴なし", "noHistory"), //
                 new ItemPropMapping("スタイル", "fieldStyle"), //
@@ -488,12 +534,13 @@ public class WPIOGenerator extends WPAbstractGenerator<ScreenExcelContent> {
 
     private static final Pattern CONDTION_PATTERN = Pattern.compile("([^　 =]+) *=");
 
-    private String getCondition(ScreenItemDescription itemBean) {
+    private String getCondition(ScreenItemDescription itemBean, Map<String, List<IOItem>> itemNameMap) {
         // 表示条件
         String condition = itemBean.getDisplayCondition();
         if (!hasValue(condition)) {
             return null;
         }
+        condition = convertGmName2Id(itemNameMap, condition);
         return escapseXml(condition);
     }
 
@@ -721,6 +768,13 @@ public class WPIOGenerator extends WPAbstractGenerator<ScreenExcelContent> {
         return choiceInfo;
     }
 
+    /**
+     * 加工式解析
+     * 
+     * @param itemBean
+     * @param defineValue
+     * @return
+     */
     private Map<String, List<String>> parseDefineCell(ScreenItemDescription itemBean, String defineValue) {
         Map<String, List<String>> map = new LinkedHashMap<String, List<String>>();
 

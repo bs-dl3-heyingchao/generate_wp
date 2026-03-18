@@ -34,10 +34,10 @@ public abstract class WPAbstractGenerator<T> {
         return StringUtils.isNotEmpty(value) && !"－".equals(value) && !"ー".equals(value) && !"-".equals(value);
     }
 
-    public void create(T screenExcelContent, File outputDir) throws IOException {
+    public void create(T excelContent, File outputDir) throws IOException {
         for (String templateName : getTemplateNames()) {
             log.info(logPrefix + "Start creating file for template: {}", templateName);
-            createTemplate.create(outputDir, getReplaceMap(screenExcelContent), templateName);
+            createTemplate.create(outputDir, getReplaceMap(excelContent), templateName);
         }
     }
 

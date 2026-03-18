@@ -4,6 +4,19 @@ package com.neusoft.bsdl.wptool.core;
  * 共通定数定義
  */
 public interface CommonConstant {
+	/** セッション項目一覧 */
+	interface SESSION_MANAGEMENT_SHEET {
+		// 解析列番号
+		Integer COL_B = 1;
+		Integer COL_C = 2;
+		Integer COL_E = 4;
+		// 解析説明文字:システム項目
+		String STR_SIKAKU = "■";
+		String STR_TYPE_SYSTEM_FIELD = "システム項目";
+		// シート名称
+		String SHEET_NAME = "セッション項目一覧";
+	}
+
 	/** dbQuery定義書 */
 	interface DBQUERY_SHEET {
 		// 解析開始行:ヘッダ
@@ -12,7 +25,7 @@ public interface CommonConstant {
 		Integer START_POS_DETAIL_INDEX = 7;
 		// 解析開始行:データ
 		Integer START_POS_DATA_INDEX = 9;
-		//解析列番号
+		// 解析列番号
 		Integer COL_A = 0;
 		Integer COL_B = 1;
 		Integer COL_C = 2;
@@ -30,12 +43,12 @@ public interface CommonConstant {
 		Integer COL_AB = 27;
 		Integer COL_AJ = 35;
 		Integer COL_AK = 36;
-		
+
 		String STR_TRUE = "TRUE";
-		
-		//解析説明文字
-		String STR_CTRL= "\n";
-		String STR_METHOD_JUDGMENT_CONTAIN= "結合";
+
+		// 解析説明文字
+		String STR_CTRL = "\n";
+		String STR_METHOD_JUDGMENT_CONTAIN = "結合";
 		String STR_SHEET_NAME_MODIFY_HISTORY = "改版履歴";
 		String STR_SUMMARY = "概要";
 		String STR_SUMMARY_TABLE = "１．対象テーブル";
@@ -49,8 +62,8 @@ public interface CommonConstant {
 		String STR_SUMMARY_SUPPLEMENT = "5．補足";
 		String STR_QUERY_CONDITION = "dbQuery：検索条件";
 		String STR_QUERY_AGGREGATE_CONDITION = "dbQueryAggregate：集計関数の検索条件";
-		
-		//1から5までの数字にマッチする正規表現
+
+		// 1から5までの数字にマッチする正規表現
 		String MATCH_FROM_ONE_TO_FIVE = "^[1-5１-５][．.].*";
 	}
 
@@ -146,5 +159,10 @@ public interface CommonConstant {
 		Integer START_POS_DETAIL_INDEX = 8;
 		// 解析開始行:データ
 		Integer START_POS_DATA_INDEX = 9;
+	}
+
+	interface PROCESSING_FUNCTION_SPECIFICATION_SHEET {
+		// シート名称
+		String SHEET_NAME = "処理機能記述書";
 	}
 }

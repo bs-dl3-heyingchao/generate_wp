@@ -8,12 +8,13 @@ import java.nio.charset.StandardCharsets;
 import java.time.Duration;
 import java.util.UUID;
 
-import com.fasterxml.jackson.core.JsonProcessingException;
-import com.fasterxml.jackson.databind.JsonNode;
-import com.fasterxml.jackson.databind.ObjectMapper;
 import com.neusoft.bsdl.wptool.core.io.FileSource;
 import com.neusoft.bsdl.wptool.core.io.LocalFileSource;
 import com.neusoft.bsdl.wptool.core.service.ConfigService;
+
+import tools.jackson.databind.DeserializationFeature;
+import tools.jackson.databind.JsonNode;
+import tools.jackson.databind.json.JsonMapper;
 
 /**
  * AIサポート外部APIと連携し、設計書などの構造化JSONデータを取得するサービスクラス。
@@ -40,8 +41,7 @@ public class AiSupportApiService {
 	 * このインスタンスは不変（immutable）かつスレッドセーフです。アプリケーション全体で再利用可能です。
 	 * </p>
 	 */
-	public static final ObjectMapper MAPPER = new ObjectMapper()
-			.configure(com.fasterxml.jackson.databind.DeserializationFeature.FAIL_ON_UNKNOWN_PROPERTIES, false);
+	public static final JsonMapper MAPPER = new JsonMapper().rebuild().enable(DeserializationFeature.FAIL_ON_UNKNOWN_PROPERTIES).build();
 
 	/**
 	 * 指定されたファイルをAIサポート外部APIに送信し、構造化されたJSONレスポンスを取得します。
@@ -91,7 +91,7 @@ public class AiSupportApiService {
 				String prettyJson = MAPPER.writerWithDefaultPrettyPrinter().writeValueAsString(node).replace("\\t",
 						"    ");
 				fileData.setBinaryCodeJson(prettyJson);
-			} catch (JsonProcessingException e) {
+			} catch (Exception e) {
 				e.printStackTrace();
 			}
 		});

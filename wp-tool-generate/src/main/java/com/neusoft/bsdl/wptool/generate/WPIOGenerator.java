@@ -17,6 +17,8 @@ import org.apache.commons.beanutils.BeanUtils;
 
 import com.neusoft.bsdl.wptool.core.exception.WPException;
 import com.neusoft.bsdl.wptool.core.model.ExcelSheetContent;
+import com.neusoft.bsdl.wptool.core.model.ProcessingFuncSpecification;
+import com.neusoft.bsdl.wptool.core.model.ProcessingFuncSpecificationParam;
 import com.neusoft.bsdl.wptool.core.model.ScreenDefinition;
 import com.neusoft.bsdl.wptool.core.model.ScreenExcelContent;
 import com.neusoft.bsdl.wptool.core.model.ScreenItemDescription;
@@ -45,6 +47,8 @@ public class WPIOGenerator extends WPAbstractGenerator<ScreenExcelContent> {
      * IOタイプ（IO/EXPORT）
      */
     private IOType ioType = IOType.IO;
+
+    private Map<String, String> funcNameToCodeMap;
 
     public WPIOGenerator(WPGenerateContext context, ScreenExcelContent excelContent) {
         super(context, excelContent);
@@ -93,7 +97,7 @@ public class WPIOGenerator extends WPAbstractGenerator<ScreenExcelContent> {
                     if (itemNameMap.containsKey(temp[1])) {
                         List<IOItem> items = itemNameMap.get(temp[1]);
                         if (items.size() > 1) {
-                            writeWarnLog("項目名 '{}' が複数のIO項目にマッピングされています。GM表記 '{}' をコードに変換できません。", temp[1], item);
+                            writeWarnLog("項目名 '{}' が複数のIO項目にマッピングされています。", temp[1], item);
                         }
                         String code = items.get(0).code;
                         if (code != null) {
@@ -104,8 +108,14 @@ public class WPIOGenerator extends WPAbstractGenerator<ScreenExcelContent> {
                     // TODO セッションから変換
                     writeWarnLog("セッション表記 '{}' をコードに変換するロジックはまだ実装されていません。", item);
                 } else if ("パラメータ".equals(temp[0])) {
-                    // TODO パラメータ変換
-                    writeWarnLog("パラメータ表記 '{}' をコードに変換するロジックはまだ実装されていません。", item);
+                    if (funcNameToCodeMap != null && funcNameToCodeMap.containsKey(temp[1])) {
+                        String code = funcNameToCodeMap.get(temp[1]);
+                        if (code != null) {
+                            matcher.appendReplacement(sb, "@" + code);
+                        }
+                    } else {
+                        writeErrorLog("パラメータ名 '{}' が処理機能記述書のパラメータに見つかりません。GM表記 '{}' をコードに変換できません。", temp[1], item);
+                    }
                 }
             }
             matcher.appendTail(sb);
@@ -122,8 +132,7 @@ public class WPIOGenerator extends WPAbstractGenerator<ScreenExcelContent> {
     public Map<String, Object> getReplaceMap(ScreenExcelContent screenExcelContent) {
         Map<String, Object> replaceMap = new HashMap<String, Object>();
         // 画面定義書
-        ExcelSheetContent<ScreenDefinition> screenExcelScreenDefinition = (ExcelSheetContent<ScreenDefinition>) screenExcelContent.getSheetList().stream().filter(s -> "画面定義書".equals(s.getSheetName()))
-                .findFirst().orElse(null);
+        ExcelSheetContent<ScreenDefinition> screenExcelScreenDefinition = findSheetContent(screenExcelContent, "画面定義書", ScreenDefinition.class);
         if (screenExcelScreenDefinition != null) {
             this.logPrefix = String.format("[%s:%s %s]", screenExcelContent.getScreenId(), screenExcelContent.getScreenName(), screenExcelScreenDefinition.getSheetName());
             ScreenDefinition dxtjBean = screenExcelScreenDefinition.getContent();
@@ -139,6 +148,17 @@ public class WPIOGenerator extends WPAbstractGenerator<ScreenExcelContent> {
                 }
             }
         }
+        // 処理機能記述書
+        ExcelSheetContent<ProcessingFuncSpecification> screenExcelSpecification = findSheetContent(screenExcelContent, "処理機能記述書", ProcessingFuncSpecification.class);
+
+        List<ProcessingFuncSpecificationParam> screenInputParams = null;
+        if (screenExcelSpecification != null) {
+            funcNameToCodeMap = new HashMap<String, String>();
+            screenInputParams = screenExcelSpecification.getContent().getParams();
+            screenInputParams.forEach((k) -> {
+                funcNameToCodeMap.put(k.getLogicName(), k.getSort());
+            });
+        }
 
         // 画面項目説明書
         String ioSuffix = "";
@@ -148,8 +168,9 @@ public class WPIOGenerator extends WPAbstractGenerator<ScreenExcelContent> {
         int groupIndex = 0;
         boolean isInGroup = false;
         String curGroupPrefix = "";
-        ExcelSheetContent<List<ScreenItemDescriptionResult>> excelSheetScreenItem = (ExcelSheetContent<List<ScreenItemDescriptionResult>>) screenExcelContent.getSheetList().stream()
-                .filter(s -> "画面項目説明書".equals(s.getSheetName())).findFirst().orElse(null);
+//        ExcelSheetContent<List<ScreenItemDescriptionResult>> excelSheetScreenItem =  (ExcelSheetContent<List<ScreenItemDescriptionResult>>) screenExcelContent.getSheetList().stream()
+//                .filter(s -> "画面項目説明書".equals(s.getSheetName())).findFirst().orElse(null);
+        ExcelSheetContent<List<ScreenItemDescriptionResult>> excelSheetScreenItem = findSheetContent(screenExcelContent, "画面項目説明書", (Class<List<ScreenItemDescriptionResult>>) (Class<?>) List.class);
         if (excelSheetScreenItem == null) {
             throw new WPException("画面項目説明書シートが見つかりません");
         }
@@ -474,6 +495,11 @@ public class WPIOGenerator extends WPAbstractGenerator<ScreenExcelContent> {
 
     }
 
+    @SuppressWarnings("unchecked")
+    private <V> ExcelSheetContent<V> findSheetContent(ScreenExcelContent screenExcelContent, String sheetName, Class<V> clazz) {
+        return (ExcelSheetContent<V>) screenExcelContent.getSheetList().stream().filter(s -> sheetName.equals(s.getSheetName())).findFirst().orElse(null);
+    }
+
     private void setBiko(ScreenItemDescription itemBean, IOItem ioItem, Map<String, List<IOItem>> itemNameMap) {
         String bikoText = itemBean.getRemarks(); // itemBean.備考;
         if (!hasValue(bikoText)) {
@@ -482,6 +508,15 @@ public class WPIOGenerator extends WPAbstractGenerator<ScreenExcelContent> {
         Function<String, String> nameConverter = (s) -> {
             return convertGmName2Id(itemNameMap, s);
         };
+        String[] bikoList = bikoText.split("\n");
+        List<List<String>> propGroup = new ArrayList<>();
+        for (String line : bikoList) {
+            if (line.matches("^([^：:]+)[:：].*")) {
+                propGroup.add(new ArrayList<String>());
+            }
+            propGroup.get(propGroup.size() - 1).add(line);
+        }
+
         List<ItemPropMapping> ioItemPropDefine = Arrays.asList(//
                 new ItemPropMapping("ラベル付加", "labelAvailable"), //
                 new ItemPropMapping("ラベル式", "labelStatement", nameConverter), //
@@ -490,8 +525,9 @@ public class WPIOGenerator extends WPAbstractGenerator<ScreenExcelContent> {
                 new ItemPropMapping("アクション履歴なし", "noHistory"), //
                 new ItemPropMapping("スタイル", "fieldStyle"), //
                 new ItemPropMapping("行番号表示", "lineNumber"));
-        String[] bikoList = bikoText.split("\n");
-        for (String biko : bikoList) {
+
+        for (List<String> groupItem : propGroup) {
+            String biko = String.join("\n", groupItem);
             boolean matched = false;
             for (ItemPropMapping mapping : ioItemPropDefine) {
                 if (biko.startsWith(mapping.propLabel)) {

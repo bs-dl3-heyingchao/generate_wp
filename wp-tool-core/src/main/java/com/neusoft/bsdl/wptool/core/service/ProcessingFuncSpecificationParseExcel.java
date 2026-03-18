@@ -1,6 +1,6 @@
 package com.neusoft.bsdl.wptool.core.service;
 
-import java.util.HashMap;
+import java.util.ArrayList;
 import java.util.List;
 import java.util.Map;
 
@@ -12,6 +12,7 @@ import com.neusoft.bsdl.wptool.core.CommonConstant.SESSION_MANAGEMENT_SHEET;
 import com.neusoft.bsdl.wptool.core.exception.WPParseExcelException.ExcelParseError;
 import com.neusoft.bsdl.wptool.core.io.FileSource;
 import com.neusoft.bsdl.wptool.core.model.ProcessingFuncSpecification;
+import com.neusoft.bsdl.wptool.core.model.ProcessingFuncSpecificationParam;
 
 import lombok.extern.slf4j.Slf4j;
 
@@ -33,7 +34,7 @@ public class ProcessingFuncSpecificationParseExcel {
 	public ProcessingFuncSpecification parseSpecSheet(FileSource source, String sheetName, List<ExcelParseError> errors)
 			throws Exception {
 		// 「順（C列）→ 項目（E列）」のマッピングを格納
-		Map<String, String> params = new HashMap<>();
+		List<ProcessingFuncSpecificationParam> params = new ArrayList<>();
 
 		// EasyExcelでシートを読み込み、各行をMap<Integer, String>形式で処理
 		EasyExcel.read(source.getInputStream(), null, new AnalysisEventListener<Map<Integer, String>>() {
@@ -84,7 +85,10 @@ public class ProcessingFuncSpecificationParseExcel {
 					// C列が空でなければ、パラメータ行としてマップに追加
 					// ※ 数値チェックは行わず、文字列としてそのまま格納
 					if (!StringUtils.isEmpty(colC)) {
-						params.put(colC, colE);
+						ProcessingFuncSpecificationParam param =new ProcessingFuncSpecificationParam();
+						param.setSort(colC);
+						param.setLogicName(colE);
+						params.add(param);
 					}
 					break;
 				}

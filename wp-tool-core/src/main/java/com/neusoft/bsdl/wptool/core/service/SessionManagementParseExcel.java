@@ -75,21 +75,20 @@ public class SessionManagementParseExcel extends AbstractParseTool {
 
 						// 「システム項目」ブロック内で、かつセッションキーが存在する行のみ処理
 						if (inSystemType && !StringUtils.isEmpty(sessionKey)) {
-							SessionManagementSystemField field = new SessionManagementSystemField();
-							// 分類は統一して「システム項目」とする
-							field.setCategory(SESSION_MANAGEMENT_SHEET.STR_TYPE_SYSTEM_FIELD);
-							field.setSessionKey(sessionKey);
-							field.setSessionLogicName(data.getSessionLogicName());
-
 							// ■ログインユーザ情報 などのセクション名を設定
 							if (sessionKey.startsWith(SESSION_MANAGEMENT_SHEET.STR_SIKAKU)) {
 								// 黄色タイトル行 → セクション名として保存
 								sectionName = sessionKey;
 							} else {
+								SessionManagementSystemField field = new SessionManagementSystemField();
+								// 分類は統一して「システム項目」とする
+								field.setCategory(SESSION_MANAGEMENT_SHEET.STR_TYPE_SYSTEM_FIELD);
+								field.setSessionKey(sessionKey);
+								field.setSessionLogicName(data.getSessionLogicName());
 								// 普通のフィールド行 → 前のセクション名を設定
 								field.setSectionName(sectionName);
+								systemFields.add(field);
 							}
-							systemFields.add(field);
 						}
 					}
 

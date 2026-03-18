@@ -13,6 +13,8 @@ public interface CommonConstant {
 		// 解析説明文字:システム項目
 		String STR_SIKAKU = "■";
 		String STR_TYPE_SYSTEM_FIELD = "システム項目";
+		// シート名称
+		String SHEET_NAME = "セッション項目一覧";
 	}
 
 	/** dbQuery定義書 */

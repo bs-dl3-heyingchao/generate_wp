@@ -26,11 +26,33 @@ import com.neusoft.bsdl.wptool.core.model.ScreenFuncSpecification;
 import com.neusoft.bsdl.wptool.core.model.ScreenItemDescriptionResult;
 import com.neusoft.bsdl.wptool.core.model.ScreenMetadata;
 import com.neusoft.bsdl.wptool.core.model.ScreenValidation;
+import com.neusoft.bsdl.wptool.core.model.SessionManagementContent;
 
 import lombok.extern.slf4j.Slf4j;
 
 @Slf4j
 public class ParseExcelUtils {
+	/**
+	 * dbQuery定義書解析
+	 * 
+	 * @param source リソースファイル
+	 * @return
+	 * @throws Exception
+	 */
+	public static SessionManagementContent parseSessionManagementExcel(FileSource source) throws Exception {
+		List<String> sheetNames = getSheetNames(source.getInputStream());
+		SessionManagementContent sessionManagementContent = new SessionManagementContent();
+		for (String sheetName : sheetNames) {
+			// 改修履歴シートは解析対象外
+			if (CommonConstant.SESSION_MANAGEMENT_SHEET.SHEET_NAME.equals(sheetName)) {
+				SessionManagementParseExcel parseExcel = new SessionManagementParseExcel();
+				sessionManagementContent = parseExcel.parseSpecSheet(source, sheetName);
+			}
+		}
+		log.info("解析したセッション項目一覧の内容:{}", sessionManagementContent.toString());
+		return sessionManagementContent;
+	}
+
 	/**
 	 * dbQuery定義書解析
 	 * 
@@ -136,8 +158,9 @@ public class ParseExcelUtils {
 				excelSheetContent.setContent(contents);
 				sheetList.add(excelSheetContent);
 			} else if (sheetName.equals(CommonConstant.PROCESSING_FUNCTION_SPECIFICATION_SHEET.SHEET_NAME)) {
+				// 処理機能記述書
 				ProcessingFuncSpecificationParseExcel parseExcel = new ProcessingFuncSpecificationParseExcel();
-				ProcessingFuncSpecification contents  = parseExcel.parseSpecSheet(source, sheetName, errors);
+				ProcessingFuncSpecification contents = parseExcel.parseSpecSheet(source, sheetName, errors);
 				ExcelSheetContent<ProcessingFuncSpecification> excelSheetContent = new ExcelSheetContent<>();
 				excelSheetContent.setSheetName(sheetName);
 				excelSheetContent.setContent(contents);

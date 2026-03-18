@@ -1,17 +1,12 @@
 package com.neusoft.bsdl.wptool.core;
 
 import java.io.File;
-import java.util.List;
 
 import com.neusoft.bsdl.wptool.core.io.FileSource;
 import com.neusoft.bsdl.wptool.core.io.LocalFileSource;
 import com.neusoft.bsdl.wptool.core.model.ScreenExcelContent;
-import com.neusoft.bsdl.wptool.core.reader.WPTableBeanReader;
 import com.neusoft.bsdl.wptool.core.service.ParseExcelUtils;
 
-import cbai.util.FileUtil;
-import cbai.util.db.define.TableBean;
-import cbai.util.db.define.reader.ITableBeanReader;
 import tools.jackson.databind.ObjectMapper;
 
 public class ParseExcelTest {

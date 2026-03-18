@@ -74,14 +74,13 @@
 		<dependency>
 			<groupId>cbai</groupId>
 			<artifactId>cbai-util-excel</artifactId>
- 			<version>1.5.4</version>
+			<version>1.5.4</version>
 		</dependency>
 
 		<dependency>
 			<groupId>tools.jackson.core</groupId>
 			<artifactId>jackson-databind</artifactId>
 			<version>3.0.4</version>
-			<scope>test</scope>
 		</dependency>
 	</dependencies>
 	<repositories>

@@ -514,8 +514,6 @@ public class WPIOGenerator extends WPAbstractGenerator<ScreenExcelContent> {
         ioItem.description = escapseXml(bikoText);
     }
 
-    private static final Pattern CONDTION_PATTERN = Pattern.compile("([^　 =]+) *=");
-
     private String getCondition(ScreenItemDescription itemBean, Map<String, List<IOItem>> itemNameMap) {
         // 表示条件
         String condition = itemBean.getDisplayCondition();
@@ -538,6 +536,21 @@ public class WPIOGenerator extends WPAbstractGenerator<ScreenExcelContent> {
             initValue = convertGmName2Id(itemNameMap, initValue);
         }
         return escapseXml(initValue);
+    }
+
+    private static final Pattern CONDTION_PATTERN = Pattern.compile("([^　 =]+) *=");
+    private static final Pattern DOUBLE_QUOTE_PATTERN = Pattern.compile("\"([^\"]*)\"");
+
+    private String convertDoubleQuoteInCondition(String condition) {
+        Matcher m = DOUBLE_QUOTE_PATTERN.matcher(condition);
+        StringBuilder sb = new StringBuilder();
+        while (m.find()) {
+            String value = m.group(1);
+            m.appendReplacement(sb, "'" + value + "'");
+            writeWarnLog("条件 '{}' 中のダブルクオーテーションで囲まれた値 '{}' をシングルクオーテーションに変換しました。", condition, value);
+        }
+        m.appendTail(sb);
+        return sb.toString();
     }
 
     /**
@@ -593,7 +606,7 @@ public class WPIOGenerator extends WPAbstractGenerator<ScreenExcelContent> {
                         m.appendReplacement(sb, fb.getFieldName() + "=");
                     }
                     m.appendTail(sb);
-                    conditionResult = sb.toString();
+                    conditionResult = convertDoubleQuoteInCondition(sb.toString());
                 }
                 String valueResult = "";
                 if (valueList == null || valueList.isEmpty()) {
@@ -701,7 +714,7 @@ public class WPIOGenerator extends WPAbstractGenerator<ScreenExcelContent> {
         if (conditionList == null || conditionList.isEmpty()) {
             writeErrorLog("選択リストの【条件】が見つかりません", itemBean.getItemNo());
         } else {
-            StringBuffer sb = new StringBuffer();
+            StringBuilder sb = new StringBuilder();
             for (String condition : conditionList) {
                 condition = normalizeCondition(condition);
                 sb.append(condition).append(" ");
@@ -718,7 +731,7 @@ public class WPIOGenerator extends WPAbstractGenerator<ScreenExcelContent> {
                 m.appendReplacement(sb, fb.getFieldName() + "=");
             }
             m.appendTail(sb);
-            choiceInfo.condition = sb.toString();
+            choiceInfo.condition = convertDoubleQuoteInCondition(sb.toString());
         }
         if (valueList == null || valueList.isEmpty()) {
             writeErrorLog("選択リストの【値】が見つかりません", itemBean.getItemNo());

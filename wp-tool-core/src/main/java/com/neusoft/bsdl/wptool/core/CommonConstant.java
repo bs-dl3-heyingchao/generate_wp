@@ -164,5 +164,39 @@ public interface CommonConstant {
 	interface PROCESSING_FUNCTION_SPECIFICATION_SHEET {
 		// シート名称
 		String SHEET_NAME = "処理機能記述書";
+		// 1.パラメータ
+		String SECTION_PARAM = "1.パラメータ";
+		// XXXボタン押下処理
+		String SECTION_BTN_OPERATION = "ボタン押下処理";
+		// "1)メッセージ"
+		String SECTION_SUB_MESSAGE = "1)メッセージ";
+		// 2)次画面遷移
+		String SECTION_SUB_REDIREECT = "2)次画面遷移";
+		// 事前メッセージ
+		String JIZEN_MESSAGE_ITEM = "事前メッセージ";
+		// OKメッセージ
+		String OK_MESSAGE_ITEM = "OKメッセージ";
+		// NGメッセージ
+		String NG_MESSAGE_ITEM = "NGメッセージ";
+		// 変更破棄確認
+		String MODIFY_CONFIRM = "変更破棄確認";
+		// 次入出力
+		String IN_OUT = "次入出力";
+		// メッセージの区切り
+		String MESSAGE_COLON = "：";
+		// パラメータ列名称：順
+		String STR_COL_SORT = "順";
+		// パラメータ列名称：項目
+		String STR_COL_ITEM = "項目";
+		// JsonNodeの子ノート：nodeKey
+		String STR_NODE_NODE_KEY = "nodeKey";
+		// JsonNodeの子ノート：childTreeNodes
+		String STR_NODE_CHILD_TREE_NODES = "childTreeNodes";
+		// JsonNodeの子ノート：value
+		String STR_NODE_VALUE = "value";
+		// JsonNodeの子ノート：tableList
+		String STR_NODE_TABLE_LIST = "tableList";
+		//メッセージのコンテンツの正規表現式	
+		String PATTERN_MESSAGE="：([A-Z0-9]+)\\s*(.*)";
 	}
 }

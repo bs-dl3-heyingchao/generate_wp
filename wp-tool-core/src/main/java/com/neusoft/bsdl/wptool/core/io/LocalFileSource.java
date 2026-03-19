@@ -12,18 +12,22 @@ import lombok.Data;
  */
 @Data
 public class LocalFileSource implements FileSource {
-	private final String filePath;
+    private final File file;
 
     public LocalFileSource(String filePath) {
-        this.filePath = filePath;
+        this(new File(filePath));
+    }
+
+    public LocalFileSource(File file) {
+        this.file = file;
     }
 
     @Override
     public InputStream getInputStream() throws IOException {
-        return new FileInputStream(new File(filePath));
+        return new FileInputStream(file);
     }
-    
-    public String getAbsolutePath() {
-        return new File(filePath).getAbsolutePath();
+
+    public String getFileName() {
+        return file.getName();
     }
 }

@@ -95,6 +95,13 @@ public interface CommonConstant {
 		int COL_AB = 27;
 		// AG列：外部ファイルの項目値
 		int COL_AG = 32;
+		// 部分入出力：partCode列
+		int COL_AI = 34;
+		// 部分入出力：partName列
+		int COL_AN = 39;
+		// 部分入出力：partOperation列
+		int COL_BC = 54;
+		
 		// シート名称
 		String STR_JAVASCRIPT = "Javascript";
 		// シート名称

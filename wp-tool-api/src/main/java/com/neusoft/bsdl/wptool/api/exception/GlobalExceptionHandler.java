@@ -27,6 +27,7 @@ public class GlobalExceptionHandler {
 
     @ExceptionHandler(ResponseStatusException.class)
     public ResponseEntity<ApiResponse<Void>> handleResponseStatusException(ResponseStatusException exception) {
+        log.error("ResponseStatusException: {}", exception.getMessage(), exception);
         int code = exception.getStatusCode().value();
         String message = exception.getReason() == null ? "Request failed" : exception.getReason();
         return ResponseEntity.status(code).body(ApiResponse.error(code, message));

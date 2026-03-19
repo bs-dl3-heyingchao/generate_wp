@@ -515,7 +515,7 @@ public class WPIOGenerator extends WPAbstractGenerator<ScreenExcelContent> {
         String[] bikoList = bikoText.split("\n");
         List<List<String>> propGroup = new ArrayList<>();
         for (String line : bikoList) {
-            if (line.matches("^([^：:]+)[:：].*")) {
+            if (line.matches("^([^：:]+)[:：].*") || propGroup.isEmpty()) {
                 propGroup.add(new ArrayList<String>());
             }
             propGroup.get(propGroup.size() - 1).add(line);

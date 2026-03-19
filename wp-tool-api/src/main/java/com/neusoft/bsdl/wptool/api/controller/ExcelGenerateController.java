@@ -1,0 +1,109 @@
+package com.neusoft.bsdl.wptool.api.controller;
+
+import java.io.ByteArrayOutputStream;
+import java.nio.file.Files;
+import java.nio.file.Path;
+import java.nio.file.Paths;
+import java.util.Base64;
+import java.util.List;
+import java.util.UUID;
+import java.util.zip.ZipEntry;
+import java.util.zip.ZipOutputStream;
+
+import org.springframework.beans.factory.annotation.Value;
+import org.springframework.http.HttpStatus;
+import org.springframework.http.ResponseEntity;
+import org.springframework.web.bind.annotation.PostMapping;
+import org.springframework.web.bind.annotation.RequestMapping;
+import org.springframework.web.bind.annotation.RequestParam;
+import org.springframework.web.bind.annotation.RestController;
+import org.springframework.web.multipart.MultipartFile;
+import org.springframework.web.server.ResponseStatusException;
+
+import com.neusoft.bsdl.wptool.api.dto.ApiResponse;
+import com.neusoft.bsdl.wptool.api.dto.GeneratedCodeZipResponse;
+import com.neusoft.bsdl.wptool.core.exception.WPParseExcelException;
+import com.neusoft.bsdl.wptool.core.io.FileSource;
+import com.neusoft.bsdl.wptool.core.model.ScreenExcelContent;
+import com.neusoft.bsdl.wptool.core.service.ParseExcelUtils;
+import com.neusoft.bsdl.wptool.generate.WPIOGenerator;
+import com.neusoft.bsdl.wptool.generate.context.WPGenerateContext;
+
+import io.swagger.v3.oas.annotations.Operation;
+import io.swagger.v3.oas.annotations.Parameter;
+import io.swagger.v3.oas.annotations.media.Content;
+import io.swagger.v3.oas.annotations.media.Schema;
+import io.swagger.v3.oas.annotations.tags.Tag;
+
+@RestController
+@RequestMapping("/api/v1")
+@Tag(name = "Excel Generate", description = "Excelコード生成API")
+public class ExcelGenerateController {
+
+    private final WPGenerateContext generateContext;
+
+    public ExcelGenerateController(WPGenerateContext generateContext) {
+        this.generateContext = generateContext;
+    }
+
+    @Value("${wp-tool.generate.output-root-dir:${user.dir}/temp}")
+    private String generateOutputRootDir;
+
+    @PostMapping("/excel/generate-io-code")
+    @Operation(
+            summary = "画面設計書ExcelからIOコード生成",
+            description = "アップロードされた画面設計書Excelを解析し、生成したコードをZIP化してBase64文字列で返します。"
+        )
+    public ResponseEntity<ApiResponse<GeneratedCodeZipResponse>> generateIoCode(
+            @Parameter(
+                description = "解析対象のExcelファイル",
+                required = true,
+                content = @Content(schema = @Schema(type = "string", format = "binary", example = "screen-design.xlsx"))
+            )
+            @RequestParam("file") MultipartFile file) {
+        if (file.isEmpty()) {
+            throw new ResponseStatusException(HttpStatus.BAD_REQUEST, "Uploaded file is empty");
+        }
+
+        try {
+            FileSource fileSource = file::getInputStream;
+            ScreenExcelContent screenExcelContent = ParseExcelUtils.parseScreenExcel(fileSource);
+            GeneratedCodeZipResponse responseData = generateZipBase64Response(screenExcelContent);
+            return ResponseEntity.ok(ApiResponse.success(responseData));
+        } catch (WPParseExcelException exception) {
+            throw exception;
+        } catch (Exception exception) {
+            throw new ResponseStatusException(HttpStatus.BAD_REQUEST, "Failed to generate code from excel file", exception);
+        }
+    }
+
+    private GeneratedCodeZipResponse generateZipBase64Response(ScreenExcelContent screenExcelContent) throws Exception {
+        String taskId = UUID.randomUUID().toString().replace("-", "");
+        Path taskOutputDir = Paths.get(generateOutputRootDir, taskId);
+        Files.createDirectories(taskOutputDir);
+
+        WPIOGenerator ioGenerator = new WPIOGenerator(generateContext, screenExcelContent, WPIOGenerator.IOType.IO);
+        ioGenerator.generate(taskOutputDir.toFile());
+        List<String> errorLog = ioGenerator.getLogSnapshotError();
+        List<String> warnLog = ioGenerator.getLogSnapshotWarn();
+
+        byte[] zipBytes = zipDirectory(taskOutputDir);
+        String zipBase64 = Base64.getEncoder().encodeToString(zipBytes);
+        return new GeneratedCodeZipResponse(zipBase64, taskId, errorLog, warnLog);
+    }
+
+    private byte[] zipDirectory(Path sourceDir) throws Exception {
+        ByteArrayOutputStream byteArrayOutputStream = new ByteArrayOutputStream();
+        try (ZipOutputStream zipOutputStream = new ZipOutputStream(byteArrayOutputStream);
+                var pathStream = Files.walk(sourceDir)) {
+            List<Path> filePaths = pathStream.filter(Files::isRegularFile).toList();
+            for (Path filePath : filePaths) {
+                String entryName = sourceDir.relativize(filePath).toString().replace("\\", "/");
+                zipOutputStream.putNextEntry(new ZipEntry(entryName));
+                zipOutputStream.write(Files.readAllBytes(filePath));
+                zipOutputStream.closeEntry();
+            }
+        }
+        return byteArrayOutputStream.toByteArray();
+    }
+}

@@ -39,6 +39,34 @@ import lombok.extern.slf4j.Slf4j;
 @Slf4j
 public class WPIOGenerator extends WPAbstractGenerator<ScreenExcelContent> {
 
+    private static final Map<String, String> CHECK_KBN_MAP = new LinkedHashMap<String, String>() {
+        private static final long serialVersionUID = 1L;
+        {
+//            REQ    ：必須チェック
+//            EXT    ：存在チェック
+//            DUP    ：重複チェック
+//            RNG    ：範囲チェック   逆転チェック
+//            RNG_MAX:           最大値チェック
+//            RNG_MIN:         最小値チェック
+//            FMT    ：フォーマットチェック  文字種チェック
+//            BIZ     ：業務上のチェック
+//            BIZ_ABLE     ：可能チェック
+//            BIZ_VALID            : 妥当性チェック
+//            BIZ_CHG  : 変更チェック
+            put("必須チェック", "REQ");
+            put("存在チェック", "EXT");
+            put("重複チェック", "DUP");
+            put("範囲チェック", "RNG");
+            put("最大値チェック", "RNG_MAX");
+            put("最小値チェック", "RNG_MIN");
+            put("文字種チェック", "FMT");
+            put("可能チェック", "BIZ_ABLE");
+            put("妥当性チェック", "BIZ_VALID");
+            put("変更チェック", "BIZ_CHG");
+            put("チェック", "BIZ"); // 默认
+        }
+    };
+
     public enum IOType {
         IO, EXPORT
     }
@@ -131,6 +159,27 @@ public class WPIOGenerator extends WPAbstractGenerator<ScreenExcelContent> {
         return content;
     }
 
+    private String addAndGetUniqueCode(String baseCode, Set<String> codeSet) {
+        while (!codeSet.add(baseCode)) {
+            if (baseCode.matches(".*_\\d+$")) {
+                try {
+                    String part1 = baseCode.substring(0, baseCode.lastIndexOf("_"));
+                    String part2 = baseCode.substring(baseCode.lastIndexOf("_") + 1);
+                    int suffixLen = part2.length();
+                    int index = Integer.parseInt(part2);
+                    suffixLen = Math.max(suffixLen, String.valueOf(index + 1).length());
+                    baseCode = part1 + "_" + StringUtils.leftPad(String.valueOf((index + 1)), suffixLen, '0');
+                } catch (Exception e) {
+                    baseCode = baseCode + "_01";
+                }
+            } else {
+                baseCode = baseCode + "_01";
+            }
+            baseCode = baseCode.replaceAll("_+", "_");
+        }
+        return baseCode;
+    }
+
     @SuppressWarnings("unchecked")
     @Override
     public Map<String, Object> getReplaceMap(ScreenExcelContent screenExcelContent) {
@@ -206,18 +255,18 @@ public class WPIOGenerator extends WPAbstractGenerator<ScreenExcelContent> {
                 ioItem.name = itemBean.getItemName();// itemBean.getItemName();
                 String display = itemBean.getDisplay();// itemBean.表示;
                 String io = itemBean.getIo();// itemBean.IO;
-                String codePrefix = "D_";
-
+                String codePrefix = "X_";
+                String baseCode = "";
                 this.logSubPrefix = String.format("項番[%s]", itemBean.getItemNo());
                 if (io.contains("I入力")) {
                     ioItem.item_type = "I";
-//              codePrefix = "I_";
+                    codePrefix = "I_";
                 } else if (io.contains("IO入出力")) {
                     ioItem.item_type = "IO";
-//              codePrefix = "IO_";
+                    codePrefix = "I_";
                 } else if (io.contains("O出力")) {
                     ioItem.item_type = "O";
-//              codePrefix = "O_";
+                    codePrefix = "O_";
                 } else if (io.contains("Aアクション")) {
                     ioItem.item_type = "A";
                     codePrefix = "A_";
@@ -226,13 +275,15 @@ public class WPIOGenerator extends WPAbstractGenerator<ScreenExcelContent> {
                     ioItem.item_type = "G";
                     groupIndex++;
                     isInGroup = true;
-                    codePrefix = "G" + groupIndex + "_";
+                    codePrefix = "";
                     curGroupPrefix = "G" + groupIndex + "_";
+                    baseCode = "G" + groupIndex;
                 } else {
                     writeErrorLog("unkonw I/O :{}", io);
                 }
                 if ("○".equalsIgnoreCase(itemBean.getRequired())) {
-                    ioItem.is_require = "true";
+                    // 设计书中的必須不生成到WP的设定中，之后在 チェック仕様 中实现，这里全都设置成非必须
+                    ioItem.is_require = "false";
                 } else {
                     ioItem.is_require = "false";
                 }
@@ -243,8 +294,9 @@ public class WPIOGenerator extends WPAbstractGenerator<ScreenExcelContent> {
                 } else {
                     ioItem.is_visible = "true";
                 }
-                if (isInGroup && !io.contains("Gグループ")) {
-                    codePrefix = curGroupPrefix + codePrefix;
+                // 在Group中的项目
+                if (isInGroup && !"G".equals(ioItem.item_type)) {
+                    codePrefix = codePrefix + curGroupPrefix;
                     ioItem.level = "2";
                 }
                 if (hasValue(itemBean.getLengthWP())) {
@@ -281,7 +333,9 @@ public class WPIOGenerator extends WPAbstractGenerator<ScreenExcelContent> {
                 // 備考
                 setBiko(itemBean, ioItem, itemNameMap);
 
+                boolean hasModelInfo = false;
                 if (hasValue(itemBean.getModelName()) /* && !tableFullName.endsWith("クエリ") */) {
+                    hasModelInfo = true;
                     // 対象テーブル情報
                     String tableFullName = itemBean.getModelName().replaceAll("[\r\n]", "");
                     String fieldFullName = itemBean.getModelItemName().replaceAll("[\r\n]", "");
@@ -295,7 +349,7 @@ public class WPIOGenerator extends WPAbstractGenerator<ScreenExcelContent> {
                             if ("DM".equals(itemBean.getAttributeWP())) {
                                 ioItem.dm_item_code = fb.getFieldName();
                             }
-                            ioItem.code = fb.getFieldName();
+                            baseCode = fb.getFieldName();
                         } else {
                             ioItem.dm_item_code = fieldFullName;
                             writeErrorLog("テーブル項目が見つかりません:{}.{}", tableFullName, fieldFullName);
@@ -305,13 +359,13 @@ public class WPIOGenerator extends WPAbstractGenerator<ScreenExcelContent> {
                         writeErrorLog("テーブルが見つかりません:{}", tableFullName);
                     }
                 } else {
-//                    if ("A".equals(ioItem.item_type)) {
-//                        ioItem.code = getActionIoCode(itemBean.getItemName(), ioItem.label);
-//                    }
-//                    if (StringUtils.isEmpty(ioItem.code)) {
-                    String id = context.getMorphemHelper().getRomaFromKanji(itemBean.getItemName()).toUpperCase();
-                    ioItem.code = id;
-//                    }
+                    if ("A".equals(ioItem.item_type) && StringUtils.isEmpty(baseCode)) {
+                        baseCode = getActionIoCode(itemBean.getItemName());
+                    }
+                    if (StringUtils.isEmpty(baseCode)) {
+                        String id = context.getMorphemHelper().getRomaFromKanji(itemBean.getItemName()).toUpperCase();
+                        baseCode = id;
+                    }
                 }
                 if (!"DM".equals(itemBean.getAttributeWP())) {
                     if (StringUtils.isNotEmpty(itemBean.getAttributeWP()) && itemBean.getAttributeWP().length() > 1) {
@@ -322,29 +376,29 @@ public class WPIOGenerator extends WPAbstractGenerator<ScreenExcelContent> {
                         }
                     }
                 }
-                if (!"G".equals(ioItem.item_type) && StringUtils.isNotEmpty(ioItem.code) /* && !"DM".equals(itemBean.getAttributeWP()) */) {
-                    ioItem.code = codePrefix + ioItem.code;
-                    while (!codeSet.add(ioItem.code)) {
-                        if (ioItem.code.matches(".*_\\d+$")) {
-                            try {
-                                String part1 = ioItem.code.substring(0, ioItem.code.lastIndexOf("_"));
-                                String part2 = ioItem.code.substring(ioItem.code.lastIndexOf("_") + 1);
-                                int suffixLen = part2.length();
-                                int index = Integer.parseInt(part2);
-                                suffixLen = Math.max(suffixLen, String.valueOf(index + 1).length());
-                                ioItem.code = part1 + "_" + StringUtils.leftPad(String.valueOf((index + 1)), suffixLen, '0');
-                            } catch (Exception e) {
-                                ioItem.code = ioItem.code + "_1";
-                            }
-                        } else {
-                            if ("A".equals(ioItem.item_type)) {
-                                ioItem.code = ioItem.code + "_01";
-                            } else {
-                                ioItem.code = ioItem.code + "_1";
-                            }
-                        }
-                        ioItem.code = ioItem.code.replaceAll("_+", "_");
+                if (!"G".equals(ioItem.item_type) && StringUtils.isNotEmpty(codePrefix) /* && !"DM".equals(itemBean.getAttributeWP()) */) {
+                    // データモデルに紐づく項目，表示是不要前缀
+                    if (hasModelInfo && codePrefix.startsWith("O_")) {
+                        codePrefix = codePrefix.replaceFirst("O_", "");
                     }
+//                    baseCode = codePrefix + baseCode;
+//                    while (!codeSet.add(ioItem.code)) {
+//                        if (ioItem.code.matches(".*_\\d+$")) {
+//                            try {
+//                                String part1 = ioItem.code.substring(0, ioItem.code.lastIndexOf("_"));
+//                                String part2 = ioItem.code.substring(ioItem.code.lastIndexOf("_") + 1);
+//                                int suffixLen = part2.length();
+//                                int index = Integer.parseInt(part2);
+//                                suffixLen = Math.max(suffixLen, String.valueOf(index + 1).length());
+//                                ioItem.code = part1 + "_" + StringUtils.leftPad(String.valueOf((index + 1)), suffixLen, '0');
+//                            } catch (Exception e) {
+//                                ioItem.code = ioItem.code + "_01";
+//                            }
+//                        } else {
+//                            ioItem.code = ioItem.code + "_01";
+//                        }
+//                        ioItem.code = ioItem.code.replaceAll("_+", "_");
+//                    }
                 }
                 // 初期値
                 ioItem.default_value = getInitValue(itemBean, itemNameMap);
@@ -354,6 +408,8 @@ public class WPIOGenerator extends WPAbstractGenerator<ScreenExcelContent> {
                 ioItem.choiceInfo = getChoiceInfo(itemBean, itemNameMap);
                 // 表示条件
                 ioItem.condition = getCondition(itemBean, itemNameMap);
+
+                ioItem.code = addAndGetUniqueCode(codePrefix + baseCode, codeSet);
                 ioItemList.add(ioItem);
                 if (StringUtils.isNotEmpty(ioItem.name)) {
                     if (!itemNameMap.containsKey(ioItem.name)) {
@@ -372,8 +428,9 @@ public class WPIOGenerator extends WPAbstractGenerator<ScreenExcelContent> {
         if (excelSheetScreenValidation.getContent() != null && !excelSheetScreenValidation.getContent().isEmpty()) {
             this.logPrefix = String.format("[%s:%s %s]", screenExcelContent.getScreenId(), screenExcelContent.getScreenName(), excelSheetScreenValidation.getSheetName());
 
-            Map<String, Integer> actionIndexMap = new HashMap<String, Integer>();
+//            Map<String, Integer> actionIndexMap = new HashMap<String, Integer>();
             for (ScreenValidation checkItem : excelSheetScreenValidation.getContent()) {
+                String baseCode = "";
                 if ("BP".equalsIgnoreCase(checkItem.getBizWarining())) {
                     // TODO BP Check
                     continue;
@@ -389,21 +446,33 @@ public class WPIOGenerator extends WPAbstractGenerator<ScreenExcelContent> {
                 ioItem.is_visible = "false";
                 ioItem.item_type = "C";
                 String codePrefix = "C_";
+                String checkKbnCode = getCheckKbnCode(checkItem.getValidationName());
+                if (StringUtils.isNotEmpty(checkKbnCode)) {
+                    codePrefix = codePrefix + checkKbnCode + "_";
+                }
                 List<ScreenValidationAction> actions = checkItem.getValidationActions();
                 StringBuilder actionConditionSb = new StringBuilder();
+
+                List<IOItem> checkNameItems = itemNameMap.get(checkItem.getItemName());
+                if (checkNameItems != null && !checkNameItems.isEmpty()) {
+                    baseCode = checkNameItems.get(0).code;
+                } else {
+                    String id = context.getMorphemHelper().getRomaFromKanji(checkItem.getItemName()).toUpperCase();
+                    baseCode = id;
+                }
                 if (actions.size() > 0) {
-                    String actionKey = actions.stream().filter(a -> a.isHasChecked()).map(a -> a.getActionName()).reduce((a, b) -> a + "_" + b).orElse("");
-                    if (!actionIndexMap.containsKey(actionKey)) {
-                        actionIndexMap.put(actionKey, 0);
-                    }
+//                    String actionKey = actions.stream().filter(a -> a.isHasChecked()).map(a -> a.getActionName()).reduce((a, b) -> a + "_" + b).orElse("");
+//                    if (!actionIndexMap.containsKey(actionKey)) {
+//                        actionIndexMap.put(actionKey, 0);
+//                    }
                     StringBuilder sb = new StringBuilder();
                     for (ScreenValidationAction action : actions) {
                         List<IOItem> actionItems = itemNameMap.get(action.getActionName());
                         String name = "";
                         if (actionItems != null) {
-                            for (IOItem item : actionItems) {
-                                if ("A".equals(item.item_type) && item.code != null && item.code.startsWith("A_")) {
-                                    name = item.code.substring(2);
+                            for (IOItem ait : actionItems) {
+                                if ("A".equals(ait.item_type) && ait.code != null && ait.code.startsWith("A_")) {
+                                    name = ait.code.substring(2);
                                     break;
                                 }
                             }
@@ -420,24 +489,22 @@ public class WPIOGenerator extends WPAbstractGenerator<ScreenExcelContent> {
                         }
                         actionConditionSb.append(String.format("@ACTION = '%s'", "A_" + name));
                     }
-                    String code = sb.toString();
-                    int index = actionIndexMap.get(actionKey) + 1;
-                    code = code + "_" + StringUtils.leftPad(String.valueOf(index), 2, '0');
-                    actionIndexMap.put(actionKey, index);
-                    ioItem.code = code;
+//                    String code = sb.toString();
+//                    int index = actionIndexMap.get(actionKey) + 1;
+//                    code = code + "_" + StringUtils.leftPad(String.valueOf(index), 2, '0');
+//                    actionIndexMap.put(actionKey, index);
+//                    ioItem.code = code;
                 }
-                if (StringUtils.isEmpty(ioItem.code)) {
-                    String action = "IO";
-                    if (!actionIndexMap.containsKey(action)) {
-                        actionIndexMap.put(action, 0);
-                    }
-                    int index = actionIndexMap.get(action) + 1;
-                    String code = action + "_" + StringUtils.leftPad(String.valueOf(index), 2, '0');
-                    actionIndexMap.put(action, index);
-                    ioItem.code = code;
-                }
-                ioItem.code = codePrefix + ioItem.code;
-
+//                if (StringUtils.isEmpty(ioItem.code)) {
+//                    String action = "IO";
+//                    if (!actionIndexMap.containsKey(action)) {
+//                        actionIndexMap.put(action, 0);
+//                    }
+//                    int index = actionIndexMap.get(action) + 1;
+//                    String code = action + "_" + StringUtils.leftPad(String.valueOf(index), 2, '0');
+//                    actionIndexMap.put(action, index);
+//                    ioItem.code = code;
+//                }
                 if (StringUtils.isNotEmpty(checkItem.getMessageId())) {
                     ioItem.msg_code_ng = checkItem.getMessageId();
                     StringBuilder paramSb = new StringBuilder();
@@ -456,11 +523,6 @@ public class WPIOGenerator extends WPAbstractGenerator<ScreenExcelContent> {
                             paramSb.append(",");
                         }
                         if (param.startsWith("画面.") || param.startsWith("画面．")) {
-//                            String itemName = param.substring(3);
-//                            List<IOItem> actionItems = itemNameMap.get(itemName);
-//                            if (actionItems != null && !actionItems.isEmpty()) {
-//                                param = actionItems.get(0).code;
-//                            }
                             param = convertGmName2Id(itemNameMap, param);
                         } else {
                             param = "'" + param + "'";
@@ -473,30 +535,45 @@ public class WPIOGenerator extends WPAbstractGenerator<ScreenExcelContent> {
                 }
                 ioItem.description = escapseXml(checkItem.getValidationRule());
                 // TODO: 解析チェック仕様中的语義，转成加工式
-//                StringBuilder sb = new StringBuilder();
-//                sb.append(String.format("IF( %s ,\n", actionConditionSb.toString()));
-//                if (checkItem.仕様説明.contains("<チェック条件>")) {
-//                    String checkCondtion = checkItem.仕様説明.substring(checkItem.仕様説明.indexOf("<チェック条件>") + "<チェック条件>".length());
-//                    checkCondtion = checkCondtion.replace("\n", " ");
-//                    sb.append(String.format("      IF((%s),\n", checkCondtion));
-//                } else if (checkItem.仕様説明.contains("(＜チェック条件＞")) {
-//                    String checkCondtion = checkItem.仕様説明.substring(checkItem.仕様説明.indexOf("(＜チェック条件＞") + "(＜チェック条件＞".length());
-//                    checkCondtion = checkCondtion.replace("\n", " ");
-//                    sb.append(String.format("      IF((%s),\n", checkCondtion));
-//                } else {
-//                    sb.append(String.format("      IF((%s),\n", "XXXXXXXX"));
-//                }
-//                sb.append(String.format("          @FALSE,\n"));
-//                sb.append(String.format("          @TRUE),\n"));
-//                sb.append(String.format("@TRUE)"));
-//                ioItem.condition = escapseXml(sb.toString());
+                StringBuilder sb = new StringBuilder();
+                sb.append(String.format("IF( %s ,\n", actionConditionSb.toString()));
+                if (checkItem.getValidationRule().contains("<チェック条件>")) {
+                    String checkCondtion = checkItem.getValidationRule().substring(checkItem.getValidationRule().indexOf("<チェック条件>") + "<チェック条件>".length());
+                    checkCondtion = checkCondtion.replace("\n", " ");
+                    sb.append(String.format("      IF((%s),\n", checkCondtion));
+                } else if (checkItem.getValidationRule().contains("(＜チェック条件＞")) {
+                    String checkCondtion = checkItem.getValidationRule().substring(checkItem.getValidationRule().indexOf("(＜チェック条件＞") + "(＜チェック条件＞".length());
+                    checkCondtion = checkCondtion.replace("\n", " ");
+                    sb.append(String.format("      IF((%s),\n", checkCondtion));
+                } else {
+                    sb.append(String.format("      IF((%s),\n", "TODO XXXXXXXX"));
+                }
+                sb.append(String.format("          @FALSE,\n"));
+                sb.append(String.format("          @TRUE),\n"));
+                sb.append(String.format("@TRUE)"));
+                ioItem.condition = escapseXml(sb.toString());
                 ioItem.is_disable = "true";
+                ioItem.code = addAndGetUniqueCode(codePrefix + baseCode, codeSet);
                 ioItemList.add(ioItem);
             }
         }
         replaceMap.put("ioItemList", ioItemList);
         return replaceMap;
 
+    }
+
+    private String getCheckKbnCode(String validationName) {
+        return CHECK_KBN_MAP.entrySet().stream().filter(e -> validationName.contains(e.getKey())).map(e -> e.getValue()).findFirst().orElse("");
+    }
+
+    private String getActionIoCode(String itemName) {
+        // フッタ部のアクション （Fキー割当あり
+        Pattern pattern = Pattern.compile("F(\\d+)");
+        Matcher matcher = pattern.matcher(itemName);
+        if (matcher.find()) {
+            return "F" + StringUtils.leftPad(matcher.group(1), 2, "0");
+        }
+        return null;
     }
 
     @SuppressWarnings("unchecked")

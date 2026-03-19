@@ -9,11 +9,11 @@ import java.time.Duration;
 import java.util.UUID;
 
 import com.neusoft.bsdl.wptool.core.io.FileSource;
-import com.neusoft.bsdl.wptool.core.io.LocalFileSource;
 import com.neusoft.bsdl.wptool.core.service.ConfigService;
 
 import tools.jackson.databind.DeserializationFeature;
 import tools.jackson.databind.JsonNode;
+import tools.jackson.databind.ObjectMapper;
 import tools.jackson.databind.json.JsonMapper;
 
 /**
@@ -55,14 +55,13 @@ public class AiSupportApiService {
 	 * @return AIサポートAPIからの構造化応答データをラップした{@link AiSupportApiResponse}オブジェクト
 	 * @throws Exception ファイル読み込み、HTTP通信、JSONパースなど何らかのエラーが発生した場合
 	 */
-	public static AiSupportApiResponse callAiSupportApi(String fileName) throws Exception {
+	public static AiSupportApiResponse callAiSupportApi(FileSource source) throws Exception {
 		// ローカルファイルを読み込む
-		FileSource source = new LocalFileSource(fileName);
 		byte[] fileBytes = source.getInputStream().readAllBytes();
 
 		// multipart/form-data の境界文字（boundary）を生成
 		String boundary = "----Boundary" + UUID.randomUUID().toString();
-		byte[] requestBody = buildMultipartBody(boundary, "file", fileName, fileBytes);
+		byte[] requestBody = buildMultipartBody(boundary, "file", "XXXXXX", fileBytes);
 
 		// HTTPクライアントを構築（接続タイムアウト：10秒）
 		HttpClient client = HttpClient.newBuilder().connectTimeout(Duration.ofSeconds(10)).build();
@@ -135,24 +134,5 @@ public class AiSupportApiService {
 		System.arraycopy(footerBytes, 0, result, headerBytes.length + fileData.length, footerBytes.length);
 
 		return result;
-	}
-
-	/**
-	 * メインメソッド。コマンドライン引数で指定されたファイルをAIサポートAPIに送信します。
-	 * <p>
-	 * 使用例: {@code java AiSupportApiService design-book-process.md}
-	 * </p>
-	 *
-	 * @param args コマンドライン引数。args[0] に処理対象ファイルパスを指定すること
-	 * @throws Exception 処理中にエラーが発生した場合
-	 */
-	public static void main(String[] args) throws Exception {
-		if (args.length == 0) {
-			System.err.println("Usage: java AiSupportApiService <input-file-path>");
-			System.exit(1);
-		}
-		AiSupportApiResponse apiResponse = callAiSupportApi(args[0]);
-		// デバッグ用：整形後の応答内容をコンソール出力
-		System.out.println("apiResponse: " + apiResponse.toString());
 	}
 }

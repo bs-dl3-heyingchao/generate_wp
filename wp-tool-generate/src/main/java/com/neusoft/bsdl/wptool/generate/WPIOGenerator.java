@@ -48,7 +48,7 @@ public class WPIOGenerator extends WPAbstractGenerator<ScreenExcelContent> {
      */
     private IOType ioType = IOType.IO;
 
-    private Map<String, String> funcNameToCodeMap;
+    private Map<String, String> paramNameToCodeMap;
 
     public WPIOGenerator(WPGenerateContext context, ScreenExcelContent excelContent) {
         super(context, excelContent);
@@ -105,11 +105,15 @@ public class WPIOGenerator extends WPAbstractGenerator<ScreenExcelContent> {
                         }
                     }
                 } else if ("セッション".equals(temp[0])) {
-                    // TODO セッションから変換
-                    writeWarnLog("セッション表記 '{}' をコードに変換するロジックはまだ実装されていません。", item);
+                    String sessionKey = context.getSessionItemLoaderService().findSessionKeyByName(temp[1]);
+                    if (sessionKey != null) {
+                        matcher.appendReplacement(sb, sessionKey);
+                    } else {
+                        writeErrorLog("セッション名 '{}' がセッションアイテム定義に見つかりません。GM表記 '{}' をコードに変換できません。", temp[1], item);
+                    }
                 } else if ("パラメータ".equals(temp[0])) {
-                    if (funcNameToCodeMap != null && funcNameToCodeMap.containsKey(temp[1])) {
-                        String code = funcNameToCodeMap.get(temp[1]);
+                    if (paramNameToCodeMap != null && paramNameToCodeMap.containsKey(temp[1])) {
+                        String code = paramNameToCodeMap.get(temp[1]);
                         if (code != null) {
                             matcher.appendReplacement(sb, "@" + code);
                         }
@@ -153,10 +157,10 @@ public class WPIOGenerator extends WPAbstractGenerator<ScreenExcelContent> {
 
         List<ProcessingFuncSpecificationParam> screenInputParams = null;
         if (screenExcelSpecification != null) {
-            funcNameToCodeMap = new HashMap<String, String>();
+            paramNameToCodeMap = new HashMap<String, String>();
             screenInputParams = screenExcelSpecification.getContent().getParams();
             screenInputParams.forEach((k) -> {
-                funcNameToCodeMap.put(k.getLogicName(), k.getSort());
+                paramNameToCodeMap.put(k.getLogicName(), k.getSort());
             });
         }
 

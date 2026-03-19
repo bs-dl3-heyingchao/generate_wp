@@ -24,7 +24,7 @@ public class WPGenerateContext extends WPContext {
     private SqlConverterAbstract sqlConverter;
 
     public WPGenerateContext(WPContext context) {
-        super(context.getTableSearchService(), context.getMessageLoaderService());
+        super(context.getTableSearchService(), context.getMessageLoaderService(), context.getSessionItemLoaderService());
         List<TableBean> tableList = context.getTableSearchService().listAll();
         this.sqlConverter = new NormalSqlConverter(tableList);
         List<String[]> extendDic = new ArrayList<>();

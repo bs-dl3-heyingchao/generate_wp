@@ -1,6 +1,6 @@
 package com.neusoft.bsdl.wptool.core.service;
 
-public interface IWPSessionItemLoaderService {
+public interface IWPSessionItemService {
 
     String findSessionKeyByName(String sessionName);
 

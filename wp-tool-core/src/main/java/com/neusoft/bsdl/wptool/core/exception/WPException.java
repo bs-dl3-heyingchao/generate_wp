@@ -23,4 +23,8 @@ public class WPException extends RuntimeException {
         super(message);
     }
 
+    public WPException(String message, Throwable cause) {
+        super(message, cause);
+    }
+
 }

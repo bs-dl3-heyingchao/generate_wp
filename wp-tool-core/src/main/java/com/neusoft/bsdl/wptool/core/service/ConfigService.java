@@ -29,7 +29,10 @@ public class ConfigService {
     }
 
     public static String getConfig(String key) {
-        String value = properties.getProperty(key);
+        String value = System.getProperty(key);
+        if (value == null || value.isBlank()) {
+            value = properties.getProperty(key);
+        }
         if (value == null) {
             throw new WPException(String.format("未配置 %s，请在 wp-tool-config 文件中添加该配置项", key));
         }
@@ -37,7 +40,11 @@ public class ConfigService {
     }
 
     public static String getConfig(String key, String defaultValue) {
-        return properties.getProperty(key, defaultValue);
+        String value = System.getProperty(key);
+        if (value == null || value.isBlank()) {
+            value = properties.getProperty(key);
+        }
+        return value == null ? defaultValue : value;
     }
 
     public static File getSvnBaseDir() {

@@ -4,3 +4,14 @@ spring:
 
 server:
   port: 8080
+
+wp-tool:
+  generate:
+    output-root-dir: ${user.dir}/temp/generate_output
+  core-config:
+    svn-base-dir: ${WP_TOOL_SVN_BASE_DIR:D:/WORK/128SYIS25142_devora}
+    svn-db-define-dir: /SVN_CITS/documents/04_内部設計/02_作成ドキュメント/50_機能設計/80_DB設計書/02_テーブル定義/
+    svn-session-items-define-file: /test/模版/副本04_50_45_01_09_【共通仕様】セッション管理項目一覧1.xlsx
+    db-define-cachefile: ${user.dir}/temp/cache/wp-db.cache
+    ai-support-url: https://devora.neusoft.work/backend/api/v1/projects/128SYIS25142/commands/69b892bc6fda971e8977a42b/file/invoke
+    ai-support-token: ${WP_TOOL_AI_SUPPORT_TOKEN:}

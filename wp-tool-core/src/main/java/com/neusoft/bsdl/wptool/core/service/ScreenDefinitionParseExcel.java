@@ -17,41 +17,43 @@ import com.neusoft.bsdl.wptool.core.exception.WPParseExcelException;
 import com.neusoft.bsdl.wptool.core.exception.WPParseExcelException.ExcelParseError;
 import com.neusoft.bsdl.wptool.core.io.FileSource;
 import com.neusoft.bsdl.wptool.core.model.ScreenDefinition;
+import com.neusoft.bsdl.wptool.core.model.ScreenDefinitionPartInOut;
 import com.neusoft.bsdl.wptool.core.model.ScreenDefinitionProcessingTarget;
 import com.neusoft.bsdl.wptool.core.model.ScreenDefinitionTargetData;
 
 /**
  * 「画面定義書」Excelシートを解析し、{@link ScreenDefinition} モデルに変換するためのツールクラス。
  * 
- * <p>この定義書は以下の主要セクションから構成されます：
+ * <p>
+ * この定義書は以下の主要セクションから構成されます：
  * <ul>
- *   <li><b>対象データモデル</b>：A列に「対象データモデル」と記載されたブロック</li>
- *   <li><b>処理対象データモデル</b>：A列に「処理対象データモデル」と記載されたブロック（CRUD情報含む）</li>
- *   <li><b>対象条件</b>：U列に「対象条件」と記載され、その下のU～BP列に条件文が記述</li>
- *   <li><b>入出力タイプ</b>：U列に「入出力タイプ」と記載され、その直下に値が記載</li>
- *   <li><b>外部ファイル</b>：AB列に「外部ファイル」と記載され、AB列（項目名）とAG列（値）のペアで定義</li>
+ * <li><b>対象データモデル</b>：A列に「対象データモデル」と記載されたブロック</li>
+ * <li><b>処理対象データモデル</b>：A列に「処理対象データモデル」と記載されたブロック（CRUD情報含む）</li>
+ * <li><b>対象条件</b>：U列に「対象条件」と記載され、その下のU～BP列に条件文が記述</li>
+ * <li><b>入出力タイプ</b>：U列に「入出力タイプ」と記載され、その直下に値が記載</li>
+ * <li><b>外部ファイル</b>：AB列に「外部ファイル」と記載され、AB列（項目名）とAG列（値）のペアで定義</li>
  * </ul>
  * 
- * <p>解析は {@link EasyExcel} を用いて全行を生文字列リストとして読み込み、
- * セクションタイトルの位置を基に各情報を抽出します。
+ * <p>
+ * 解析は {@link EasyExcel} を用いて全行を生文字列リストとして読み込み、 セクションタイトルの位置を基に各情報を抽出します。
  */
 public class ScreenDefinitionParseExcel {
 
 	/**
-	 * 指定されたExcelファイルソースから「画面定義書」シートを解析し、
-	 * {@link ScreenDefinition} オブジェクトを構築して返却します。
+	 * 指定されたExcelファイルソースから「画面定義書」シートを解析し、 {@link ScreenDefinition} オブジェクトを構築して返却します。
 	 * 
-	 * <p>処理フロー：
+	 * <p>
+	 * 処理フロー：
 	 * <ol>
-	 *   <li>EasyExcel で全セルを {@code List<List<String>>} 形式で読み込み</li>
-	 *   <li>「対象データモデル」「処理対象データモデル」ブロックを A 列のタイトルで特定し解析</li>
-	 *   <li>「対象条件」「入出力タイプ」を U 列のキーワードで検索し内容を抽出</li>
-	 *   <li>「外部ファイル」セクションを AB 列で検出し、キー-値マップとして取得</li>
+	 * <li>EasyExcel で全セルを {@code List<List<String>>} 形式で読み込み</li>
+	 * <li>「対象データモデル」「処理対象データモデル」ブロックを A 列のタイトルで特定し解析</li>
+	 * <li>「対象条件」「入出力タイプ」を U 列のキーワードで検索し内容を抽出</li>
+	 * <li>「外部ファイル」セクションを AB 列で検出し、キー-値マップとして取得</li>
 	 * </ol>
 	 * 
-	 * @param source     解析対象のExcelファイルソース
-	 * @param sheetName  解析対象のシート名
-	 * @param errors     現在未使用（将来拡張用）。null可
+	 * @param source    解析対象のExcelファイルソース
+	 * @param sheetName 解析対象のシート名
+	 * @param errors    現在未使用（将来拡張用）。null可
 	 * @return 解析結果の {@link ScreenDefinition} オブジェクト
 	 * @throws Exception Excelの読み込みまたは解析中に予期せぬ例外が発生した場合
 	 */
@@ -96,8 +98,8 @@ public class ScreenDefinitionParseExcel {
 			Integer ioTypeStartRowNum = null;
 
 			for (int rowNum = 0; rowNum < allRows.size(); rowNum++) {
-				String uCell = StringUtils.trim(
-						rowNum < allRows.size() && allRows.get(rowNum).size() > SCREEN_DEFINITION_SHEET.COL_U
+				String uCell = StringUtils
+						.trim(rowNum < allRows.size() && allRows.get(rowNum).size() > SCREEN_DEFINITION_SHEET.COL_U
 								? allRows.get(rowNum).get(SCREEN_DEFINITION_SHEET.COL_U)
 								: null);
 				if (uCell != null) {
@@ -151,27 +153,48 @@ public class ScreenDefinitionParseExcel {
 
 			// 外部ファイルセクションを AB 列から解析（AB=キー、AG=値）
 			for (int i = 0; i < allRows.size(); i++) {
-				String externalFilesTitles = StringUtils.trim(
-						i < allRows.size() && allRows.get(i).size() > SCREEN_DEFINITION_SHEET.COL_AB
+				String externalFilesTitles = StringUtils
+						.trim(i < allRows.size() && allRows.get(i).size() > SCREEN_DEFINITION_SHEET.COL_AB
 								? allRows.get(i).get(SCREEN_DEFINITION_SHEET.COL_AB)
 								: null);
 				if (ScreenDefinitionParseSectionEnum.EXTERNAL_FILES.getSectionName().equals(externalFilesTitles)) {
 					Map<String, String> ext = new HashMap<>();
 					for (int rowNum = i + 1; rowNum < allRows.size(); rowNum++) {
-						String item = StringUtils.trim(
-								allRows.get(rowNum).size() > SCREEN_DEFINITION_SHEET.COL_AB
-										? allRows.get(rowNum).get(SCREEN_DEFINITION_SHEET.COL_AB)
-										: null);
-						String value = StringUtils.trim(
-								allRows.get(rowNum).size() > SCREEN_DEFINITION_SHEET.COL_AG
-										? allRows.get(rowNum).get(SCREEN_DEFINITION_SHEET.COL_AG)
-										: null);
+						List<String> row = allRows.get(rowNum);
+						String item = StringUtils.trim(row.get(SCREEN_DEFINITION_SHEET.COL_AB));
+						String value = StringUtils.trim(row.get(SCREEN_DEFINITION_SHEET.COL_AG));
 						if (StringUtils.isEmpty(item)) {
-							break; // 項目名が空なら終了
+							break;
 						}
 						ext.put(item, value);
 					}
 					result.externalFiles = ext;
+					break;
+				}
+			}
+
+			// 部分入出力セクションを AI 列から解析
+			for (int i = 0; i < allRows.size(); i++) {
+				String externalFilesTitles = StringUtils
+						.trim(i < allRows.size() && allRows.get(i).size() > SCREEN_DEFINITION_SHEET.COL_AI
+								? allRows.get(i).get(SCREEN_DEFINITION_SHEET.COL_AI)
+								: null);
+				if (ScreenDefinitionParseSectionEnum.INOUT_PART.getSectionName().equals(externalFilesTitles)) {
+					List<ScreenDefinitionPartInOut> parts = new ArrayList<>();
+					for (int rowNum = i + 1; rowNum < allRows.size(); rowNum++) {
+						List<String> row = allRows.get(rowNum);
+						// 部分入出力コード
+						String code = StringUtils.trim(row.get(SCREEN_DEFINITION_SHEET.COL_AI));
+						if (StringUtils.isEmpty(code))
+							break;
+						// 部分入出力コード
+						String name = StringUtils.trim(row.get(SCREEN_DEFINITION_SHEET.COL_AN));
+						// 部分入出力名称
+						String operation = StringUtils.trim(row.get(SCREEN_DEFINITION_SHEET.COL_BC));
+						// 部分入出力オペレーション
+						parts.add(new ScreenDefinitionPartInOut(code, name, operation));
+					}
+					result.inputParts = parts;
 					break;
 				}
 			}
@@ -183,6 +206,7 @@ public class ScreenDefinitionParseExcel {
 			def.setIoType(result.ioType);
 			def.setTargetCondition(result.targetCondition);
 			def.setExternalFiles(result.externalFiles != null ? result.externalFiles : new HashMap<>());
+			def.setInOutParts(result.inputParts);
 			return def;
 
 		} catch (Exception e) {
@@ -192,10 +216,10 @@ public class ScreenDefinitionParseExcel {
 	}
 
 	/**
-	 * 「対象データモデル」または「処理対象データモデル」ブロックを解析し、
-	 * 論理名・物理名（およびCRUD情報）を抽出します。
+	 * 「対象データモデル」または「処理対象データモデル」ブロックを解析し、 論理名・物理名（およびCRUD情報）を抽出します。
 	 * 
-	 * <p>ブロックは A 列に指定されたタイトルで始まり、次のセクションタイトルまたは空行で終了します。
+	 * <p>
+	 * ブロックは A 列に指定されたタイトルで始まり、次のセクションタイトルまたは空行で終了します。
 	 * 
 	 * @param rows         全行データ（各行は列インデックス→値のリスト）
 	 * @param title        セクションタイトル（例: 「対象データモデル」）
@@ -215,17 +239,18 @@ public class ScreenDefinitionParseExcel {
 			if (rowNum >= rows.size())
 				break;
 			List<String> row = rows.get(rowNum);
-			String logical = StringUtils.trim(
-					row.size() > SCREEN_DEFINITION_SHEET.COL_A ? row.get(SCREEN_DEFINITION_SHEET.COL_A) : null);
+			String logical = StringUtils
+					.trim(row.size() > SCREEN_DEFINITION_SHEET.COL_A ? row.get(SCREEN_DEFINITION_SHEET.COL_A) : null);
 			if (StringUtils.isEmpty(logical))
 				break; // 論理名が空なら終了
 
-			String physical = StringUtils.trim(
-					row.size() > SCREEN_DEFINITION_SHEET.COL_J ? row.get(SCREEN_DEFINITION_SHEET.COL_J) : null);
+			String physical = StringUtils
+					.trim(row.size() > SCREEN_DEFINITION_SHEET.COL_J ? row.get(SCREEN_DEFINITION_SHEET.COL_J) : null);
 
 			if (isProcessing) {
-				String crud = StringUtils.trim(
-						row.size() > SCREEN_DEFINITION_SHEET.COL_CRUD ? row.get(SCREEN_DEFINITION_SHEET.COL_CRUD) : null);
+				String crud = StringUtils
+						.trim(row.size() > SCREEN_DEFINITION_SHEET.COL_CRUD ? row.get(SCREEN_DEFINITION_SHEET.COL_CRUD)
+								: null);
 				result.processingModels.add(new ScreenDefinitionProcessingTarget(logical, physical, crud));
 			} else {
 				result.targetModels.add(new ScreenDefinitionTargetData(logical, physical));
@@ -242,10 +267,9 @@ public class ScreenDefinitionParseExcel {
 	 */
 	private Integer findRowIndexColumnA(List<List<String>> rows, String title) {
 		for (int rowNum = 0; rowNum < rows.size(); rowNum++) {
-			String content = StringUtils.trim(
-					rows.get(rowNum).size() > SCREEN_DEFINITION_SHEET.COL_A
-							? rows.get(rowNum).get(SCREEN_DEFINITION_SHEET.COL_A)
-							: null);
+			String content = StringUtils.trim(rows.get(rowNum).size() > SCREEN_DEFINITION_SHEET.COL_A
+					? rows.get(rowNum).get(SCREEN_DEFINITION_SHEET.COL_A)
+					: null);
 			if (title.equals(content)) {
 				return rowNum;
 			}
@@ -256,7 +280,8 @@ public class ScreenDefinitionParseExcel {
 	/**
 	 * 指定行以降で、A列に定義済みのセクションタイトルが出現する最初の行番号を返却します。
 	 * 
-	 * <p>これにより、現在のブロックの終端を特定できます。
+	 * <p>
+	 * これにより、現在のブロックの終端を特定できます。
 	 * 
 	 * @param rows      全行データ
 	 * @param fromIndex 検索開始行（0起点）
@@ -264,10 +289,9 @@ public class ScreenDefinitionParseExcel {
 	 */
 	private Integer findNextSectionStart(List<List<String>> rows, int fromIndex) {
 		for (int rowNum = fromIndex; rowNum < rows.size(); rowNum++) {
-			String content = StringUtils.trim(
-					rows.get(rowNum).size() > SCREEN_DEFINITION_SHEET.COL_A
-							? rows.get(rowNum).get(SCREEN_DEFINITION_SHEET.COL_A)
-							: null);
+			String content = StringUtils.trim(rows.get(rowNum).size() > SCREEN_DEFINITION_SHEET.COL_A
+					? rows.get(rowNum).get(SCREEN_DEFINITION_SHEET.COL_A)
+					: null);
 			if (StringUtils.isNoneEmpty(content)
 					&& ScreenDefinitionParseSectionEnum.getAllDisplayNames().contains(content)) {
 				return rowNum;
@@ -279,13 +303,15 @@ public class ScreenDefinitionParseExcel {
 	/**
 	 * 画面定義書の解析結果を一時的に保持する内部ヘルパークラス。
 	 * 
-	 * <p>解析中の各セクションの結果をフィールドに集約し、最終的に {@link ScreenDefinition} にマッピングします。
+	 * <p>
+	 * 解析中の各セクションの結果をフィールドに集約し、最終的に {@link ScreenDefinition} にマッピングします。
 	 */
 	private static class ParseResult {
 		List<ScreenDefinitionTargetData> targetModels = new ArrayList<>();
 		List<ScreenDefinitionProcessingTarget> processingModels = new ArrayList<>();
-		String ioType = "";
-		String targetCondition = "";
+		String ioType = null;
+		String targetCondition = null;
 		Map<String, String> externalFiles = new HashMap<>();
+		List<ScreenDefinitionPartInOut> inputParts = new ArrayList<>();
 	}
 }

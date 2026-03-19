@@ -1,6 +1,5 @@
 package com.neusoft.bsdl.wptool.core.external;
 
-import java.io.File;
 import java.net.URI;
 import java.net.http.HttpClient;
 import java.net.http.HttpRequest;
@@ -63,7 +62,7 @@ public class AiSupportApiService {
 
 		// multipart/form-data の境界文字（boundary）を生成
 		String boundary = "----Boundary" + UUID.randomUUID().toString();
-		String fileName = source instanceof LocalFileSource ? new File(((LocalFileSource) source).getAbsolutePath()).getName() : "file";
+		String fileName = source instanceof LocalFileSource ? ((LocalFileSource) source).getFileName() : "file";
 		byte[] requestBody = buildMultipartBody(boundary, "file", fileName, fileBytes);
 
 		// HTTPクライアントを構築（接続タイムアウト：10秒）

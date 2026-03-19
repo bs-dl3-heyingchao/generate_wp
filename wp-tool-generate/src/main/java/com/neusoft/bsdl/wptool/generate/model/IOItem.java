@@ -9,7 +9,7 @@ public class IOItem {
 	public String io_code;
 	public String code;
 	public String name;
-	public String label;
+//	public String label;
 	public String is_visible = "true";
 	public String item_type = "IO";
 	public String is_require = "false";

@@ -16,16 +16,8 @@ import cbai.util.db.define.TableBean;
 
 public class WPCommonDMGenerator extends WPAbstractGenerator<TableBean> {
 
-    public WPCommonDMGenerator(WPGenerateContext context) {
-        super(context);
-    }
-
-    public void generateAll(File outputDir) throws IOException {
-        List<TableBean> tableList = context.getTableSearchService().listAll();
-
-        for (TableBean tb : tableList) {
-            generate(tb, outputDir);
-        }
+    public WPCommonDMGenerator(WPGenerateContext context, TableBean tableBean) {
+        super(context, tableBean);
     }
 
     @Override

@@ -2,9 +2,13 @@ package com.neusoft.bsdl.wptool.generate;
 
 import java.io.File;
 import java.io.IOException;
+import java.util.Collections;
+import java.util.LinkedList;
+import java.util.List;
 import java.util.Map;
 
 import org.apache.commons.text.StringEscapeUtils;
+import org.slf4j.helpers.MessageFormatter;
 
 import com.neusoft.bsdl.wptool.generate.context.WPGenerateContext;
 
@@ -16,14 +20,25 @@ import lombok.extern.slf4j.Slf4j;
 public abstract class WPAbstractGenerator<T> {
     protected final static CreateTemplateVelocity createTemplate = new CreateTemplateVelocity("com.neusoft.bsdl.wptool.generate.WP_TEMPLATE", true);
     protected WPGenerateContext context;
-    protected String logPrefix;
+    protected String logPrefix = "";
+    protected String logSubPrefix = "";
+    protected T excelContent;
 
-    public WPAbstractGenerator(WPGenerateContext context) {
+    private List<String> errorLog = new LinkedList<String>();
+    private List<String> warnLog = new LinkedList<String>();
+
+    public WPAbstractGenerator(WPGenerateContext context, T excelContent) {
         this.context = context;
+        this.excelContent = excelContent;
     }
 
-    public void generate(T excelContent, File outputDir) throws IOException {
-        create(excelContent, outputDir);
+    public void generate(File outputDir) throws IOException {
+        errorLog.clear();
+        warnLog.clear();
+        for (String templateName : getTemplateNames()) {
+            log.info("Start creating file for template: {}", templateName);
+            createTemplate.create(outputDir, getReplaceMap(excelContent), templateName);
+        }
     }
 
     public abstract String[] getTemplateNames();
@@ -34,25 +49,27 @@ public abstract class WPAbstractGenerator<T> {
         return StringUtils.isNotEmpty(value) && !"－".equals(value) && !"ー".equals(value) && !"-".equals(value);
     }
 
-    public void create(T screenExcelContent, File outputDir) throws IOException {
-        for (String templateName : getTemplateNames()) {
-            log.info(logPrefix + "Start creating file for template: {}", templateName);
-            createTemplate.create(outputDir, getReplaceMap(screenExcelContent), templateName);
-        }
-    }
-
     protected String escapseXml(String xml) {
         return StringEscapeUtils.escapeXml11(xml);
     }
 
     protected void writeErrorLog(String format, Object... arguments) {
-        log.error(logPrefix + format, arguments);
+        String rendered = String.format("%s %s ", logPrefix, logSubPrefix) + MessageFormatter.arrayFormat(format, arguments).getMessage();
+        log.error(rendered);
+        errorLog.add(rendered);
     }
 
     protected void writeWarnLog(String format, Object... arguments) {
-        log.warn(logPrefix + format, arguments);
-//        if (logger != null) {
-//            logger.warn(logPrefix + format, arguments);
-//        }
+        String rendered = String.format("%s %s ", logPrefix, logSubPrefix) + MessageFormatter.arrayFormat(format, arguments).getMessage();
+        log.warn(rendered);
+        warnLog.add(rendered);
+    }
+
+    public List<String> getLogSnapshotError() {
+        return Collections.unmodifiableList(errorLog);
+    }
+
+    public List<String> getLogSnapshotWarn() {
+        return Collections.unmodifiableList(warnLog);
     }
 }

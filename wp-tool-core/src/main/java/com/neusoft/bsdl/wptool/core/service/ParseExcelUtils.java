@@ -13,6 +13,7 @@ import org.apache.poi.ss.usermodel.WorkbookFactory;
 import com.neusoft.bsdl.wptool.core.CommonConstant;
 import com.neusoft.bsdl.wptool.core.exception.WPParseExcelException;
 import com.neusoft.bsdl.wptool.core.exception.WPParseExcelException.ExcelParseError;
+import com.neusoft.bsdl.wptool.core.external.AiSupportApiService;
 import com.neusoft.bsdl.wptool.core.io.FileSource;
 import com.neusoft.bsdl.wptool.core.model.CsvLayout;
 import com.neusoft.bsdl.wptool.core.model.DBConfigDefinition;
@@ -159,12 +160,13 @@ public class ParseExcelUtils {
 				sheetList.add(excelSheetContent);
 			} else if (sheetName.equals(CommonConstant.PROCESSING_FUNCTION_SPECIFICATION_SHEET.SHEET_NAME)) {
 				// 処理機能記述書
-				ProcessingFuncSpecificationParseExcel parseExcel = new ProcessingFuncSpecificationParseExcel();
-				ProcessingFuncSpecification contents = parseExcel.parseSpecSheet(source, sheetName, errors);
+				ProcessingFuncSpecificationExternalParser parseExcel = new ProcessingFuncSpecificationExternalParser();
+				ProcessingFuncSpecification contents = parseExcel.exeternalParser(source);
 				ExcelSheetContent<ProcessingFuncSpecification> excelSheetContent = new ExcelSheetContent<>();
 				excelSheetContent.setSheetName(sheetName);
 				excelSheetContent.setContent(contents);
 				sheetList.add(excelSheetContent);
+				log.info(contents.toString());
 			}
 		}
 		// エラーが存在の場合、異常終了

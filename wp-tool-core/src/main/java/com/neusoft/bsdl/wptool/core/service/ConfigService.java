@@ -61,4 +61,8 @@ public class ConfigService {
     public static File getDBDefineCacheFile() {
         return new File(getConfig("wp-tool.db.db-define.cachefile"));
     }
+
+    public static File getSvnSessionItemDefineFile() {
+        return getSvnFullPath(getConfig("wp-tool.svn.session-items-define.file"));
+    }
 }

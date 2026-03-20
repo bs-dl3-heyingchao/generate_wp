@@ -41,22 +41,29 @@ public interface CommonConstant {
 		Integer COL_M = 12;
 		Integer COL_P = 15;
 		Integer COL_AB = 27;
-		Integer COL_AD = 25;
+		Integer COL_AD = 29;
+		Integer COL_AH = 33;
 		Integer COL_AJ = 35;
 		Integer COL_AK = 36;
-
+		Integer COL_AL = 37;
 		String STR_TRUE = "TRUE";
 
 		// 解析説明文字
 		String STR_CTRL = "\n";
+		String STR_TAB = "\t";
+		String STR_SIKAKU = "■";
 		String STR_METHOD_JUDGMENT_CONTAIN = "結合";
 		String STR_SHEET_NAME_MODIFY_HISTORY = "改版履歴";
 		String STR_SECTION_SUMMARY = "概要";
 		String STR_SECTION_QUERY_CONDITION = "dbQuery：検索条件";
 		String STR_SECTION_QUERY_AGGREGATE_CONDITION = "dbQueryAggregate：集計関数の検索条件";
+		String STR_SECTION_SIBORIKOMI = "■絞込条件";
+		String STR_SECTION_SORT= "■ソート条件";
+		String STR_JUDGEMENT_REMARK = "備考";
 		String STR_JUDGEMENT_JOIN = "・結合条件";
 		String STR_JUDGEMENT_PREFIX = "★";
 		String STR_JUDGEMENT_QUERY = "クエリ";
+		
 
 		// 1から5までの数字にマッチする正規表現
 		String MATCH_FROM_ONE_TO_FIVE = "^[1-5１-５][．.].*";

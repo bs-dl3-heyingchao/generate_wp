@@ -51,7 +51,7 @@ public class ProcessingFuncSpecificationExternalParser {
 		List<FunctionalSpecification> targetParseObj = aiSupportApiResponse.getData();
 
 		if (targetParseObj == null || targetParseObj.size() == 0) {
-			throw new IllegalStateException("AI API returned empty data");
+			throw new IllegalStateException("ai api returned empty data");
 		}
 
 		// 仕様書の処理機能記述書のJSONコンテンツを取得する

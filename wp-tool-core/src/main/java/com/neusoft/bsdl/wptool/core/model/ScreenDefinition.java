@@ -19,6 +19,7 @@ public class ScreenDefinition {
 	/** 対象条件 */
 	private String targetCondition;
 	/** 外部ファイル */
-	private Map<String,String> externalFiles;
-	/**TODO:部分入出力*/
+	private Map<String, String> externalFiles;
+	/** 部分入出力 */
+	private List<ScreenDefinitionPartInOut> inOutParts;
 }

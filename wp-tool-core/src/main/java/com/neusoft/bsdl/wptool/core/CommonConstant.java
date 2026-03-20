@@ -41,6 +41,7 @@ public interface CommonConstant {
 		Integer COL_M = 12;
 		Integer COL_P = 15;
 		Integer COL_AB = 27;
+		Integer COL_AD = 25;
 		Integer COL_AJ = 35;
 		Integer COL_AK = 36;
 
@@ -50,18 +51,12 @@ public interface CommonConstant {
 		String STR_CTRL = "\n";
 		String STR_METHOD_JUDGMENT_CONTAIN = "結合";
 		String STR_SHEET_NAME_MODIFY_HISTORY = "改版履歴";
-		String STR_SUMMARY = "概要";
-		String STR_SUMMARY_TABLE = "１．対象テーブル";
-		String STR_SUMMARY_TABLE_CONDITION = "２．対象テーブルの条件";
-		String STR_SUMMARY_JOIN_CONDITION = "3．結合条件";
-		String STR_SUMMARY_JOIN_CONDITION_METHOD = "結合方法";
-		String STR_SUMMARY_JOIN_CONDITION_TABLE = "対象テーブル";
-		String STR_SUMMARY_JOIN_CONDITION_ALIAS = "テーブル別名";
-		String STR_SUMMARY_JOIN_CONDITION_JOIN = "結合条件";
-		String STR_SUMMARY_SORT_CONDITION = "4．ソート条件";
-		String STR_SUMMARY_SUPPLEMENT = "5．補足";
-		String STR_QUERY_CONDITION = "dbQuery：検索条件";
-		String STR_QUERY_AGGREGATE_CONDITION = "dbQueryAggregate：集計関数の検索条件";
+		String STR_SECTION_SUMMARY = "概要";
+		String STR_SECTION_QUERY_CONDITION = "dbQuery：検索条件";
+		String STR_SECTION_QUERY_AGGREGATE_CONDITION = "dbQueryAggregate：集計関数の検索条件";
+		String STR_JUDGEMENT_JOIN = "・結合条件";
+		String STR_JUDGEMENT_PREFIX = "★";
+		String STR_JUDGEMENT_QUERY = "クエリ";
 
 		// 1から5までの数字にマッチする正規表現
 		String MATCH_FROM_ONE_TO_FIVE = "^[1-5１-５][．.].*";
@@ -95,6 +90,13 @@ public interface CommonConstant {
 		int COL_AB = 27;
 		// AG列：外部ファイルの項目値
 		int COL_AG = 32;
+		// 部分入出力：partCode列
+		int COL_AI = 34;
+		// 部分入出力：partName列
+		int COL_AN = 39;
+		// 部分入出力：partOperation列
+		int COL_BC = 54;
+		
 		// シート名称
 		String STR_JAVASCRIPT = "Javascript";
 		// シート名称

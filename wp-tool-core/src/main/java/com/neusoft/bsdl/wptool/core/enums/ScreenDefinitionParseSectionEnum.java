@@ -11,7 +11,8 @@ public enum ScreenDefinitionParseSectionEnum {
     PROCESS_MODEL("処理対象データモデル"),
     CONDITION("対象条件"),
     IO_TYPE("入出力タイプ"),
-    EXTERNAL_FILES("外部ファイル");
+    EXTERNAL_FILES("外部ファイル"),
+    INOUT_PART("部分入出力");
 
     private final String sectionName;
 

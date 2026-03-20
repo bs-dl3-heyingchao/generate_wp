@@ -193,8 +193,11 @@ public class WPIOGenerator extends WPAbstractGenerator<ScreenExcelContent> {
         this.codeSet = new HashSet<String>();
         this.itemIdMap = new LinkedHashMap<String, IOItem>();
 
-        List<IOItem> ioItemList = new ArrayList<>();
+        // 名称先作成
         processExcelSheetScreenItemCreateItemIdMap(screenExcelContent, itemIdMap);
+        processExcelSheetScreenValidationCreateItemIdMap(screenExcelContent, itemIdMap);
+
+        List<IOItem> ioItemList = new ArrayList<>();
         processExcelSheetScreenItem(screenExcelContent, replaceMap, ioItemList);
         // 画面チェック仕様書
         processExcelSheetScreenValidation(screenExcelContent, ioItemList);
@@ -203,7 +206,7 @@ public class WPIOGenerator extends WPAbstractGenerator<ScreenExcelContent> {
 
     }
 
-    private void processExcelSheetScreenValidation(ScreenExcelContent screenExcelContent, List<IOItem> ioItemList) {
+    private void processExcelSheetScreenValidationCreateItemIdMap(ScreenExcelContent screenExcelContent, Map<String, IOItem> itemIdMap) {
         ExcelSheetContent<List<ScreenValidation>> excelSheetScreenValidation = findSheetContentList(screenExcelContent, "画面チェック仕様書", ScreenValidation.class);
         if (excelSheetScreenValidation.getContent() != null && !excelSheetScreenValidation.getContent().isEmpty()) {
             this.logPrefix = String.format("[%s:%s %s]", screenExcelContent.getScreenId(), screenExcelContent.getScreenName(), excelSheetScreenValidation.getSheetName());
@@ -218,8 +221,54 @@ public class WPIOGenerator extends WPAbstractGenerator<ScreenExcelContent> {
                     // TODO ワーニング Check ?
                     continue;
                 }
+                String codePrefix = "C_";
+                String checkKbnCode = getCheckKbnCode(checkItem.getValidationName());
+                if (StringUtils.isNotEmpty(checkKbnCode)) {
+                    codePrefix = codePrefix + checkKbnCode + "_";
+                }
+
+                // 从画面查的指定项目的ID，如果找不到就用罗马字转换的ID
+                IOItem tmpIoItem = findItemCodeByName(checkItem.getItemName());
+                if (tmpIoItem != null) {
+                    baseCode = tmpIoItem.code;
+                } else {
+                    String id = context.getMorphemHelper().getRomaFromKanji(checkItem.getItemName()).toUpperCase();
+                    baseCode = id;
+                }
+
+                String itemCode = addAndGetUniqueCode(codePrefix + baseCode, codeSet);
+                IOItem ioItem = new IOItem();
+                ioItem.code = itemCode;
+                ioItem.name = checkItem.getValidationName();
+                itemIdMap.put(createCodeKey(screenExcelContent.getScreenId(), excelSheetScreenValidation.getSheetName(), checkItem.getItemNo()), ioItem);
+            }
+        }
+
+    }
+
+    private void processExcelSheetScreenValidation(ScreenExcelContent screenExcelContent, List<IOItem> ioItemList) {
+        ExcelSheetContent<List<ScreenValidation>> excelSheetScreenValidation = findSheetContentList(screenExcelContent, "画面チェック仕様書", ScreenValidation.class);
+        if (excelSheetScreenValidation.getContent() != null && !excelSheetScreenValidation.getContent().isEmpty()) {
+            this.logPrefix = String.format("[%s:%s %s]", screenExcelContent.getScreenId(), screenExcelContent.getScreenName(), excelSheetScreenValidation.getSheetName());
+
+//            Map<String, Integer> actionIndexMap = new HashMap<String, Integer>();
+            for (ScreenValidation checkItem : excelSheetScreenValidation.getContent()) {
+                if ("BP".equalsIgnoreCase(checkItem.getBizWarining())) {
+                    // TODO BP Check
+                    continue;
+                } else if ("ワーニング".equalsIgnoreCase(checkItem.getBizWarining())) {
+                    // TODO ワーニング Check ?
+                    continue;
+                }
+                IOItem preIoItem = itemIdMap.get(createCodeKey(screenExcelContent.getScreenId(), excelSheetScreenValidation.getSheetName(), checkItem.getItemNo()));
+                if (preIoItem == null) {
+                    throw new WPException(
+                            String.format("画面チェック仕様書の項目IDが見つかりません。画面ID: %s, シート名: %s, 項番: %s", screenExcelContent.getScreenId(), excelSheetScreenValidation.getSheetName(), checkItem.getItemNo()));
+                }
+
                 this.logSubPrefix = String.format("項番[%s]", checkItem.getItemNo());
                 IOItem ioItem = new IOItem();
+                ioItem.code = preIoItem.code;
                 ioItem.io_code = screenExcelContent.getScreenId();
 //                ioItem.name = escapseXml(checkItem.チェックアクション.trim().replace("\n", "／") + " " + checkItem.チェック名);
                 ioItem.name = escapseXml(checkItem.getValidationName());
@@ -235,12 +284,6 @@ public class WPIOGenerator extends WPAbstractGenerator<ScreenExcelContent> {
 
                 // 从画面查的指定项目的ID，如果找不到就用罗马字转换的ID
                 IOItem tmpIoItem = findItemCodeByName(checkItem.getItemName());
-                if (tmpIoItem != null) {
-                    baseCode = tmpIoItem.code;
-                } else {
-                    String id = context.getMorphemHelper().getRomaFromKanji(checkItem.getItemName()).toUpperCase();
-                    baseCode = id;
-                }
                 if (actions.size() > 0) {
                     StringBuilder sb = new StringBuilder();
                     for (ScreenValidationAction action : actions) {
@@ -315,7 +358,6 @@ public class WPIOGenerator extends WPAbstractGenerator<ScreenExcelContent> {
                 sb.append(String.format("@TRUE)"));
                 ioItem.condition = escapseXml(sb.toString());
                 ioItem.is_disable = "true";
-                ioItem.code = addAndGetUniqueCode(codePrefix + baseCode, codeSet);
                 ioItemList.add(ioItem);
             }
         }
@@ -457,16 +499,16 @@ public class WPIOGenerator extends WPAbstractGenerator<ScreenExcelContent> {
         for (ScreenItemDescriptionResult itemGroup : list) {
             isInGroup = false;
             for (ScreenItemDescription itemBean : itemGroup.getItems()) {
-                IOItem ioItem = new IOItem();
-                IOItem tmpIoItem = itemIdMap.get(createCodeKey(screenExcelContent.getScreenId(), excelSheetScreenItem.getSheetName(), itemBean.getItemNo()));
-                if (tmpIoItem == null) {
+                IOItem preIoItem = itemIdMap.get(createCodeKey(screenExcelContent.getScreenId(), excelSheetScreenItem.getSheetName(), itemBean.getItemNo()));
+                if (preIoItem == null) {
                     throw new WPException(String.format("項目IDが見つかりません。画面ID: %s, シート名: %s, 項番: %s", screenExcelContent.getScreenId(), excelSheetScreenItem.getSheetName(), itemBean.getItemNo()));
                 }
-                if (!StringUtils.equals(tmpIoItem.name, itemBean.getItemName())) {
+                if (!StringUtils.equals(preIoItem.name, itemBean.getItemName())) {
                     throw new WPException(String.format("項目IDに対応する項目名が一致しません。画面ID: %s, シート名: %s, 項番: %s, 項目ID: %s, 項目名1: %s, 項目名2: %s", screenExcelContent.getScreenId(),
-                            excelSheetScreenItem.getSheetName(), itemBean.getItemNo(), tmpIoItem.code, tmpIoItem.name, itemBean.getItemName()));
+                            excelSheetScreenItem.getSheetName(), itemBean.getItemNo(), preIoItem.code, preIoItem.name, itemBean.getItemName()));
                 }
-                ioItem.code = tmpIoItem.code;
+                IOItem ioItem = new IOItem();
+                ioItem.code = preIoItem.code;
                 ioItem.name = itemBean.getItemName();// itemBean.getItemName();
                 ioItem.io_code = screenExcelContent.getScreenId();
                 String display = itemBean.getDisplay();// itemBean.表示;

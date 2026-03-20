@@ -68,7 +68,8 @@ public class WPIOGenerator extends WPAbstractGenerator<ScreenExcelContent> {
     private IOType ioType = IOType.IO;
 
     private Map<String, String> paramNameToCodeMap;
-    private Map<String, List<IOItem>> itemNameMap;
+    private Map<String, IOItem> itemIdMap;
+//    private Map<String, List<IOItem>> itemNameMap;
     private Set<String> codeSet;
 
     public WPIOGenerator(WPGenerateContext context, ScreenExcelContent excelContent) {
@@ -99,6 +100,15 @@ public class WPIOGenerator extends WPAbstractGenerator<ScreenExcelContent> {
         return condition;
     }
 
+    private IOItem findItemCodeByName(String itemName) {
+        for (IOItem item : itemIdMap.values()) {
+            if (item.name.equals(itemName)) {
+                return item;
+            }
+        }
+        return null;
+    }
+
     private String convertGmName2Id(String content) {
         content = content.replaceAll("\t", " ");
         content = content.replaceAll("－", "-");
@@ -115,12 +125,9 @@ public class WPIOGenerator extends WPAbstractGenerator<ScreenExcelContent> {
                 String[] temp = item.split("\\.");
                 // 画面项目
                 if ("画面".equals(temp[0])) {
-                    if (itemNameMap.containsKey(temp[1])) {
-                        List<IOItem> items = itemNameMap.get(temp[1]);
-                        if (items.size() > 1) {
-                            writeWarnLog("項目名 '{}' が複数のIO項目にマッピングされています。", temp[1], item);
-                        }
-                        String code = items.get(0).code;
+                    if (findItemCodeByName(temp[1]) != null) {
+                        IOItem tmpIoItem = findItemCodeByName(temp[1]);
+                        String code = tmpIoItem.code;
                         if (code != null) {
                             matcher.appendReplacement(sb, code);
                         }
@@ -182,9 +189,12 @@ public class WPIOGenerator extends WPAbstractGenerator<ScreenExcelContent> {
         // 処理機能記述書
         processScreenExcelSpecification(screenExcelContent);
 
-        this.itemNameMap = new HashMap<String, List<IOItem>>();
+//        this.itemNameMap = new HashMap<String, List<IOItem>>();
         this.codeSet = new HashSet<String>();
+        this.itemIdMap = new LinkedHashMap<String, IOItem>();
+
         List<IOItem> ioItemList = new ArrayList<>();
+        processExcelSheetScreenItemCreateItemIdMap(screenExcelContent, itemIdMap);
         processExcelSheetScreenItem(screenExcelContent, replaceMap, ioItemList);
         // 画面チェック仕様書
         processExcelSheetScreenValidation(screenExcelContent, ioItemList);
@@ -223,31 +233,25 @@ public class WPIOGenerator extends WPAbstractGenerator<ScreenExcelContent> {
                 List<ScreenValidationAction> actions = checkItem.getValidationActions();
                 StringBuilder actionConditionSb = new StringBuilder();
 
-                List<IOItem> checkNameItems = itemNameMap.get(checkItem.getItemName());
-                if (checkNameItems != null && !checkNameItems.isEmpty()) {
-                    baseCode = checkNameItems.get(0).code;
+                // 从画面查的指定项目的ID，如果找不到就用罗马字转换的ID
+                IOItem tmpIoItem = findItemCodeByName(checkItem.getItemName());
+                if (tmpIoItem != null) {
+                    baseCode = tmpIoItem.code;
                 } else {
                     String id = context.getMorphemHelper().getRomaFromKanji(checkItem.getItemName()).toUpperCase();
                     baseCode = id;
                 }
                 if (actions.size() > 0) {
-//                    String actionKey = actions.stream().filter(a -> a.isHasChecked()).map(a -> a.getActionName()).reduce((a, b) -> a + "_" + b).orElse("");
-//                    if (!actionIndexMap.containsKey(actionKey)) {
-//                        actionIndexMap.put(actionKey, 0);
-//                    }
                     StringBuilder sb = new StringBuilder();
                     for (ScreenValidationAction action : actions) {
                         if (!action.isHasChecked()) {
                             continue;
                         }
-                        List<IOItem> actionItems = itemNameMap.get(action.getActionName());
+                        tmpIoItem = findItemCodeByName(action.getActionName());
                         String name = "";
-                        if (actionItems != null) {
-                            for (IOItem ait : actionItems) {
-                                if ("A".equals(ait.item_type) && ait.code != null && ait.code.startsWith("A_")) {
-                                    name = ait.code.substring(2);
-                                    break;
-                                }
+                        if (tmpIoItem != null) {
+                            if (tmpIoItem.code.startsWith("A_")) {
+                                name = tmpIoItem.code.substring(2);
                             }
                         }
                         if (sb.length() > 0) {
@@ -317,11 +321,116 @@ public class WPIOGenerator extends WPAbstractGenerator<ScreenExcelContent> {
         }
     }
 
-    private void processExcelSheetScreenItem(ScreenExcelContent screenExcelContent, Map<String, Object> replaceMap, List<IOItem> ioItemList) {
-        String ioSuffix;
+    private String createCodeKey(String screenId, String sheetName, String itemNo) {
+        return screenId + "_" + sheetName + "_" + itemNo;
+    }
+
+    /**
+     * 画面项目进行两次处理，第一次只生成各项目的ID
+     * 
+     * @param screenExcelContent
+     * @param itemIdMap
+     */
+    private void processExcelSheetScreenItemCreateItemIdMap(ScreenExcelContent screenExcelContent, Map<String, IOItem> itemIdMap) {
         int groupIndex = 0;
         boolean isInGroup = false;
         String curGroupPrefix = "";
+        ExcelSheetContent<List<ScreenItemDescriptionResult>> excelSheetScreenItem = findSheetContentList(screenExcelContent, "画面項目説明書", ScreenItemDescriptionResult.class);
+        if (excelSheetScreenItem == null) {
+            throw new WPException("画面項目説明書シートが見つかりません");
+        }
+        List<ScreenItemDescriptionResult> list = null;
+        switch (ioType) {
+        case IO:
+            list = excelSheetScreenItem.getContent();
+            break;
+        case EXPORT:
+            throw new WPException("エクスポートIOの生成はまだ実装されていません");
+        default:
+            throw new WPException("不明なIOタイプ: " + ioType);
+        }
+        this.logPrefix = String.format("[%s:%s %s]", screenExcelContent.getScreenId(), screenExcelContent.getScreenName(), excelSheetScreenItem.getSheetName());
+
+        for (ScreenItemDescriptionResult itemGroup : list) {
+            curGroupPrefix = "";
+            isInGroup = false;
+            for (ScreenItemDescription itemBean : itemGroup.getItems()) {
+                String display = itemBean.getDisplay();// itemBean.表示;
+                String itemType = "";
+                String io = itemBean.getIo();// itemBean.IO;
+                String codePrefix = "X_";
+                String baseCode = "";
+                this.logSubPrefix = String.format("項番[%s]", itemBean.getItemNo());
+                if (io.contains("I入力")) {
+                    itemType = "I";
+                    codePrefix = "I_";
+                } else if (io.contains("IO入出力")) {
+                    itemType = "IO";
+                    codePrefix = "I_";
+                } else if (io.contains("O出力")) {
+                    itemType = "O";
+                    codePrefix = "O_";
+                } else if (io.contains("Aアクション")) {
+                    itemType = "A";
+                    codePrefix = "A_";
+                } else if (io.contains("Gグループ")) {
+                    itemType = "G";
+                    groupIndex++;
+                    isInGroup = true;
+                    codePrefix = "";
+                    curGroupPrefix = "G" + groupIndex + "_";
+                    baseCode = "G" + groupIndex;
+                }
+
+                if (display != null && display.contains("非表示")) {
+                    codePrefix = "H_";
+                }
+                // 在Group中的项目
+                if (isInGroup && !"G".equals(itemType)) {
+                    codePrefix = codePrefix + curGroupPrefix;
+                }
+
+                boolean hasModelInfo = false;
+                if (hasValue(itemBean.getModelName()) /* && !tableFullName.endsWith("クエリ") */) {
+                    hasModelInfo = true;
+                    // 対象テーブル情報
+                    String tableFullName = itemBean.getModelName().replaceAll("[\r\n]", "");
+                    String fieldFullName = itemBean.getModelItemName().replaceAll("[\r\n]", "");
+                    TableBean tb = context.getTableSearchService().findTableByFullName(tableFullName);
+                    if (tb != null) {
+                        FieldBean fb = context.getTableSearchService().findFieldByFullName(tableFullName, fieldFullName);
+                        if (fb != null) {
+                            baseCode = fb.getFieldName();
+                        }
+                    }
+                } else {
+                    if ("A".equals(itemType) && StringUtils.isEmpty(baseCode)) {
+                        baseCode = getActionIoCode(itemBean.getItemName());
+                    }
+                    if (StringUtils.isEmpty(baseCode)) {
+                        String id = context.getMorphemHelper().getRomaFromKanji(itemBean.getItemName()).toUpperCase();
+                        baseCode = id;
+                    }
+                }
+                if (!"G".equals(itemType) && StringUtils.isNotEmpty(codePrefix) /* && !"DM".equals(itemBean.getAttributeWP()) */) {
+                    // データモデルに紐づく項目，表示是不要前缀
+                    if (hasModelInfo && codePrefix.startsWith("O_")) {
+                        codePrefix = codePrefix.replaceFirst("O_", "");
+                    }
+                }
+                String itemCode = addAndGetUniqueCode(codePrefix + baseCode, codeSet);
+                IOItem tmpIoItem = new IOItem();
+                tmpIoItem.code = itemCode;
+                tmpIoItem.name = itemBean.getItemName();
+                itemIdMap.put(createCodeKey(screenExcelContent.getScreenId(), excelSheetScreenItem.getSheetName(), itemBean.getItemNo()), tmpIoItem);
+            }
+        }
+
+    }
+
+    private void processExcelSheetScreenItem(ScreenExcelContent screenExcelContent, Map<String, Object> replaceMap, List<IOItem> ioItemList) {
+        String ioSuffix;
+        boolean isInGroup = false;
         ExcelSheetContent<List<ScreenItemDescriptionResult>> excelSheetScreenItem = findSheetContentList(screenExcelContent, "画面項目説明書", ScreenItemDescriptionResult.class);
         if (excelSheetScreenItem == null) {
             throw new WPException("画面項目説明書シートが見つかりません");
@@ -346,37 +455,35 @@ public class WPIOGenerator extends WPAbstractGenerator<ScreenExcelContent> {
         replaceMap.put("gmName", screenExcelContent.getScreenName());
 //        replaceMap.put("parentDir", screenExcelContent.getScreenId());
         for (ScreenItemDescriptionResult itemGroup : list) {
-            curGroupPrefix = "";
             isInGroup = false;
             for (ScreenItemDescription itemBean : itemGroup.getItems()) {
                 IOItem ioItem = new IOItem();
-                ioItem.io_code = screenExcelContent.getScreenId();
+                IOItem tmpIoItem = itemIdMap.get(createCodeKey(screenExcelContent.getScreenId(), excelSheetScreenItem.getSheetName(), itemBean.getItemNo()));
+                if (tmpIoItem == null) {
+                    throw new WPException(String.format("項目IDが見つかりません。画面ID: %s, シート名: %s, 項番: %s", screenExcelContent.getScreenId(), excelSheetScreenItem.getSheetName(), itemBean.getItemNo()));
+                }
+                if (!StringUtils.equals(tmpIoItem.name, itemBean.getItemName())) {
+                    throw new WPException(String.format("項目IDに対応する項目名が一致しません。画面ID: %s, シート名: %s, 項番: %s, 項目ID: %s, 項目名1: %s, 項目名2: %s", screenExcelContent.getScreenId(),
+                            excelSheetScreenItem.getSheetName(), itemBean.getItemNo(), tmpIoItem.code, tmpIoItem.name, itemBean.getItemName()));
+                }
+                ioItem.code = tmpIoItem.code;
                 ioItem.name = itemBean.getItemName();// itemBean.getItemName();
+                ioItem.io_code = screenExcelContent.getScreenId();
                 String display = itemBean.getDisplay();// itemBean.表示;
                 String io = itemBean.getIo();// itemBean.IO;
-                String codePrefix = "X_";
-                String baseCode = "";
                 this.logSubPrefix = String.format("項番[%s]", itemBean.getItemNo());
                 if (io.contains("I入力")) {
                     ioItem.item_type = "I";
-                    codePrefix = "I_";
                 } else if (io.contains("IO入出力")) {
                     ioItem.item_type = "IO";
-                    codePrefix = "I_";
                 } else if (io.contains("O出力")) {
                     ioItem.item_type = "O";
-                    codePrefix = "O_";
                 } else if (io.contains("Aアクション")) {
                     ioItem.item_type = "A";
-                    codePrefix = "A_";
                 } else if (io.contains("Gグループ")) {
                     ioItem.level = "1";
                     ioItem.item_type = "G";
-                    groupIndex++;
                     isInGroup = true;
-                    codePrefix = "";
-                    curGroupPrefix = "G" + groupIndex + "_";
-                    baseCode = "G" + groupIndex;
                 } else {
                     writeErrorLog("unkonw I/O :{}", io);
                 }
@@ -389,13 +496,11 @@ public class WPIOGenerator extends WPAbstractGenerator<ScreenExcelContent> {
 
                 if (display != null && display.contains("非表示")) {
                     ioItem.is_visible = "false";
-                    codePrefix = "H_";
                 } else {
                     ioItem.is_visible = "true";
                 }
                 // 在Group中的项目
                 if (isInGroup && !"G".equals(ioItem.item_type)) {
-                    codePrefix = codePrefix + curGroupPrefix;
                     ioItem.level = "2";
                 }
                 if (hasValue(itemBean.getLengthWP())) {
@@ -432,9 +537,7 @@ public class WPIOGenerator extends WPAbstractGenerator<ScreenExcelContent> {
                 // 備考
                 setBiko(itemBean, ioItem);
 
-                boolean hasModelInfo = false;
                 if (hasValue(itemBean.getModelName()) /* && !tableFullName.endsWith("クエリ") */) {
-                    hasModelInfo = true;
                     // 対象テーブル情報
                     String tableFullName = itemBean.getModelName().replaceAll("[\r\n]", "");
                     String fieldFullName = itemBean.getModelItemName().replaceAll("[\r\n]", "");
@@ -448,7 +551,6 @@ public class WPIOGenerator extends WPAbstractGenerator<ScreenExcelContent> {
                             if ("DM".equals(itemBean.getAttributeWP())) {
                                 ioItem.dm_item_code = fb.getFieldName();
                             }
-                            baseCode = fb.getFieldName();
                         } else {
                             ioItem.dm_item_code = fieldFullName;
                             writeErrorLog("テーブル項目が見つかりません:{}.{}", tableFullName, fieldFullName);
@@ -456,14 +558,6 @@ public class WPIOGenerator extends WPAbstractGenerator<ScreenExcelContent> {
                     } else {
                         ioItem.dm_code = tableFullName;
                         writeErrorLog("テーブルが見つかりません:{}", tableFullName);
-                    }
-                } else {
-                    if ("A".equals(ioItem.item_type) && StringUtils.isEmpty(baseCode)) {
-                        baseCode = getActionIoCode(itemBean.getItemName());
-                    }
-                    if (StringUtils.isEmpty(baseCode)) {
-                        String id = context.getMorphemHelper().getRomaFromKanji(itemBean.getItemName()).toUpperCase();
-                        baseCode = id;
                     }
                 }
                 if (!"DM".equals(itemBean.getAttributeWP())) {
@@ -475,30 +569,6 @@ public class WPIOGenerator extends WPAbstractGenerator<ScreenExcelContent> {
                         }
                     }
                 }
-                if (!"G".equals(ioItem.item_type) && StringUtils.isNotEmpty(codePrefix) /* && !"DM".equals(itemBean.getAttributeWP()) */) {
-                    // データモデルに紐づく項目，表示是不要前缀
-                    if (hasModelInfo && codePrefix.startsWith("O_")) {
-                        codePrefix = codePrefix.replaceFirst("O_", "");
-                    }
-//                    baseCode = codePrefix + baseCode;
-//                    while (!codeSet.add(ioItem.code)) {
-//                        if (ioItem.code.matches(".*_\\d+$")) {
-//                            try {
-//                                String part1 = ioItem.code.substring(0, ioItem.code.lastIndexOf("_"));
-//                                String part2 = ioItem.code.substring(ioItem.code.lastIndexOf("_") + 1);
-//                                int suffixLen = part2.length();
-//                                int index = Integer.parseInt(part2);
-//                                suffixLen = Math.max(suffixLen, String.valueOf(index + 1).length());
-//                                ioItem.code = part1 + "_" + StringUtils.leftPad(String.valueOf((index + 1)), suffixLen, '0');
-//                            } catch (Exception e) {
-//                                ioItem.code = ioItem.code + "_01";
-//                            }
-//                        } else {
-//                            ioItem.code = ioItem.code + "_01";
-//                        }
-//                        ioItem.code = ioItem.code.replaceAll("_+", "_");
-//                    }
-                }
                 // 初期値
                 ioItem.default_value = getInitValue(itemBean);
                 // 加工式
@@ -507,17 +577,7 @@ public class WPIOGenerator extends WPAbstractGenerator<ScreenExcelContent> {
                 ioItem.choiceInfo = getChoiceInfo(itemBean);
                 // 表示条件
                 ioItem.condition = getCondition(itemBean);
-
-                ioItem.code = addAndGetUniqueCode(codePrefix + baseCode, codeSet);
                 ioItemList.add(ioItem);
-                if (StringUtils.isNotEmpty(ioItem.name)) {
-                    if (!itemNameMap.containsKey(ioItem.name)) {
-                        itemNameMap.put(ioItem.name, new ArrayList<IOItem>());
-                    } else {
-                        writeWarnLog("項目名 '{}' が重複しています。", ioItem.name);
-                    }
-                    itemNameMap.get(ioItem.name).add(ioItem);
-                }
             }
         }
     }

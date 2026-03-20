@@ -122,20 +122,17 @@ docker build -t wp-tool-api:latest .
 docker run --rm -p 8080:8080 wp-tool-api:latest
 ```
 
-## APP_WORK_DIR 持久化说明
+## 持久化说明
 
-应用在容器内通过环境变量 `APP_WORK_DIR` 指定工作目录。当前 `Dockerfile` 配置为：
-
-- `APP_WORK_DIR=/app/work-dir`
-
-为了让日志、临时文件、缓存等数据在容器重建后仍保留，请将宿主机目录挂载到该路径。
+为了让日志、临时文件、缓存等数据在容器重建后仍保留，请将宿主机目录挂载到 `/app/work-dir` 路径。
 
 ### Linux 示例
 
 ```bash
 docker build -t wp-tool-api:latest .
 docker run --rm -d -p 8080:8080 \
-  -v ./work-dir:/app/work-dir \
+  -v ./work-dir:/app/work-dir \  
+  -v /mnt/d/WORK/128SYIS25142_devora/:/app/work-dir/svn \
   --name wp-tool-api \
   wp-tool-api:latest
 ```
@@ -145,4 +142,3 @@ docker run --rm -d -p 8080:8080 \
 - 容器内：`/app/work-dir/`
 - 宿主机：`./work-dir`
 
-应用写入 `APP_WORK_DIR` 的文件会持久化到宿主机挂载目录。

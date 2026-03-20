@@ -15,9 +15,9 @@ public enum DBQueryHeaderEnum implements HeaderEnum {
     DB_DEFINE_LENGTH(1,"桁数", 11),
     DB_DEFINE_DECIMAL(1,"小数桁", 12),
     REMARK(0,"備考", 15),    
-    ENCODE_TYPE(0,"使用文字種", 27),
-    SOURCE_TABLE(1,"テーブル名", 35), 
-    SOURCE_COLUMN(1,"カラム名", 36); 
+    ENCODE_TYPE(0,"使用文字種", 27);
+    //SOURCE_TABLE(1,"テーブル名", 35), 
+    //SOURCE_COLUMN(1,"カラム名", 36); 
 	
 	private final int level;
 	private final String displayName;

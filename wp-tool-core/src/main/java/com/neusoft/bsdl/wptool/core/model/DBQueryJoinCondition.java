@@ -1,21 +1,24 @@
 package com.neusoft.bsdl.wptool.core.model;
 
+import java.util.List;
+import java.util.Map;
+
 import lombok.Data;
 
 /**
- * DBQuery定義書の結合条件を保持するクラス
+ * DBQuery定義書の結合条件の備考を保持するクラス
  */
 @Data
 public class DBQueryJoinCondition {
-	/**結合方法*/
-	private String method;
+	/**備考の解析対象はUNION ALLを使用したパターンではないかの判断区分*/
+	private boolean isUnionAllCase;
 	
-	/**対象テーブル*/
-	private String table;
+	/**・結合条件一覧テーブル*/
+	private List<DBQueryJoinConditionContents> normaljoinConditions;
 	
-	/**テーブル別名*/
-	private String alias;
+	/**セクション対象*/
+	private Map<String,String> sectionContents;
 	
-	/**結合条件*/
-	private String condition;
+	/**unionAll結合条件*/
+	private List<DBQueryJoinConditionUnionAllContents> unionAlljoinConditions;
 }

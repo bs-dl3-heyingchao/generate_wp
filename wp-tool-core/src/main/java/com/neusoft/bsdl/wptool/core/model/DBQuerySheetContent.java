@@ -20,4 +20,6 @@ public class DBQuerySheetContent {
 	private String queryCondition;
 	/**dbQueryAggregate：集計関数の検索条件*/
 	private String queryAggregateCondition;
+	/**備考*/
+	private DBQueryJoinCondition joinCondition;
 }

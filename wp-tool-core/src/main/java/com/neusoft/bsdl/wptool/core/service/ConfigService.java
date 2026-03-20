@@ -51,7 +51,7 @@ public class ConfigService {
         String baseDir = getConfig("wp-tool.svn.base-dir");
         File dir = new File(baseDir);
         if (!dir.exists() || !dir.isDirectory()) {
-            throw new WPException("SVN基準ディレクトリが存在しないか	らディレクトリではありません: " + baseDir);
+            throw new WPException("SVN基準ディレクトリが存在しないか: " + baseDir);
         }
         return dir;
     }

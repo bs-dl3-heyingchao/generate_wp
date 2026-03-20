@@ -2,6 +2,7 @@ package com.neusoft.bsdl.wptool.generate;
 
 import java.io.File;
 import java.io.IOException;
+import java.util.ArrayList;
 import java.util.Collections;
 import java.util.LinkedList;
 import java.util.List;
@@ -22,22 +23,29 @@ public abstract class WPAbstractGenerator<T> {
     protected WPGenerateContext context;
     protected String logPrefix = "";
     protected String logSubPrefix = "";
-    protected T excelContent;
+    protected List<T> excelContents;
 
     private List<String> errorLog = new LinkedList<String>();
     private List<String> warnLog = new LinkedList<String>();
 
     public WPAbstractGenerator(WPGenerateContext context, T excelContent) {
         this.context = context;
-        this.excelContent = excelContent;
+        this.excelContents = new ArrayList<>();
+        this.excelContents.add(excelContent);
+    }
+
+    public WPAbstractGenerator(WPGenerateContext context, List<T> excelContents) {
+        this.context = context;
+        this.excelContents = excelContents;
     }
 
     public void generate(File outputDir) throws IOException {
         errorLog.clear();
         warnLog.clear();
-        for (String templateName : getTemplateNames()) {
-            log.info("Start creating file for template: {}", templateName);
-            createTemplate.create(outputDir, getReplaceMap(excelContent), templateName);
+        for (T excelContent : excelContents) {
+            for (String templateName : getTemplateNames()) {
+                createTemplate.create(outputDir, getReplaceMap(excelContent), templateName);
+            }
         }
     }
 

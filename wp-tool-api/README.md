@@ -121,3 +121,24 @@ docker build -t wp-tool-api:latest .
 ```bash
 docker run --rm -p 8080:8080 wp-tool-api:latest
 ```
+
+## 持久化说明
+
+为了让日志、临时文件、缓存等数据在容器重建后仍保留，请将宿主机目录挂载到 `/app/work-dir` 路径。
+
+### Linux 示例
+
+```bash
+docker build -t wp-tool-api:latest .
+docker run --rm -d -p 8080:8080 \
+  -v ./work-dir:/app/work-dir \  
+  -v /mnt/d/WORK/128SYIS25142_devora/:/app/work-dir/svn \
+  --name wp-tool-api \
+  wp-tool-api:latest
+```
+
+### 路径映射关系
+
+- 容器内：`/app/work-dir/`
+- 宿主机：`./work-dir`
+

@@ -42,23 +42,14 @@ public class WPIOGenerator extends WPAbstractGenerator<ScreenExcelContent> {
     private static final Map<String, String> CHECK_KBN_MAP = new LinkedHashMap<String, String>() {
         private static final long serialVersionUID = 1L;
         {
-//            REQ    ：必須チェック
-//            EXT    ：存在チェック
-//            DUP    ：重複チェック
-//            RNG    ：範囲チェック   逆転チェック
-//            RNG_MAX:           最大値チェック
-//            RNG_MIN:         最小値チェック
-//            FMT    ：フォーマットチェック  文字種チェック
-//            BIZ     ：業務上のチェック
-//            BIZ_ABLE     ：可能チェック
-//            BIZ_VALID            : 妥当性チェック
-//            BIZ_CHG  : 変更チェック
             put("必須チェック", "REQ");
             put("存在チェック", "EXT");
             put("重複チェック", "DUP");
             put("範囲チェック", "RNG");
+            put("逆転チェック", "RNG");
             put("最大値チェック", "RNG_MAX");
             put("最小値チェック", "RNG_MIN");
+            put("フォーマットチェック", "FMT");
             put("文字種チェック", "FMT");
             put("可能チェック", "BIZ_ABLE");
             put("妥当性チェック", "BIZ_VALID");

@@ -123,8 +123,7 @@ public class DBQueryParseExcel extends AbstractParseTool {
 		// ==================== 情况一：普通模式（无UNION）====================
 		if (!isUnionAllCase) {
 			// 解析普通 JOIN 条件
-			List<DBQueryJoinConditionContents> list = new ArrayList<>();
-			int lastRow = parseNormalJoinBlock(sheet, scan, list);
+			int lastRow = parseNormalJoinBlock(sheet, scan, normalList);
 			// 提取 ★ 标题区块内容到 sectionContents
 			extractStarSectionContent(sheet, lastRow, sectionContents);
 		}
@@ -256,8 +255,8 @@ public class DBQueryParseExcel extends AbstractParseTool {
 				continue;
 			}
 
-			String b = getCellValue(row, DBQUERY_SHEET.COL_B).trim();
-			if (b.startsWith("★") && b.endsWith("クエリ")) {
+			String queryName = getCellValue(row, DBQUERY_SHEET.COL_B).trim();
+			if (queryName.startsWith("★") && queryName.endsWith("クエリ")) {
 				// Step 1: 找到块结束
 				int blockEnd = r + 1;
 				while (blockEnd <= sheet.getLastRowNum()) {
@@ -367,6 +366,7 @@ public class DBQueryParseExcel extends AbstractParseTool {
 
 				// Step 4: 构建 block
 				DBQueryJoinConditionUnionAllContents block = new DBQueryJoinConditionUnionAllContents();
+				block.setQueryName(queryName);
 				block.setJoinConditions(joins);
 				block.setCondition(conditionText);
 				block.setSort(sortText);
@@ -480,10 +480,6 @@ public class DBQueryParseExcel extends AbstractParseTool {
 		return line.toString();
 	}
 
-	private boolean isJoinMethod(String method) {
-		return !StringUtils.isBlank(method) && (method.contains("内部結合") || method.contains("左外部結合"));
-	}
-
 	private boolean isSectionHeader(String text) {
 		if (text == null || text.isEmpty())
 			return false;
@@ -574,6 +570,7 @@ public class DBQueryParseExcel extends AbstractParseTool {
 		entity.setEncodeType(getCellValue(row, DBQUERY_SHEET.COL_AB));
 		entity.setResourceTableName(getCellValue(row, DBQUERY_SHEET.COL_AJ));
 		entity.setResourceColumnName(getCellValue(row, DBQUERY_SHEET.COL_AK));
+		entity.setCaseWhenCondition(getCellValue(row, DBQUERY_SHEET.COL_AL));
 		return entity;
 	}
 

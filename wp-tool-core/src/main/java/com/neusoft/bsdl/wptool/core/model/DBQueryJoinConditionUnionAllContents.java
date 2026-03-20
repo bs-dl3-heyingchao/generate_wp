@@ -6,6 +6,9 @@ import lombok.Data;
 
 @Data
 public class DBQueryJoinConditionUnionAllContents {
+	/** クエリ名称 */
+	private String queryName;
+	
 	/** クエリ */
 	private List<DBQueryJoinConditionContents> joinConditions;
 

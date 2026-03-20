@@ -41,10 +41,10 @@ public interface CommonConstant {
 		Integer COL_M = 12;
 		Integer COL_P = 15;
 		Integer COL_AB = 27;
-		Integer COL_AD = 25;
+		Integer COL_AD = 29;
 		Integer COL_AJ = 35;
 		Integer COL_AK = 36;
-
+		Integer COL_AL = 37;
 		String STR_TRUE = "TRUE";
 
 		// 解析説明文字

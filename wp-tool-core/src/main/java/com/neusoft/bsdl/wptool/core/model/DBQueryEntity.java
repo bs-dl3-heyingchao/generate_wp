@@ -36,4 +36,6 @@ public class DBQueryEntity {
 	private String resourceTableName;
 	/**取得元:カラム名*/
 	private String resourceColumnName;
+	/**備考*/
+	private String caseWhenCondition;
 }

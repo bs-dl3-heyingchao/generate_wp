@@ -93,8 +93,10 @@ public class WPDBQueryGenerator extends WPAbstractGenerator<DBQuerySheetContent>
 
 		List<DmProp> dmPropList = new ArrayList<DmProp>();
 		String sql = createDbQuery(excelContent);
-		log.info("sql:{}", sql);
-		dmPropList.add(new DmProp("dbQuery", escapseXml(sql), "false"));
+		String result = context.getSqlConverter().convert(sql);
+		log.info("result:{}", result);
+		dmPropList.add(new DmProp("dbQuery", escapseXml(result), "false"));
+		
 		replaceMap.put("dmPropList", dmPropList);
 		return replaceMap;
 	}
@@ -140,7 +142,7 @@ public class WPDBQueryGenerator extends WPAbstractGenerator<DBQuerySheetContent>
 						querySelectBuilder.append(parsedCaseWhenConditon).append(STR_CTRL).append(STR_TAB).append("END AS ")
 								.append(queryEntities.get(i).getLogicalName()).append(STR_COMMA + STR_CTRL);
 					} else {
-						querySelectBuilder.append("ERROR⇒解析できないCASE-WHEN：").append(caseWhenConditon)
+						querySelectBuilder.append("/*ERROR⇒解析できないCASE-WHEN：").append(caseWhenConditon).append("*/")
 								.append(STR_COMMA + STR_CTRL);
 					}
 				}

@@ -11,7 +11,19 @@
     <is-disable>false</is-disable>
     <creator>eclipse</creator>
     <create-time>2026-04-01 00:00:00.0</create-time>
+#if(${ioPartsList} && ${ioPartsList.size()} > 0)
+    <io-parts-list>
+#foreach($ioParts in $!{ioPartsList})
+      <io-parts>
+        <io-code>$!{gmIoId}</io-code>
+        <parts>$!{ioParts.parts}</parts>
+        <position>$!{ioParts.position}</position>
+      </io-parts>
+#end
+    </io-parts-list>
+#else
     <io-parts-list/>
+#end
     <io-item-list>
 #foreach($item in $!{ioItemList})
       <io-item>

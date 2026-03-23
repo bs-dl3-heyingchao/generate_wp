@@ -362,7 +362,6 @@ public class DBQueryParseExcel extends AbstractParseTool {
 			// 「★...クエリ」形式のブロックを検出
 			if (queryName.startsWith(DBQUERY_SHEET.STR_JUDGEMENT_PREFIX)
 					&& queryName.endsWith(DBQUERY_SHEET.STR_JUDGEMENT_QUERY)) {
-
 				// ブロックの終了位置を特定（次の★クエリ or シート終端）
 				int blockEnd = r + 1;
 				while (blockEnd <= sheet.getLastRowNum()) {

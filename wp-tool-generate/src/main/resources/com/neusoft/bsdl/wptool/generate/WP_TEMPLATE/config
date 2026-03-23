@@ -6,3 +6,9 @@ io_path=io
 type_2=dm
 dm_path=dm
 
+#Type dq
+type_3=dq
+dq_path=dq
+
+
+

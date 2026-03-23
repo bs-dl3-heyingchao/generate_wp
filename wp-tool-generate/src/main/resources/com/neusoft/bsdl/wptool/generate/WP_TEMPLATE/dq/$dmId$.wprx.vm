@@ -1,0 +1,42 @@
+<?xml version = "1.0"  encoding = "UTF-8" ?>
+  <dm>
+    <tool-version>2.7.0.0</tool-version>
+    <code>${dmId}</code>
+    <name>${dmName}</name>
+    <is-disable>false</is-disable>
+    <creator>eclipse</creator>
+    <create-time>2026-04-01 00:00:00.0</create-time>
+    <dm-item-list>
+#foreach($item in $!{dmItemList})
+      <dm-item>
+        <dm-code>${dmId}</dm-code>
+        <code>$!{item.code}</code>
+        <name>$!{item.name}</name>
+        <length>$!{item.length}</length>
+        <byteSize>$!{item.byteSize}</byteSize>
+        <scale>$!{item.scale}</scale>
+        <is-nullable>$!{item.is_nullable}</is-nullable>
+        <key-group>$!{item.key_group}</key-group>
+        <data-type>$!{item.data_type}</data-type>
+        <is-disable>$!{item.is_disable}</is-disable>
+        <creator>eclipse</creator>
+        <create-time>2026-04-01 00:00:00.0</create-time>
+        <dm-item-prop-list/>
+      </dm-item>
+#end
+    </dm-item-list>
+    <dm-ope-list/>
+#if(${dmPropList} && ${dmPropList.size()} > 0)
+    <dm-prop-list>
+#foreach($dmProp in $!{dmPropList})
+      <dm-prop>
+        <key>$!{dmProp.key}</key>
+        <value>$!{dmProp.value}</value>
+        <is-disable>$!{dmProp.is_disable}</is-disable>
+      </dm-prop>
+#end
+    </dm-prop-list>
+#else
+    <dm-prop-list/>
+#end
+  </dm>

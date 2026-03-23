@@ -1,7 +1,5 @@
 package com.neusoft.bsdl.wptool.generate;
 
-import java.io.File;
-import java.io.IOException;
 import java.util.ArrayList;
 import java.util.HashMap;
 import java.util.List;
@@ -24,7 +22,7 @@ public class WPCommonDMGenerator extends WPAbstractGenerator<TableBean> {
     public Map<String, Object> getReplaceMap(TableBean tableBean) {
         Map<String, Object> replaceMap = new HashMap<>();
         replaceMap.put("dmId", tableBean.getTableName());
-        replaceMap.put("dmName", tableBean.getTableFullName());
+        replaceMap.put("dmName", escapseXml(tableBean.getTableFullName()));
         List<DmItem> dmList = new ArrayList<DmItem>();
         for (FieldBean fb : tableBean.getFieldList()) {
             DmItem dmItem = new DmItem();
@@ -44,7 +42,7 @@ public class WPCommonDMGenerator extends WPAbstractGenerator<TableBean> {
                 }
             }
             dmItem.code = fb.getFieldName();
-            dmItem.name = fb.getFieldFullName();
+            dmItem.name = escapseXml(fb.getFieldFullName());
             dmItem.length = fb.getLen();
             dmItem.byteSize = "0";
             dmItem.scale = fb.getDotLen();

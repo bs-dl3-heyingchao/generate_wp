@@ -120,7 +120,6 @@ public class WPDBQueryGenerator extends WPAbstractGenerator<DBQuerySheetContent>
 		StringBuilder querySelectBuilder = new StringBuilder();
 		//結合条件のビルダー
 		StringBuilder queryConditionBuilder = new StringBuilder();
-		//
 		List<DBQueryJoinConditionContents> normaljoinConditions = joinCondition.getNormaljoinConditions();
 		if (!joinCondition.isUnionAllCase() && !CollectionUtils.isEmpty(normaljoinConditions)) {
 			List<DBQueryEntity> queryEntities = excelContent.getQueryEntities();

@@ -7,12 +7,11 @@ import java.util.List;
 import com.neusoft.bsdl.wptool.core.context.WPContext;
 import com.neusoft.bsdl.wptool.core.io.FileSource;
 import com.neusoft.bsdl.wptool.core.io.LocalFileSource;
+import com.neusoft.bsdl.wptool.core.model.DBQueryExcelContent;
 import com.neusoft.bsdl.wptool.core.model.ScreenExcelContent;
 import com.neusoft.bsdl.wptool.core.service.ConfigService;
 import com.neusoft.bsdl.wptool.core.service.ParseExcelUtils;
 import com.neusoft.bsdl.wptool.generate.context.WPGenerateContext;
-
-import tools.jackson.databind.ObjectMapper;
 
 public class WpCodeGeneratorTest {
 
@@ -33,11 +32,9 @@ public class WpCodeGeneratorTest {
             screenExcelContents.add(screenExcelContent);
         }
 
-        File outputFile = new File("./target/screenExcelContents.json");
-        ObjectMapper objectMapper = new ObjectMapper();
-        objectMapper.writerWithDefaultPrettyPrinter().writeValue(outputFile, screenExcelContents);
+        DBQueryExcelContent queryExcelContent = ParseExcelUtils.parseDBQueryExcel(new LocalFileSource(ConfigService.getSvnFullPath("\\test\\模版\\設計書\\dbQuery定義書_工事保守_総合試験管理共通.xlsx")));
 
-        WPIOGenerator codeGenerator = new WPIOGenerator(context, screenExcelContents);
+        WPIOGenerator codeGenerator = new WPIOGenerator(context, screenExcelContents, queryExcelContent.getQuerySheetContents());
         codeGenerator.generate(outputDir);
     }
 

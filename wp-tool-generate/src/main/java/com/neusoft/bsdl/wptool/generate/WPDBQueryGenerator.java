@@ -94,8 +94,9 @@ public class WPDBQueryGenerator extends WPAbstractGenerator<DBQuerySheetContent>
 		List<DmProp> dmPropList = new ArrayList<DmProp>();
 		String sql = createDbQuery(excelContent);
 		if (!StringUtils.isEmpty(sql)) {
-			String result = context.getSqlConverter().convert(sql);
-			log.info("result:{}", result);
+	        log.info("generated SQL before conversion:\n{}", sql);
+	        String result = context.getSqlConverter().convert(sql);
+	        log.info("generated SQL after conversion:\n{}", result);
 			dmPropList.add(new DmProp("dbQuery", escapseXml(sql), "false"));
 			replaceMap.put("dmPropList", dmPropList);
 		}

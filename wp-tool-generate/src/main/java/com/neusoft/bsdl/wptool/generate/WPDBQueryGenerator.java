@@ -114,13 +114,20 @@ public class WPDBQueryGenerator extends WPAbstractGenerator<DBQuerySheetContent>
 	 */
 	private String createDbQuery(DBQuerySheetContent excelContent) {
 		StringBuilder queryBuilder = new StringBuilder();
+		String errorMsg = null;
 		DBQueryJoinCondition joinCondition = excelContent.getJoinCondition();
 		if (ObjectUtils.isEmpty(joinCondition)) {
-			writeErrorLog("dbQuery：検索条件が記載なしです、ご確認ください。", "");
+			errorMsg = String.format("[%s]シート:DBQuery定義書の結合条件の備考が記載なしです、ご確認ください。", excelContent.getSheetName());
+			writeErrorLog(errorMsg);
 			return null;
 		}
 		// dbQuery：検索条件
 		String queryCondition = excelContent.getQueryCondition();
+		if (StringUtils.isEmpty(queryCondition)) {
+			errorMsg = String.format("[%s]シート:DBQuery定義書のdbQuery：検索条件が記載なしです、ご確認ください。", excelContent.getSheetName());
+			writeErrorLog(errorMsg);
+			return null;
+		}
 		// WHEREのコンディションを洗い出す
 		String whereConditon = extractWhereClause(queryCondition);
 		// SELECT文の項目のビルダー
@@ -128,7 +135,7 @@ public class WPDBQueryGenerator extends WPAbstractGenerator<DBQuerySheetContent>
 		// 結合条件のビルダー
 		StringBuilder queryConditionBuilder = new StringBuilder();
 		List<DBQueryJoinConditionContents> normaljoinConditions = joinCondition.getNormaljoinConditions();
-		if (!joinCondition.isUnionAllCase() && !CollectionUtils.isEmpty(normaljoinConditions)) {
+		if (!joinCondition.isUnionAllCase()) {
 			List<DBQueryEntity> queryEntities = excelContent.getQueryEntities();
 			for (int i = 0; i < queryEntities.size(); i++) {
 				String caseWhenConditon = queryEntities.get(i).getCaseWhenCondition();
@@ -141,8 +148,8 @@ public class WPDBQueryGenerator extends WPAbstractGenerator<DBQuerySheetContent>
 					}
 				} else {
 					// AL列の記載が存在する場合、CASE-WHEN条件を作成する
-					String parsedCaseWhenConditon = convertToCaseWhen(queryEntities.get(i).getItemNo(),
-							caseWhenConditon);
+					String parsedCaseWhenConditon = convertToCaseWhen(excelContent.getSheetName(),
+							queryEntities.get(i).getItemNo(), caseWhenConditon);
 					if (!StringUtils.isEmpty(parsedCaseWhenConditon)) {
 						querySelectBuilder.append(parsedCaseWhenConditon).append(STR_CTRL).append(STR_TAB)
 								.append("END AS ").append(queryEntities.get(i).getLogicalName())
@@ -153,30 +160,35 @@ public class WPDBQueryGenerator extends WPAbstractGenerator<DBQuerySheetContent>
 					}
 				}
 			}
+			// 結合条件エリアが存在する場合
+			if (!CollectionUtils.isEmpty(normaljoinConditions)) {
+				// 結合条件を作成する
+				queryConditionBuilder.append(normaljoinConditions.get(0).getTableName());
+				for (int i = 1; i < normaljoinConditions.size(); i++) {
+					DBQueryJoinConditionContents current = normaljoinConditions.get(i);
+					String joinType = logicalNameToPhicalName(current.getMethod());
+					String tableName = current.getTableName();
+					String alias = current.getAlias();
+					String condition = current.getCondition();
 
-			// 結合条件を作成する
-			queryConditionBuilder.append(normaljoinConditions.get(0).getTableName());
-			for (int i = 1; i < normaljoinConditions.size(); i++) {
-				DBQueryJoinConditionContents current = normaljoinConditions.get(i);
-				String joinType = logicalNameToPhicalName(current.getMethod());
-				String tableName = current.getTableName();
-				String alias = current.getAlias();
-				String condition = current.getCondition();
+					queryConditionBuilder.append(STR_CTRL).append(joinType).append(STR_HANKAKU_SPACE);
 
-				queryConditionBuilder.append(STR_CTRL).append(joinType).append(STR_HANKAKU_SPACE);
+					if (!STR_HAIHUN.equals(alias)) {
+						queryConditionBuilder.append(tableName).append(STR_HANKAKU_SPACE).append(alias);
+					} else {
+						queryConditionBuilder.append(tableName);
+					}
 
-				if (!STR_HAIHUN.equals(alias)) {
-					queryConditionBuilder.append(tableName).append(STR_HANKAKU_SPACE).append(alias);
-				} else {
-					queryConditionBuilder.append(tableName);
+					queryConditionBuilder.append(STR_CTRL).append(STR_TAB).append("ON ").append(condition);
 				}
-
-				queryConditionBuilder.append(STR_CTRL).append(STR_TAB).append("ON ").append(condition);
+				queryBuilder.append("SELECT " + STR_CTRL + querySelectBuilder.toString() + STR_CTRL + "FROM "
+						+ queryConditionBuilder.toString() + STR_CTRL + "WHERE" + STR_CTRL + whereConditon);
+			} else {
+				errorMsg = String.format("[%s]シート:DBQuery定義書の備考の結合条件が記載なしです、ご確認ください。", excelContent.getSheetName());
+				writeErrorLog(errorMsg);
+				return null;
 			}
 		}
-
-		queryBuilder.append("SELECT " + STR_CTRL + querySelectBuilder.toString() + STR_CTRL + "FROM "
-				+ queryConditionBuilder.toString() + STR_CTRL + "WHERE" + STR_CTRL + whereConditon);
 		return queryBuilder.toString();
 	}
 
@@ -201,21 +213,22 @@ public class WPDBQueryGenerator extends WPAbstractGenerator<DBQuerySheetContent>
 	 * <li>「上記以外の場合」行は最後に1回のみ出現することを想定</li>
 	 * </ul>
 	 *
+	 * @param sheetName        シート名称
 	 * @param itemNo           項番（エラーログ用）
 	 * @param caseWhenConditon 複数行からなる日本語条件分岐テキスト
 	 * @return 変換されたCASE WHEN式（例: "CASE\n\tWHEN XXX = 03 THEN YYY\n\tELSE
 	 *         NULL"）。解析失敗時は空文字列
 	 */
-	public String convertToCaseWhen(String itemNo, String caseWhenConditon) {
+	public String convertToCaseWhen(String sheetName, String itemNo, String caseWhenConditon) {
 		String[] lines = caseWhenConditon.split(STR_CTRL);
 		if (lines.length < 2) {
-			exportWarningCondition(itemNo, caseWhenConditon);
+			exportWarningCondition(sheetName, itemNo, caseWhenConditon);
 			return "";
 		}
 
 		String firstLine = lines[0].trim();
 		if (!firstLine.endsWith("が")) {
-			exportWarningCondition(itemNo, caseWhenConditon);
+			exportWarningCondition(sheetName, itemNo, caseWhenConditon);
 			return "";
 		}
 		String columnName = firstLine.substring(0, firstLine.length() - 1).trim();
@@ -247,7 +260,7 @@ public class WPDBQueryGenerator extends WPAbstractGenerator<DBQuerySheetContent>
 				caseBuilder.append(STR_TAB).append(STR_TAB).append("WHEN ").append(columnName).append(" = ")
 						.append(code).append(" THEN ").append(thenExpr).append(STR_CTRL);
 			} else {
-				exportWarningCondition(itemNo, caseWhenConditon);
+				exportWarningCondition(sheetName, itemNo, caseWhenConditon);
 				break;
 			}
 		}
@@ -330,11 +343,12 @@ public class WPDBQueryGenerator extends WPAbstractGenerator<DBQuerySheetContent>
 	/**
 	 * CASE-WHEN条件のパースエラーをログに出力します。
 	 *
+	 * @param sheetName        シート名称
 	 * @param itemNo           項番
 	 * @param caseWhenConditon 元の条件テキスト
 	 */
-	private void exportWarningCondition(String itemNo, String caseWhenConditon) {
-		String logSubPrefix = String.format("項番[%s]、AL列のコンディション[%s]", itemNo, caseWhenConditon);
+	private void exportWarningCondition(String sheetName, String itemNo, String caseWhenConditon) {
+		String logSubPrefix = String.format("[%s]シート:項番[%s]、AL列のコンディション[%s]", sheetName, itemNo, caseWhenConditon);
 		writeWarnLog("コンディションの形式が不正です:{}", logSubPrefix);
 	}
 }

@@ -97,8 +97,9 @@ public class WPDBQueryGenerator extends WPAbstractGenerator<DBQuerySheetContent>
 			String result = context.getSqlConverter().convert(sql);
 			log.info("result:{}", result);
 			dmPropList.add(new DmProp("dbQuery", escapseXml(sql), "false"));
+			replaceMap.put("dmPropList", dmPropList);
 		}
-		replaceMap.put("dmPropList", dmPropList);
+
 		return replaceMap;
 	}
 

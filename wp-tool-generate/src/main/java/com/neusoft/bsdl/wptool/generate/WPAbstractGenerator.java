@@ -58,6 +58,9 @@ public abstract class WPAbstractGenerator<T> {
     }
 
     protected String escapseXml(String xml) {
+//        if (xml != null) {
+//            xml = xml.replaceAll("\r\n", "\n").replaceAll("\r", "").replaceAll("\n", "\r\n");
+//        }
         return StringEscapeUtils.escapeXml11(xml);
     }
 

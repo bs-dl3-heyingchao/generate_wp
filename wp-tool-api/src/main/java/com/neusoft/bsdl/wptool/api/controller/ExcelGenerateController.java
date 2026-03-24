@@ -25,6 +25,8 @@ import com.neusoft.bsdl.wptool.api.dto.ApiResponse;
 import com.neusoft.bsdl.wptool.api.dto.GeneratedCodeZipResponse;
 import com.neusoft.bsdl.wptool.core.exception.WPParseExcelException;
 import com.neusoft.bsdl.wptool.core.io.FileSource;
+import com.neusoft.bsdl.wptool.core.model.DBQueryExcelContent;
+import com.neusoft.bsdl.wptool.core.model.DBQuerySheetContent;
 import com.neusoft.bsdl.wptool.core.model.ScreenExcelContent;
 import com.neusoft.bsdl.wptool.core.service.ParseExcelUtils;
 import com.neusoft.bsdl.wptool.generate.WPIOGenerator;
@@ -53,13 +55,14 @@ public class ExcelGenerateController {
     @PostMapping("/excel/generate-io-code")
     @Operation(summary = "画面設計書ExcelからIOコード生成", description = "アップロードされた画面設計書Excelを解析し、生成したコードをZIP化してBase64文字列で返します。")
     public ResponseEntity<ApiResponse<GeneratedCodeZipResponse>> generateIoCode(
-            @Parameter(description = "解析対象のExcelファイル(複数可)", required = true, content = @Content(schema = @Schema(type = "array"))) @RequestParam("ioFiles") MultipartFile[] ioFiles) {
+            @Parameter(description = "解析対象のExcelファイル(複数可)", required = true, content = @Content(schema = @Schema(type = "array"))) @RequestParam("ioFiles") MultipartFile[] ioFiles,
+            @Parameter(description = "関連するDBQuery設計書(複数可)", required = false, content = @Content(schema = @Schema(type = "array"))) @RequestParam("dbQueryFiles") MultipartFile[] dbQueryFiles) {
         if (ioFiles == null || ioFiles.length == 0) {
             throw new ResponseStatusException(HttpStatus.BAD_REQUEST, "Uploaded files are empty");
         }
 
         try {
-            GeneratedCodeZipResponse responseData = generateZipBase64Response(ioFiles);
+            GeneratedCodeZipResponse responseData = generateZipBase64Response(ioFiles, dbQueryFiles);
             return ResponseEntity.ok(ApiResponse.success(responseData));
         } catch (WPParseExcelException exception) {
             throw exception;
@@ -68,7 +71,7 @@ public class ExcelGenerateController {
         }
     }
 
-    private GeneratedCodeZipResponse generateZipBase64Response(MultipartFile[] ioFiles) throws Exception {
+    private GeneratedCodeZipResponse generateZipBase64Response(MultipartFile[] ioFiles, MultipartFile[] dbQueryFiles) throws Exception {
         String taskId = UUID.randomUUID().toString().replace("-", "");
         Path taskOutputDir = Paths.get(generateOutputRootDir, taskId);
         Files.createDirectories(taskOutputDir);
@@ -86,7 +89,19 @@ public class ExcelGenerateController {
             parsedContents.add(screenExcelContent);
         }
 
-        WPIOGenerator ioGenerator = new WPIOGenerator(generateContext, parsedContents, WPIOGenerator.IOType.IO);
+        List<DBQuerySheetContent> parsedDBQueryContents = new ArrayList<>();
+        if (dbQueryFiles != null) {
+            for (MultipartFile file : dbQueryFiles) {
+                if (file == null || file.isEmpty()) {
+                    continue;
+                }
+
+                FileSource fileSource = file::getInputStream;
+                DBQueryExcelContent queryExcelContent = ParseExcelUtils.parseDBQueryExcel(fileSource);
+                parsedDBQueryContents.addAll(queryExcelContent.getQuerySheetContents());
+            }
+        }
+        WPIOGenerator ioGenerator = new WPIOGenerator(generateContext, parsedContents, parsedDBQueryContents);
         ioGenerator.generate(taskOutputDir.toFile());
         errorLog.addAll(ioGenerator.getLogSnapshotError());
         warnLog.addAll(ioGenerator.getLogSnapshotWarn());

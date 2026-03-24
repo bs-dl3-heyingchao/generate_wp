@@ -105,7 +105,7 @@ public class WPIOGenerator extends WPAbstractGenerator<ScreenExcelContent> {
     }
 
     private void loadDBQuerySheetContents(List<DBQuerySheetContent> dbQuerySheetContents) {
-        if (dbQuerySheetContents != null) {
+        if (dbQuerySheetContents != null && !dbQuerySheetContents.isEmpty()) {
             List<TableBean> dbQueryTableBeans = new ArrayList<>();
             for (DBQuerySheetContent dbQuerySheetContent : dbQuerySheetContents) {
                 String tableFullName = dbQuerySheetContent.getTableName();

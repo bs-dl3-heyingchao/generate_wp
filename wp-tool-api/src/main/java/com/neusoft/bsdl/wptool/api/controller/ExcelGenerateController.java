@@ -29,6 +29,7 @@ import com.neusoft.bsdl.wptool.core.model.DBQueryExcelContent;
 import com.neusoft.bsdl.wptool.core.model.DBQuerySheetContent;
 import com.neusoft.bsdl.wptool.core.model.ScreenExcelContent;
 import com.neusoft.bsdl.wptool.core.service.ParseExcelUtils;
+import com.neusoft.bsdl.wptool.generate.WPDBQueryGenerator;
 import com.neusoft.bsdl.wptool.generate.WPIOGenerator;
 import com.neusoft.bsdl.wptool.generate.context.WPGenerateContext;
 
@@ -62,7 +63,7 @@ public class ExcelGenerateController {
         }
 
         try {
-            GeneratedCodeZipResponse responseData = generateZipBase64Response(ioFiles, dbQueryFiles);
+            GeneratedCodeZipResponse responseData = generateIoZipBase64Response(ioFiles, dbQueryFiles);
             return ResponseEntity.ok(ApiResponse.success(responseData));
         } catch (WPParseExcelException exception) {
             throw exception;
@@ -71,7 +72,51 @@ public class ExcelGenerateController {
         }
     }
 
-    private GeneratedCodeZipResponse generateZipBase64Response(MultipartFile[] ioFiles, MultipartFile[] dbQueryFiles) throws Exception {
+    @PostMapping("/excel/generate-dbquery-code")
+    @Operation(summary = "画面設計書ExcelからIOコード生成", description = "アップロードされた画面設計書Excelを解析し、生成したコードをZIP化してBase64文字列で返します。")
+    public ResponseEntity<ApiResponse<GeneratedCodeZipResponse>> generateDbQueryCode(
+            @Parameter(description = "DBQuery設計書(複数可)", required = true, content = @Content(schema = @Schema(type = "array"))) @RequestParam("dbQueryFiles") MultipartFile[] dbQueryFiles) {
+        if (dbQueryFiles == null || dbQueryFiles.length == 0) {
+            throw new ResponseStatusException(HttpStatus.BAD_REQUEST, "Uploaded files are empty");
+        }
+
+        try {
+            GeneratedCodeZipResponse responseData = generateDbQueryZipBase64Response(dbQueryFiles);
+            return ResponseEntity.ok(ApiResponse.success(responseData));
+        } catch (WPParseExcelException exception) {
+            throw exception;
+        } catch (Exception exception) {
+            throw new ResponseStatusException(HttpStatus.BAD_REQUEST, "Failed to generate code from excel files", exception);
+        }
+    }
+
+    private GeneratedCodeZipResponse generateDbQueryZipBase64Response(MultipartFile[] dbQueryFiles) throws Exception {
+        String taskId = UUID.randomUUID().toString().replace("-", "");
+        Path taskOutputDir = Paths.get(generateOutputRootDir, taskId);
+        Files.createDirectories(taskOutputDir);
+
+        List<String> errorLog = new ArrayList<>();
+        List<String> warnLog = new ArrayList<>();
+        for (MultipartFile file : dbQueryFiles) {
+            if (file == null || file.isEmpty()) {
+                continue;
+            }
+
+            FileSource fileSource = file::getInputStream;
+            DBQueryExcelContent queryExcelContent = ParseExcelUtils.parseDBQueryExcel(fileSource);
+            for (DBQuerySheetContent sheetContent : queryExcelContent.getQuerySheetContents()) {
+                WPDBQueryGenerator ioGenerator = new WPDBQueryGenerator(generateContext, sheetContent);
+                ioGenerator.generate(taskOutputDir.toFile());
+                errorLog.addAll(ioGenerator.getLogSnapshotError());
+                warnLog.addAll(ioGenerator.getLogSnapshotWarn());
+            }
+        }
+        byte[] zipBytes = zipDirectory(taskOutputDir);
+        String zipBase64 = Base64.getEncoder().encodeToString(zipBytes);
+        return new GeneratedCodeZipResponse(zipBase64, taskId, errorLog, warnLog);
+    }
+
+    private GeneratedCodeZipResponse generateIoZipBase64Response(MultipartFile[] ioFiles, MultipartFile[] dbQueryFiles) throws Exception {
         String taskId = UUID.randomUUID().toString().replace("-", "");
         Path taskOutputDir = Paths.get(generateOutputRootDir, taskId);
         Files.createDirectories(taskOutputDir);

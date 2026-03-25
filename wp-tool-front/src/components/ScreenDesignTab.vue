@@ -18,7 +18,7 @@
           variant="elevated"
           size="large"
           class="upload-btn"
-          @click="$refs.fileInput.click()"
+          @click="fileInput?.click()"
         >
           <v-icon left>mdi-file-plus</v-icon>
           ファイルを選択

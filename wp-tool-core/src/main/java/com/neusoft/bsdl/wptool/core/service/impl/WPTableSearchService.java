@@ -19,7 +19,7 @@ import lombok.extern.slf4j.Slf4j;
 @Slf4j
 public class WPTableSearchService implements IWPTableSearchService {
 
-    private Map<String, TableBean> tableMap = new LinkedHashMap<String, TableBean>();
+    protected Map<String, TableBean> tableMap = new LinkedHashMap<String, TableBean>();
 
     public WPTableSearchService() {
     }

@@ -42,6 +42,8 @@ const emit = defineEmits<{
   filesAdded: [files: File[]]
 }>()
 
+const fileInput = ref<HTMLInputElement>()
+
 const onDrop = (event: DragEvent) => {
   event.preventDefault()
   if (event.dataTransfer?.files) {
@@ -66,11 +68,12 @@ const onFileSelect = (event: Event) => {
   display: flex;
   flex-direction: column;
   align-items: center;
+  width: 100%;
 }
 
 .upload-card {
-  width: 50vw;
-  min-width: 500px;
+  width: 100%;
+  min-width: 300px;
   border: 2px dashed #1976d2 !important;
   border-radius: 12px;
   transition: all 0.3s ease;

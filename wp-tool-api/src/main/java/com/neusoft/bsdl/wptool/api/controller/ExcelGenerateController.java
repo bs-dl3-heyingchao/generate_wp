@@ -23,7 +23,7 @@ import org.springframework.web.server.ResponseStatusException;
 
 import com.neusoft.bsdl.wptool.api.dto.ApiResponse;
 import com.neusoft.bsdl.wptool.api.dto.GeneratedCodeZipResponse;
-import com.neusoft.bsdl.wptool.core.exception.WPParseExcelException;
+import com.neusoft.bsdl.wptool.core.exception.WPException;
 import com.neusoft.bsdl.wptool.core.io.FileSource;
 import com.neusoft.bsdl.wptool.core.model.DBQueryExcelContent;
 import com.neusoft.bsdl.wptool.core.model.DBQuerySheetContent;
@@ -65,7 +65,7 @@ public class ExcelGenerateController {
         try {
             GeneratedCodeZipResponse responseData = generateIoZipBase64Response(ioFiles, dbQueryFiles);
             return ResponseEntity.ok(ApiResponse.success(responseData));
-        } catch (WPParseExcelException exception) {
+        } catch (WPException exception) {
             throw exception;
         } catch (Exception exception) {
             throw new ResponseStatusException(HttpStatus.BAD_REQUEST, "Failed to generate code from excel files", exception);
@@ -83,7 +83,7 @@ public class ExcelGenerateController {
         try {
             GeneratedCodeZipResponse responseData = generateDbQueryZipBase64Response(dbQueryFiles);
             return ResponseEntity.ok(ApiResponse.success(responseData));
-        } catch (WPParseExcelException exception) {
+        } catch (WPException exception) {
             throw exception;
         } catch (Exception exception) {
             throw new ResponseStatusException(HttpStatus.BAD_REQUEST, "Failed to generate code from excel files", exception);

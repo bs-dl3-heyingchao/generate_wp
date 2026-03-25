@@ -132,6 +132,9 @@ public class WPIOGenerator extends WPAbstractGenerator<ScreenExcelContent> {
     }
 
     private void prepareExcelContents() {
+        if (excelContents == null || excelContents.isEmpty()) {
+            throw new WPException("画面定義書が見つかりません。");
+        }
         List<ScreenExcelContent> mainContents = new ArrayList<>();
         ScreenDefinition mainScreenDefinition = null;
         List<ScreenDefinitionPartInOut> inOutPartsWithSession = null;
@@ -151,54 +154,66 @@ public class WPIOGenerator extends WPAbstractGenerator<ScreenExcelContent> {
                 partContents.add(screenExcelContent);
             }
         }
-
-        if (mainContents.size() != 1) {
-            throw new WPException(String.format("%d本　部分入出力のメイン画面が含まれています。", mainContents.size()));
-        }
-        if (inOutPartsWithSession.size() != partContents.size()) {
-            StringBuilder errorMsg = new StringBuilder();
-            errorMsg.append(String.format("部分入出力の定義書の数と、メイン定義書に記載されている部分入出力の数が一致しません。メイン定義書の部分入出力の数：%d、部分入出力定義書の数：%d\n", mainScreenDefinition.getInOutParts().size(), partContents.size()));
-            for (ScreenDefinitionPartInOut part : inOutPartsWithSession) {
-                boolean found = false;
-                for (ScreenExcelContent partContent : partContents) {
-                    if (part.getPartCode().equals(partContent.getScreenId())) {
-                        found = true;
-                        break;
-                    }
-                }
-                if (!found) {
-                    errorMsg.append(String.format("メイン定義書に記載されている部分入出力ID '%s' が部分入出力定義書の画面IDに見つかりません。\n", part.getPartCode()));
-                }
-
-            }
-            for (ScreenExcelContent partContent : partContents) {
-                boolean found = false;
-                for (ScreenDefinitionPartInOut part : inOutPartsWithSession) {
-                    if (part.getPartCode().equals(partContent.getScreenId())) {
-                        found = true;
-                        break;
-                    }
-                }
-                if (!found) {
-                    errorMsg.append(String.format("部分入出力定義書の画面ID '%s' がメイン定義書に記載されている部分入出力IDに見つかりません。\n", partContent.getScreenId()));
-                }
-
-            }
-            throw new WPException(errorMsg.toString());
-        }
-        this.excelContents.clear();
-        excelContents.addAll(mainContents);
-        excelContents.addAll(partContents);
-
         this.codeSet = new HashSet<String>();
         this.itemIdMap = new HashMap<String, IOItem>();
         this.paramNameToCodeMap = new HashMap<String, String>();
         this.groupIndex = 0;
-        // 部分入出力的参数只用主设计书的
-        // 処理機能記述書
-        Map<String, String> paramNameToCodeMap = processScreenExcelSpecification(mainContents.get(0));
-        if (mainScreenDefinition.getInOutParts() != null && mainScreenDefinition.getInOutParts().size() > 0) {
+
+        // 不包含部分入出力的主设计书，按普通设计书处理
+        if (mainContents.isEmpty()) {
+            if (partContents.size() != 1) {
+                throw new WPException("１本定義書しか処理できません。定義書が見つかった数: " + partContents.size());
+            }
+            // 只有一个定义书，且没有部分入出力定义，直接当作主定义书处理
+            // 処理機能記述書
+            Map<String, String> paramNameToCodeMap = processScreenExcelSpecification(partContents.get(0));
             this.paramNameToCodeMap.putAll(paramNameToCodeMap);
+        }
+        // 包含部分入出力的主设计书（只能有1本），且部分入出力的定义书数量必须和主设计书中部分入出力的数量一致，否则报错
+        else {
+            if (mainContents.size() > 1) {
+                throw new WPException(String.format("部分入出力のメイン定義書は１本しか処理できません。メイン定義書が%d本見つかりました。", mainContents.size()));
+            }
+            if (inOutPartsWithSession.size() != partContents.size()) {
+                StringBuilder errorMsg = new StringBuilder();
+                errorMsg.append(String.format("部分入出力の定義書の数と、メイン定義書に記載されている部分入出力の数が一致しません。メイン定義書の部分入出力の数：%d、部分入出力定義書の数：%d\n", mainScreenDefinition.getInOutParts().size(), partContents.size()));
+                for (ScreenDefinitionPartInOut part : inOutPartsWithSession) {
+                    boolean found = false;
+                    for (ScreenExcelContent partContent : partContents) {
+                        if (part.getPartCode().equals(partContent.getScreenId())) {
+                            found = true;
+                            break;
+                        }
+                    }
+                    if (!found) {
+                        errorMsg.append(String.format("メイン定義書に記載されている部分入出力ID '%s' が部分入出力定義書の画面IDに見つかりません。\n", part.getPartCode()));
+                    }
+
+                }
+                for (ScreenExcelContent partContent : partContents) {
+                    boolean found = false;
+                    for (ScreenDefinitionPartInOut part : inOutPartsWithSession) {
+                        if (part.getPartCode().equals(partContent.getScreenId())) {
+                            found = true;
+                            break;
+                        }
+                    }
+                    if (!found) {
+                        errorMsg.append(String.format("部分入出力定義書の画面ID '%s' がメイン定義書に記載されている部分入出力IDに見つかりません。\n", partContent.getScreenId()));
+                    }
+
+                }
+                throw new WPException(errorMsg.toString());
+            }
+            this.excelContents.clear();
+            excelContents.addAll(mainContents);
+            excelContents.addAll(partContents);
+            // 部分入出力的参数只用主设计书的
+            // 処理機能記述書
+            Map<String, String> paramNameToCodeMap = processScreenExcelSpecification(mainContents.get(0));
+            if (mainScreenDefinition.getInOutParts() != null && mainScreenDefinition.getInOutParts().size() > 0) {
+                this.paramNameToCodeMap.putAll(paramNameToCodeMap);
+            }
         }
         // 生成所有关联设计书中的项目ID
         for (ScreenExcelContent screenExcelContent : excelContents) {
@@ -213,9 +228,8 @@ public class WPIOGenerator extends WPAbstractGenerator<ScreenExcelContent> {
         return new String[] { "io" };
     }
 
-    private static final Pattern[] GM_ITEM_PATTERN_LIST = new Pattern[] {Pattern.compile("[\\S&&[^.]]+\\.[^\\s.]+ +[^\\s.]+"),// TBOX ID
-            Pattern.compile("[\\S&&[^.]]+\\.[\\S&&[^.]]+"), Pattern.compile("[\\S&&[^-.,=><]]+\\.[\\S&&[^-.,=<>]]+"),
-            Pattern.compile("[\\S&&[^-(.,=><]]+\\.[\\S&&[^-).,=<>]]+") };
+    private static final Pattern[] GM_ITEM_PATTERN_LIST = new Pattern[] { Pattern.compile("[\\S&&[^.]]+\\.[^\\s.]+ +[^\\s.]+"), // TBOX ID
+            Pattern.compile("[\\S&&[^.]]+\\.[\\S&&[^.]]+"), Pattern.compile("[\\S&&[^-.,=><]]+\\.[\\S&&[^-.,=<>]]+"), Pattern.compile("[\\S&&[^-(.,=><]]+\\.[\\S&&[^-).,=<>]]+") };
 
     private String normalizeCondition(String condition, boolean removeLf) {
         condition = condition.replace("＝", "=");

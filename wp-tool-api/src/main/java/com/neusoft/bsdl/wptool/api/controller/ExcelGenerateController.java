@@ -57,7 +57,7 @@ public class ExcelGenerateController {
     @Operation(summary = "画面設計書ExcelからIOコード生成", description = "アップロードされた画面設計書Excelを解析し、生成したコードをZIP化してBase64文字列で返します。")
     public ResponseEntity<ApiResponse<GeneratedCodeZipResponse>> generateIoCode(
             @Parameter(description = "解析対象のExcelファイル(複数可)", required = true, content = @Content(schema = @Schema(type = "array"))) @RequestParam("ioFiles") MultipartFile[] ioFiles,
-            @Parameter(description = "関連するDBQuery設計書(複数可)", required = false, content = @Content(schema = @Schema(type = "array"))) @RequestParam("dbQueryFiles") MultipartFile[] dbQueryFiles) {
+            @Parameter(description = "関連するDBQuery設計書(複数可)", required = false, content = @Content(schema = @Schema(type = "array"))) @RequestParam(value = "dbQueryFiles", required = false) MultipartFile[] dbQueryFiles) {
         if (ioFiles == null || ioFiles.length == 0) {
             throw new ResponseStatusException(HttpStatus.BAD_REQUEST, "Uploaded files are empty");
         }

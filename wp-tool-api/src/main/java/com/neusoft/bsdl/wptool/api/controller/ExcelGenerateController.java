@@ -1,9 +1,12 @@
 package com.neusoft.bsdl.wptool.api.controller;
 
 import java.io.ByteArrayOutputStream;
+import java.io.InputStream;
+import java.nio.charset.StandardCharsets;
 import java.nio.file.Files;
 import java.nio.file.Path;
 import java.nio.file.Paths;
+import java.nio.file.StandardCopyOption;
 import java.util.ArrayList;
 import java.util.Base64;
 import java.util.List;
@@ -11,6 +14,8 @@ import java.util.UUID;
 import java.util.zip.ZipEntry;
 import java.util.zip.ZipOutputStream;
 
+import org.slf4j.Logger;
+import org.slf4j.LoggerFactory;
 import org.springframework.beans.factory.annotation.Value;
 import org.springframework.http.HttpStatus;
 import org.springframework.http.ResponseEntity;
@@ -43,6 +48,8 @@ import io.swagger.v3.oas.annotations.tags.Tag;
 @RequestMapping("/api/v1")
 @Tag(name = "Excel Generate", description = "Excelコード生成API")
 public class ExcelGenerateController {
+
+    private static final Logger LOG = LoggerFactory.getLogger(ExcelGenerateController.class);
 
     private final WPGenerateContext generateContext;
 
@@ -92,17 +99,24 @@ public class ExcelGenerateController {
 
     private GeneratedCodeZipResponse generateDbQueryZipBase64Response(MultipartFile[] dbQueryFiles) throws Exception {
         String taskId = UUID.randomUUID().toString().replace("-", "");
-        Path taskOutputDir = Paths.get(generateOutputRootDir, taskId);
+        Path taskDir = Paths.get(generateOutputRootDir, "generate-dbquery-code", taskId);
+        Path taskInputDir = taskDir.resolve(Paths.get("input"));
+        Path taskOutputDir = taskDir.resolve("output");
+        Files.createDirectories(taskInputDir);
         Files.createDirectories(taskOutputDir);
+        LOG.info("Start generateDbQueryZipBase64Response taskId={}, inputDir={}, outputDir={}", taskId, taskInputDir, taskOutputDir);
 
         List<String> errorLog = new ArrayList<>();
         List<String> warnLog = new ArrayList<>();
+        int savedCount = 0;
         for (MultipartFile file : dbQueryFiles) {
             if (file == null || file.isEmpty()) {
                 continue;
             }
+            savedCount++;
+            Path savedFile = saveMultipartFile(taskInputDir, file, savedCount);
 
-            FileSource fileSource = file::getInputStream;
+            FileSource fileSource = () -> Files.newInputStream(savedFile);
             DBQueryExcelContent queryExcelContent = ParseExcelUtils.parseDBQueryExcel(fileSource);
             for (DBQuerySheetContent sheetContent : queryExcelContent.getQuerySheetContents()) {
                 WPDBQueryGenerator ioGenerator = new WPDBQueryGenerator(generateContext, sheetContent);
@@ -111,37 +125,51 @@ public class ExcelGenerateController {
                 warnLog.addAll(ioGenerator.getLogSnapshotWarn());
             }
         }
+        writeTaskLogs(taskDir, errorLog, warnLog);
         byte[] zipBytes = zipDirectory(taskOutputDir);
         String zipBase64 = Base64.getEncoder().encodeToString(zipBytes);
+        LOG.info("Finish generateDbQueryZipBase64Response taskId={}, savedFiles={}, errors={}, warns={}", taskId, savedCount, errorLog.size(), warnLog.size());
         return new GeneratedCodeZipResponse(zipBase64, taskId, errorLog, warnLog);
     }
 
     private GeneratedCodeZipResponse generateIoZipBase64Response(MultipartFile[] ioFiles, MultipartFile[] dbQueryFiles) throws Exception {
         String taskId = UUID.randomUUID().toString().replace("-", "");
-        Path taskOutputDir = Paths.get(generateOutputRootDir, taskId);
+        Path taskDir = Paths.get(generateOutputRootDir, "generate-io-code", taskId);
+        Path taskIoInputDir = taskDir.resolve(Paths.get("input"));
+        Path taskDbQueryInputDir = taskIoInputDir.resolve(Paths.get("dbQuery"));
+        Path taskOutputDir = taskDir.resolve(Paths.get("output"));
+        Files.createDirectories(taskIoInputDir);
+        Files.createDirectories(taskDbQueryInputDir);
         Files.createDirectories(taskOutputDir);
+        LOG.info("Start generateIoZipBase64Response taskId={}, inputDir={}, outputDir={}", taskId, taskIoInputDir.getParent(), taskOutputDir);
 
         List<String> errorLog = new ArrayList<>();
         List<String> warnLog = new ArrayList<>();
         List<ScreenExcelContent> parsedContents = new ArrayList<>();
+        int savedIoCount = 0;
         for (MultipartFile file : ioFiles) {
             if (file == null || file.isEmpty()) {
                 continue;
             }
 
-            FileSource fileSource = file::getInputStream;
+            savedIoCount++;
+            Path savedFile = saveMultipartFile(taskIoInputDir, file, savedIoCount);
+            FileSource fileSource = () -> Files.newInputStream(savedFile);
             ScreenExcelContent screenExcelContent = ParseExcelUtils.parseScreenExcel(fileSource);
             parsedContents.add(screenExcelContent);
         }
 
         List<DBQuerySheetContent> parsedDBQueryContents = new ArrayList<>();
+        int savedDbQueryCount = 0;
         if (dbQueryFiles != null) {
             for (MultipartFile file : dbQueryFiles) {
                 if (file == null || file.isEmpty()) {
                     continue;
                 }
 
-                FileSource fileSource = file::getInputStream;
+                savedDbQueryCount++;
+                Path savedFile = saveMultipartFile(taskDbQueryInputDir, file, savedDbQueryCount);
+                FileSource fileSource = () -> Files.newInputStream(savedFile);
                 DBQueryExcelContent queryExcelContent = ParseExcelUtils.parseDBQueryExcel(fileSource);
                 parsedDBQueryContents.addAll(queryExcelContent.getQuerySheetContents());
             }
@@ -151,9 +179,22 @@ public class ExcelGenerateController {
         errorLog.addAll(ioGenerator.getLogSnapshotError());
         warnLog.addAll(ioGenerator.getLogSnapshotWarn());
 
+        writeTaskLogs(taskDir, errorLog, warnLog);
         byte[] zipBytes = zipDirectory(taskOutputDir);
         String zipBase64 = Base64.getEncoder().encodeToString(zipBytes);
+        LOG.info("Finish generateIoZipBase64Response taskId={}, savedIoFiles={}, savedDbQueryFiles={}, errors={}, warns={}", taskId, savedIoCount, savedDbQueryCount, errorLog.size(), warnLog.size());
         return new GeneratedCodeZipResponse(zipBase64, taskId, errorLog, warnLog);
+    }
+
+    private Path saveMultipartFile(Path targetDir, MultipartFile multipartFile, int fileIndex) throws Exception {
+        String originalName = multipartFile.getOriginalFilename();
+        String safeName = (originalName == null || originalName.isBlank()) ? "uploaded.bin" : Paths.get(originalName).getFileName().toString();
+        String savedName = fileIndex + "_" + safeName;
+        Path targetFile = targetDir.resolve(savedName);
+        try (InputStream inputStream = multipartFile.getInputStream()) {
+            Files.copy(inputStream, targetFile, StandardCopyOption.REPLACE_EXISTING);
+        }
+        return targetFile;
     }
 
     private byte[] zipDirectory(Path sourceDir) throws Exception {
@@ -168,5 +209,12 @@ public class ExcelGenerateController {
             }
         }
         return byteArrayOutputStream.toByteArray();
+    }
+
+    private void writeTaskLogs(Path taskDir, List<String> errorLog, List<String> warnLog) throws Exception {
+        Path logDir = taskDir.resolve("log");
+        Files.createDirectories(logDir);
+        Files.write(logDir.resolve("errorLog.txt"), errorLog, StandardCharsets.UTF_8);
+        Files.write(logDir.resolve("warnLog.txt"), warnLog, StandardCharsets.UTF_8);
     }
 }

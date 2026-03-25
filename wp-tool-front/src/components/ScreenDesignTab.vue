@@ -59,6 +59,8 @@ const onFileSelect = (event: Event) => {
   const target = event.target as HTMLInputElement
   if (target.files) {
     emit('filesAdded', Array.from(target.files))
+    // Reset file input value to allow selecting the same file again
+    target.value = ''
   }
 }
 </script>
@@ -67,13 +69,12 @@ const onFileSelect = (event: Event) => {
 .upload-container {
   display: flex;
   flex-direction: column;
-  align-items: center;
   width: 100%;
 }
 
 .upload-card {
   width: 100%;
-  min-width: 300px;
+  min-width: 400px;
   border: 2px dashed #1976d2 !important;
   border-radius: 12px;
   transition: all 0.3s ease;

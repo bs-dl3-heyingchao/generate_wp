@@ -2,91 +2,109 @@
 import { ref, computed } from 'vue'
 import ScreenDesignTab from './components/ScreenDesignTab.vue'
 import DBQueryTab from './components/DBQueryTab.vue'
-import { getApiUrl } from './config/api'
+import { API_CONFIG, getApiUrl } from './config/api'
 import { MESSAGES } from './config/messages'
-
 const tab = ref(0)
 
-const files1 = ref<File[]>([])
-const files2 = ref<File[]>([])
-const result1 = ref<'idle' | 'parsing' | 'success' | 'error'>('idle')
-const result2 = ref<'idle' | 'parsing' | 'success' | 'error'>('idle')
-const errors1 = ref<string[]>([])
-const errors2 = ref<string[]>([])
-const apiResponse = ref<any>(null)
+//画面仕様書タブの変数
+const screenFiles = ref<File[]>([])
+const dbQueryFiles = ref<File[]>([])
+const screenResult = ref<'idle' | 'parsing' | 'success' | 'error'>('idle')
+const screenErrors = ref<string[]>([])
+const apiScreenResponse = ref<any>(null)
 
-const addFiles1 = (newFiles: File[]) => {
-  files1.value = [...files1.value, ...newFiles]
+//DBQuery定義書タブの変数
+const dbQueryFiles2 = ref<File[]>([])
+const dbQueryResult = ref<'idle' | 'parsing' | 'success' | 'error'>('idle')
+const dbQueryErrors = ref<string[]>([])
+const apiDbQueryResponse = ref<any>(null)
+
+
+const addScreenFiles = (newFiles: File[]) => {
+  screenFiles.value = [...screenFiles.value, ...newFiles]
 }
 
-const addFiles2 = (newFiles: File[]) => {
-  files2.value = [...files2.value, ...newFiles]
+const addDbQueryFiles = (newFiles: File[]) => {
+  dbQueryFiles.value = [...dbQueryFiles.value, ...newFiles]
 }
 
-const removeFile1 = (index: number) => {
-  files1.value.splice(index, 1)
+const addDbQueryFiles2 = (newFiles: File[]) => {
+  dbQueryFiles2.value = [...dbQueryFiles2.value, ...newFiles]
 }
 
-const removeFile2 = (index: number) => {
-  files2.value.splice(index, 1)
+const removeScreenFiles = (index: number) => {
+  screenFiles.value.splice(index, 1)
 }
 
-const generateCode1 = async () => {
-  result1.value = 'parsing'
-  errors1.value = []
-  apiResponse.value = null
+const removeDbQueryFiles = (index: number) => {
+  dbQueryFiles.value.splice(index, 1)
+}
+const removeDbQueryFiles2 = (index: number) => {
+  dbQueryFiles2.value.splice(index, 1)
+}
+
+/**
+ * 画面仕様書からWPコードを生成する
+ */
+const generateScreenWpCode= async () => {
+  if (!confirm(MESSAGES.CONFIRMATION.GENERATE_CODE)) {
+    return
+  }
+
+  
+  screenResult.value = 'parsing'
+  screenErrors.value = []
+  apiScreenResponse.value = null
   
   try {
     const formData = new FormData()
     
-    files1.value.forEach(file => {
+    screenFiles.value.forEach(file => {
       formData.append('ioFiles', file)
     })
     
-    files2.value.forEach(file => {
+    dbQueryFiles.value.forEach(file => {
       formData.append('dbQueryFiles', file)
     })
-    
-    const response = await fetch('/api/v1/excel/generate-io-code', {
+    const response = await fetch(API_CONFIG.ENDPOINTS.GENERATE_IO_CODE, {
       method: 'POST',
       body: formData
     })
     
+     // Scroll to results area immediately after confirmation
+    const resultsSection = document.querySelector('.results-section')
+    if (resultsSection) {
+      resultsSection.scrollIntoView({ behavior: 'smooth', block: 'start' })
+    }
+
     const result = await response.json()
     
     if (result.code === 200) {
-      result1.value = 'success'
-      apiResponse.value = result.data
+      screenResult.value = 'success'
+      apiScreenResponse.value = result.data
     } else if (result.code === 400) {
-      result1.value = 'error'
-      errors1.value = [result.message]
+      screenResult.value = 'error'
+      screenErrors.value = [result.message]
     } else {
-      result1.value = 'error'
-      errors1.value = ['予期しないエラーが発生しました']
+      screenResult.value = 'error'
+      screenErrors.value = ['予期しないエラーが発生しました']
     }
   } catch (error) {
-    result1.value = 'error'
-    errors1.value = ['API呼び出し中にエラーが発生しました']
+    screenResult.value = 'error'
+    screenErrors.value = ['API呼び出し中にエラーが発生しました']
   }
 }
 
-const generateCode2 = () => {
-  result2.value = 'parsing'
-  errors2.value = []
-  // Simulate parsing
-  setTimeout(() => {
-    if (files2.value.length > 0) {
-      result2.value = 'success'
-    } else {
-      result2.value = 'error'
-      errors2.value = ['ファイルがアップロードされていません']
-    }
-  }, 2000)
+/**
+ * DBQuery定義書からWPコードを生成する
+ */
+const generateDbQueryWpCode = () => {
+  alert('todo: download zip file')
 }
 
 const downloadZip = () => {
-  if (apiResponse.value && apiResponse.value.zipBase64) {
-    const binaryString = atob(apiResponse.value.zipBase64)
+  if (apiScreenResponse.value && apiScreenResponse.value.zipBase64) {
+    const binaryString = atob(apiScreenResponse.value.zipBase64)
     const bytes = new Uint8Array(binaryString.length)
     for (let i = 0; i < binaryString.length; i++) {
       bytes[i] = binaryString.charCodeAt(i)
@@ -95,310 +113,297 @@ const downloadZip = () => {
     const url = URL.createObjectURL(blob)
     const a = document.createElement('a')
     a.href = url
-    a.download = `${apiResponse.value.taskId}.zip`
+    a.download = `${apiScreenResponse.value.taskId}.zip`
     document.body.appendChild(a)
     a.click()
     document.body.removeChild(a)
     URL.revokeObjectURL(url)
   }
+
+  if (apiDbQueryResponse.value && apiDbQueryResponse.value.zipBase64) {
+    alert('todo: download zip file')
+  }
 }
 
-const clearFiles1 = () => {
-  files1.value = []
-  result1.value = 'idle'
-  errors1.value = []
-  apiResponse.value = null
+const clearScreenFiles = () => {
+  if (!confirm(MESSAGES.CONFIRMATION.CLEAR)) {
+    return
+  }
+  screenFiles.value = []
+  screenResult.value = 'idle'
+  screenErrors.value = []
+  apiScreenResponse.value = null
 }
 
 const templateScreenName = '（内部設計書サンプル_カード）画面設計書.xlsx'
 const templateDBQueryName = '（内部設計書サンプル_カード）dbQuery定義書.xlsx'
 
-const clearFiles2 = () => {
-  files2.value = []
-  result2.value = 'idle'
-  errors2.value = []
+const clearDbQueryFiles = () => {
+  dbQueryFiles.value = []
+  dbQueryResult.value = 'idle'
+  dbQueryErrors.value = []
+}
+
+const handleClear = () => {
+  if (confirm(MESSAGES.CONFIRMATION.CLEAR)) {
+    clearScreenFiles()
+    clearDbQueryFiles()
+  }
 }
 </script>
 
 <template>
-  <v-app>
-    <v-main style="background-color: #f5f5f5;">
-      <v-container fluid max-width="none">
-        <v-card elevation="0">
-          <v-card-title class="text-h5 pa-4" style="background-color: #8E2DE2; color: white;">WP内部設計仕様書解析ツール</v-card-title>
-          <v-card-text style="padding: 0;">
-            <div style="background-color: #8E2DE2; padding: 10px 0 10px 0; margin: -20px -20px 0 -20px;">
-              <v-tabs v-model="tab" style="background-color: #8E2DE2; padding: 0 20px;">
-                <v-tab style="background-color: rgba(255, 255, 255, 0.2); color: white; margin-right: 10px; border-radius: 8px 8px 0 0;">画面仕様書</v-tab>
-                <v-tab style="background-color: rgba(255, 255, 255, 0.2); color: white; margin-right: 10px; border-radius: 8px 8px 0 0;">DBQuery定義書</v-tab>
-              </v-tabs>
+  <div style="background-color: #f5f5f5; min-height: 100vh; padding: 0; margin: 0; font-family: Arial, sans-serif;">
+    <!-- メインコンテナ -->
+    <div style="width: 75%; margin: 0 auto; background-color: white; box-shadow: 0 0 10px rgba(0,0,0,0.1); min-width: 900px;">
+      <!-- ヘッダー -->
+      <div style="background-color: #8E2DE2; color: white; padding: 20px;">
+        <h1 style="margin: 0; font-size: 20px;">WP内部設計仕様書解析ツール</h1>
+      </div>
+      
+      <!-- タブ -->
+      <div style="background-color: #8E2DE2; padding: 10px 20px;">
+        <div style="display: flex;">
+          <div 
+            @click="tab = 0" 
+            style="background-color: rgba(255, 255, 255, 0.2); color: white; margin-right: 10px; border-radius: 8px 8px 0 0; padding: 12px 24px; cursor: pointer; font-size: 16px;"
+            :style="{ backgroundColor: tab === 0 ? 'rgba(255, 255, 255, 0.35)' : 'rgba(255, 255, 255, 0.2)' }"
+          >
+            画面仕様書
+          </div>
+          <div 
+            @click="tab = 1" 
+            style="background-color: rgba(255, 255, 255, 0.2); color: white; margin-right: 10px; border-radius: 8px 8px 0 0; padding: 12px 24px; cursor: pointer; font-size: 16px;"
+            :style="{ backgroundColor: tab === 1 ? 'rgba(255, 255, 255, 0.35)' : 'rgba(255, 255, 255, 0.2)' }"
+          >
+            DBQuery定義書
+          </div>
+          <div 
+            @click="tab = 2" 
+            style="background-color: rgba(255, 255, 255, 0.2); color: white; margin-right: 10px; border-radius: 8px 8px 0 0; padding: 12px 24px; cursor: pointer; font-size: 16px;"
+            :style="{ backgroundColor: tab === 2 ? 'rgba(255, 255, 255, 0.35)' : 'rgba(255, 255, 255, 0.2)' }"
+          >
+            テンプレート
+          </div>
+        </div>
+      </div>
+
+      <!-- コンテンツ -->
+      <div style="padding: 20px;">
+        <!-- 画面仕様書タブ -->
+        <div v-if="tab === 0">
+          <!-- 上传区域 -->
+          <div class="mb-4" style="border: 1px solid #e0e0e0; border-radius: 8px; padding: 16px;">
+            <!-- 上传说明 -->
+            <div class="mb-4">
+              <h4 class="mb-2">アップロードの説明</h4>
+              <ul class="list-disc pl-5" style="font-size: 14px;">
+                <li v-for="(instruction, index) in MESSAGES.UPLOAD_SCREEN_INSTRUCTIONS" :key="index" class="mb-1">{{ instruction }}</li>
+              </ul>
             </div>
+            
+            <hr style="border: 1px solid #e0e0e0; margin: 0 0 16px 0;">
+            
+            <!-- 并排上传区域 -->
+            <div style="display: flex; gap: 20px; width: 100%;">
+              <div style="flex: 1; display: flex; flex-direction: column;">
+                <h4 class="mb-2">
+                  <span style="color: red; font-weight: bolder; vertical-align: baseline;">*</span>
+                  <span style="font-weight: bold;">
+                    画面仕様書
+                  </span>
+                </h4>
+                <ScreenDesignTab @files-added="addScreenFiles" />
+                <div v-if="screenFiles.length > 0" class="mt-4">
+                  <h5>アップロードされたファイル</h5>
+                  <div v-for="(file, index) in screenFiles" :key="file.name + index" style="display: flex; justify-content: space-between; padding: 8px; border-bottom: 1px solid #e0e0e0;">
+                    <span>{{ file.name }}</span>
+                    <button @click="removeScreenFiles(index)" style="background: none; border: none; color: red; cursor: pointer;">×</button>
+                  </div>
+                </div>
+              </div>
+              
+              <div style="flex: 1; display: flex; flex-direction: column;">
+                <h4 class="mb-2">
+                  <span style="font-weight: bold;">DBQuery定義書</span>
+                </h4>
+                <DBQueryTab @files-added="addDbQueryFiles" />
+                <div v-if="dbQueryFiles.length > 0" class="mt-4">
+                  <h5>アップロードされたファイル</h5>
+                  <div v-for="(file, index) in dbQueryFiles" :key="file.name + index" style="display: flex; justify-content: space-between; padding: 8px; border-bottom: 1px solid #e0e0e0;">
+                    <span>{{ file.name }}</span>
+                    <button @click="removeDbQueryFiles(index)" style="background: none; border: none; color: red; cursor: pointer;">×</button>
+                  </div>
+                </div>
+              </div>
+            </div>
+            
+            <hr style="border: 1px solid #e0e0e0; margin: 20px 0;">
+            
+            <div style="display: flex; justify-content: flex-end; gap: 10px;">
+              <button
+                @click="generateScreenWpCode"
+                :style="{ backgroundColor: screenFiles.length === 0 ? '#ccc' : '#1976d2', color: 'white', border: 'none', padding: '8px 16px', borderRadius: '4px', cursor: screenFiles.length === 0 ? 'not-allowed' : 'pointer' }"
+                :disabled="screenFiles.length === 0"
+              >
+                コード生成
+              </button>
+              <button v-if="screenFiles.length > 0 || dbQueryFiles.length > 0" style="background-color: #ffc107; color: black; border: none; padding: 8px 16px; border-radius: 4px; cursor: pointer;" @click="handleClear">
+                クリア
+              </button>
+            </div>
+          </div>
 
-            <v-window v-model="tab" style="padding: 20px; width: 100%;">
-              <v-window-item style="width: 100%;">
-                <!-- 模版区域 -->
-                <v-card flat class="mb-4" elevation="2" rounded="lg" outlined>
-                  <v-card-title class="text-subtitle-1">テンプレート</v-card-title>
-                  <hr style="border: 1px solid #e0e0e0; margin: 0 0 16px 0;">
-                  <v-card-text>
-                    <div class="grid grid-cols-1 md:grid-cols-2 gap-4">
-                      <div>
-                        <div class="d-flex items-center">
-                          <a :href="`/templete/screen/${templateScreenName}`" download style="text-decoration: none; color: #1976d2;">
-                            {{ templateScreenName }}
-                          </a>
-                        </div>
-                      </div>
-                      <div>
-                        <div class="d-flex items-center">
-                          <a :href="`/templete/dbquery/${templateDBQueryName}`" download style="text-decoration: none; color: #1976d2;">
-                            {{ templateDBQueryName }}
-                          </a>
-                        </div>
-                      </div>
-                    </div>
-                  </v-card-text>
-                </v-card>
+          <!-- 结果区域 -->
+          <div v-if="screenResult === 'parsing' || screenResult === 'success'" class="mb-4 results-section" style="border: 1px solid #e0e0e0; border-radius: 8px; padding: 16px;">
+            <h3 style="margin-top: 0; margin-bottom: 16px;">結果</h3>
+            <hr style="border: 1px solid #e0e0e0; margin: 0 0 16px 0;">
+            
+            <div v-if="screenResult === 'parsing'" style="background-color: #e3f2fd; padding: 16px; border-radius: 4px; text-align: center;">
+              <div>解析中...</div>
+            </div>
+            <div v-if="screenResult === 'success'" style="background-color: #e8f5e8; padding: 16px; border-radius: 4px; text-align: center;">
+              <div style="color: green; font-weight: bold;">解析成功</div>
+              <button v-if="apiScreenResponse && apiScreenResponse.taskId && apiScreenResponse.zipBase64" style="background-color: #1976d2; color: white; border: none; padding: 8px 16px; border-radius: 4px; cursor: pointer; margin-top: 16px;" @click="downloadZip">
+                {{ apiScreenResponse.taskId }}.ZIP をダウンロード
+              </button>
+              <div v-else style="margin-top: 16px; color: #666;">暂无可下载的文件</div>
+            </div>
+          </div>
 
-                <!-- 上传区域 -->
-                <v-card flat class="mb-4" elevation="2" rounded="lg" outlined>
-                  <v-card-title class="text-subtitle-1">アップロード</v-card-title>
-                  <hr style="border: 1px solid #e0e0e0; margin: 0 0 16px 0;">
-                  <v-card-text>
-                    <!-- 上传说明 -->
-                    <div class="mb-4">
-                      <h4 class="mb-2">アップロードの説明</h4>
-                      <ul class="list-disc pl-5" style="font-size: 14px;">
-                        <li v-for="(instruction, index) in MESSAGES.UPLOAD_INSTRUCTIONS" :key="index" class="mb-1">{{ instruction }}</li>
-                      </ul>
-                    </div>
-                    
-                    <!-- 并排上传区域 -->
-                    <v-row>
-                      <v-col cols="12" md="6">
-                        <h4 class="mb-2 d-flex items-center">
-                          <span style="font-weight: bold;">
-                            <span style="color: red; font-size: 1.4em; font-weight: bolder; vertical-align: baseline;">*</span>
-                            画面仕様書
-                          </span>
-                        </h4>
-                        <ScreenDesignTab @files-added="addFiles1" />
-                        <v-list v-if="files1.length > 0" class="mt-4">
-                          <v-list-subheader>アップロードされたファイル</v-list-subheader>
-                          <v-list-item v-for="(file, index) in files1" :key="file.name + index">
-                            <v-list-item-title>{{ file.name }}</v-list-item-title>
-                            <template v-slot:append>
-                              <v-btn icon="mdi-close" size="small" @click="removeFile1(index)" color="error"></v-btn>
-                            </template>
-                          </v-list-item>
-                        </v-list>
-                      </v-col>
-                      
-                      <v-col cols="12" md="6">
-                        <h4 class="mb-2 d-flex items-center">
-                          <span class="font-bold">DBQuery定義書</span>
-                        </h4>
-                        <DBQueryTab @files-added="addFiles2" />
-                        <v-list v-if="files2.length > 0" class="mt-4">
-                          <v-list-subheader>アップロードされたファイル</v-list-subheader>
-                          <v-list-item v-for="(file, index) in files2" :key="file.name + index">
-                            <v-list-item-title>{{ file.name }}</v-list-item-title>
-                            <template v-slot:append>
-                              <v-btn icon="mdi-close" size="small" @click="removeFile2(index)" color="error"></v-btn>
-                            </template>
-                          </v-list-item>
-                        </v-list>
-                      </v-col>
-                    </v-row>
-                    
-                    <div class="d-flex justify-end mt-4">
-                      <v-btn
-                        @click="generateCode1"
-                        color="primary"
-                        class="action-btn mr-2"
-                        :disabled="files1.length === 0"
-                      >
-                        コード生成
-                      </v-btn>
-                      <v-btn v-if="files1.length > 0 || files2.length > 0" color="warning" class="action-btn" @click="() => { clearFiles1(); clearFiles2(); }">
-                        クリア
-                      </v-btn>
-                    </div>
-                  </v-card-text>
-                </v-card>
+          <!-- Error区域 -->
+          <div v-if="screenResult === 'error' || (screenResult === 'success' && apiScreenResponse && (apiScreenResponse.errorLog && apiScreenResponse.errorLog.length > 0 || apiScreenResponse.warnLog && apiScreenResponse.warnLog.length > 0))" class="mb-4 results-section" style="border: 1px solid #e0e0e0; border-radius: 8px; padding: 16px;">
+            <h3 style="margin-top: 0; margin-bottom: 16px;">エラー</h3>
+            <hr style="border: 1px solid #e0e0e0; margin: 0 0 16px 0;">
+            
+            <div v-if="screenResult === 'error'" style="background-color: #ffebee; padding: 16px; border-radius: 4px; margin-bottom: 16px;">
+              <h4 style="margin-top: 0; color: #c62828;">エラーメッセージ一覧</h4>
+              <ul style="list-style-type: disc; padding-left: 20px;">
+                <li v-for="error in screenErrors" :key="error" style="color: #c62828; word-wrap: break-word; white-space: pre-wrap;">{{ error }}</li>
+              </ul>
+            </div>
+            
+            <div v-if="apiScreenResponse && apiScreenResponse.errorLog && apiScreenResponse.errorLog.length > 0" style="background-color: #fff3e0; padding: 16px; border-radius: 4px; margin-bottom: 16px;">
+              <h4 style="margin-top: 0; color: #ef6c00;">エラーログ</h4>
+              <div style="max-height: 300px; overflow-y: auto;">
+                <ul style="list-style-type: disc; padding-left: 20px;">
+                  <li v-for="(log, index) in apiScreenResponse.errorLog" :key="'error-' + index" style="font-size: 14px; word-wrap: break-word; white-space: pre-wrap;">{{ log }}</li>
+                </ul>
+              </div>
+            </div>
+            
+            <div v-if="apiScreenResponse && apiScreenResponse.warnLog && apiScreenResponse.warnLog.length > 0" style="background-color: #fff8e1; padding: 16px; border-radius: 4px;">
+              <h4 style="margin-top: 0; color: #f57c00;">警告ログ</h4>
+              <div style="max-height: 300px; overflow-y: auto;">
+                <ul style="list-style-type: disc; padding-left: 20px;">
+                  <li v-for="(log, index) in apiScreenResponse.warnLog" :key="'warn-' + index" style="font-size: 14px; word-wrap: break-word; white-space: pre-wrap;">{{ log }}</li>
+                </ul>
+              </div>
+            </div>
+          </div>
+        </div>
 
-                <!-- 结果区域 -->
-                <v-card v-if="result1 === 'parsing' || result1 === 'success'" flat class="mb-4" elevation="2" rounded="lg" outlined>
-                  <v-card-title class="text-subtitle-1">結果</v-card-title>
-                  <hr style="border: 1px solid #e0e0e0; margin: 0 0 16px 0;">
-                  <v-card-text>
-                    <v-card v-if="result1 === 'parsing'" class="mt-4" color="blue-lighten-5">
-                      <v-card-text class="text-center">
-                        <v-progress-circular indeterminate color="primary"></v-progress-circular>
-                        <div class="mt-2">解析中...</div>
-                      </v-card-text>
-                    </v-card>
-                    <v-card v-if="result1 === 'success'" class="mt-4" color="green-lighten-5">
-                      <v-card-text class="text-center">
-                        <v-icon color="green">mdi-check-circle</v-icon>
-                        <div class="mt-2">解析成功</div>
-                        <v-btn v-if="apiResponse && apiResponse.taskId && apiResponse.zipBase64" color="primary" @click="downloadZip" class="mt-2">
-                          <v-icon left>mdi-download</v-icon>
-                          {{ apiResponse.taskId }}.ZIP をダウンロード
-                        </v-btn>
-                        <div v-else class="mt-2 text-gray-500">暂无可下载的文件</div>
-                      </v-card-text>
-                    </v-card>
-                  </v-card-text>
-                </v-card>
+        <!-- DBQuery定義書タブ -->
+        <div v-if="tab === 1">
+          <!-- 上传区域 -->
+          <div class="mb-4" style="border: 1px solid #e0e0e0; border-radius: 8px; padding: 16px;">
+            <!-- 上传说明 -->
+            <div class="mb-4">
+              <h4 class="mb-2">アップロードの説明</h4>
+              <ul class="list-disc pl-5" style="font-size: 14px;">
+                <li v-for="(instruction, index) in MESSAGES.UPLOAD_DBQUERY_INSTRUCTIONS" :key="index" class="mb-1">{{ instruction }}</li>
+              </ul>
+            </div>
+            
+            <hr style="border: 1px solid #e0e0e0; margin: 0 0 16px 0;">
+            
+            <div style="display: flex; flex-direction: column; height: 100%;">
+              <DBQueryTab @files-added="addDbQueryFiles2" />
+              <div v-if="dbQueryFiles2.length > 0" class="mt-4">
+                <h5>アップロードされたファイル</h5>
+                <div v-for="(file, index) in dbQueryFiles2" :key="file.name + index" style="display: flex; justify-content: space-between; padding: 8px; border-bottom: 1px solid #e0e0e0;">
+                  <span>{{ file.name }}</span>
+                  <button @click="removeDbQueryFiles2(index)" style="background: none; border: none; color: red; cursor: pointer;">×</button>
+                </div>
+              </div>
+            </div>
+            
+            <hr style="border: 1px solid #e0e0e0; margin: 20px 0;">
+            
+            <div style="display: flex; justify-content: flex-end; gap: 10px;">
+              <button
+                @click="generateDbQueryWpCode"
+                style="background-color: #1976d2; color: white; border: none; padding: 8px 16px; border-radius: 4px; cursor: pointer;"
+                :disabled="dbQueryFiles2.length === 0"
+              >
+                コード生成
+              </button>
+              <button v-if="dbQueryFiles2.length > 0" style="background-color: #ffc107; color: black; border: none; padding: 8px 16px; border-radius: 4px; cursor: pointer;" @click="clearDbQueryFiles">
+                クリア
+              </button>
+            </div>
+          </div>
 
-                <!-- Error区域 -->
-                <v-card v-if="result1 === 'error'" flat class="mb-4" elevation="2" rounded="lg" outlined>
-                  <v-card-title class="text-subtitle-1">エラー</v-card-title>
-                  <hr style="border: 1px solid #e0e0e0; margin: 0 0 16px 0;">
-                  <v-card-text>
-                    <v-card color="red-lighten-5">
-                      <v-card-title class="text-error">エラーメッセージ一覧</v-card-title>
-                      <v-card-text>
-                        <v-list>
-                          <v-list-item v-for="error in errors1" :key="error">
-                            <v-list-item-icon>
-                              <v-icon color="error">mdi-alert-circle</v-icon>
-                            </v-list-item-icon>
-                            <v-list-item-title class="text-error" style="word-wrap: break-word; white-space: pre-wrap;">{{ error }}</v-list-item-title>
-                          </v-list-item>
-                        </v-list>
-                      </v-card-text>
-                    </v-card>
-                    
-                    <v-card v-if="apiResponse && apiResponse.errorLog && apiResponse.errorLog.length > 0" color="orange-lighten-5" class="mt-4">
-                      <v-card-title class="text-orange-darken-2">エラーログ</v-card-title>
-                      <v-card-text style="max-height: 300px; overflow-y: auto;">
-                        <v-list density="compact">
-                          <v-list-item v-for="(log, index) in apiResponse.errorLog" :key="'error-' + index">
-                            <v-list-item-icon>
-                              <v-icon color="orange-darken-2" size="small">mdi-alert</v-icon>
-                            </v-list-item-icon>
-                            <v-list-item-title class="text-body-2" style="word-wrap: break-word; white-space: pre-wrap;">{{ log }}</v-list-item-title>
-                          </v-list-item>
-                        </v-list>
-                      </v-card-text>
-                    </v-card>
-                    
-                    <v-card v-if="apiResponse && apiResponse.warnLog && apiResponse.warnLog.length > 0" color="yellow-lighten-5" class="mt-4">
-                      <v-card-title class="text-yellow-darken-2">警告ログ</v-card-title>
-                      <v-card-text style="max-height: 300px; overflow-y: auto;">
-                        <v-list density="compact">
-                          <v-list-item v-for="(log, index) in apiResponse.warnLog" :key="'warn-' + index">
-                            <v-list-item-icon>
-                              <v-icon color="yellow-darken-2" size="small">mdi-alert-outline</v-icon>
-                            </v-list-item-icon>
-                            <v-list-item-title class="text-body-2" style="word-wrap: break-word; white-space: pre-wrap;">{{ log }}</v-list-item-title>
-                          </v-list-item>
-                        </v-list>
-                      </v-card-text>
-                    </v-card>
-                  </v-card-text>
-                </v-card>
-              </v-window-item>
+          <!-- 结果区域 -->
+          <div v-if="dbQueryResult === 'parsing' || dbQueryResult === 'success'" class="mb-4" style="border: 1px solid #e0e0e0; border-radius: 8px; padding: 16px;">
+            <h3 style="margin-top: 0; margin-bottom: 16px;">結果</h3>
+            <hr style="border: 1px solid #e0e0e0; margin: 0 0 16px 0;">
+            
+            <div v-if="dbQueryResult === 'parsing'" style="background-color: #e3f2fd; padding: 16px; border-radius: 4px; text-align: center;">
+              <div>解析中...</div>
+            </div>
+            <div v-if="dbQueryResult === 'success'" style="background-color: #e8f5e8; padding: 16px; border-radius: 4px; text-align: center;">
+              <div style="color: green; font-weight: bold;">解析成功</div>
+              <button v-if="apiScreenResponse && apiScreenResponse.zipBase64" style="background-color: #1976d2; color: white; border: none; padding: 8px 16px; border-radius: 4px; cursor: pointer; margin-top: 16px;" @click="downloadZip">
+                SOURCE.ZIP をダウンロード
+              </button>
+              <div v-else style="margin-top: 16px; color: #666;">暂无可下载的文件</div>
+            </div>
+          </div>
 
-              <v-window-item style="width: 100%;">
-                <!-- 模版区域 -->
-                <v-card flat class="mb-4" elevation="2" rounded="lg" outlined>
-                  <v-card-title class="text-subtitle-1">テンプレート</v-card-title>
-                  <hr style="border: 1px solid #e0e0e0; margin: 0 0 16px 0;">
-                  <v-card-text>
-                    <div class="d-flex justify-end">
-                      <a :href="`/templete/dbquery/${templateDBQueryName}`" download style="text-decoration: none; color: #1976d2;">
-                        {{ templateDBQueryName }}
-                      </a>
-                    </div>
-                  </v-card-text>
-                </v-card>
+          <!-- Error区域 -->
+          <div v-if="dbQueryResult === 'error'" class="mb-4" style="border: 1px solid #e0e0e0; border-radius: 8px; padding: 16px;">
+            <h3 style="margin-top: 0; margin-bottom: 16px;">エラー</h3>
+            <hr style="border: 1px solid #e0e0e0; margin: 0 0 16px 0;">
+            
+            <div style="background-color: #ffebee; padding: 16px; border-radius: 4px;">
+              <h4 style="margin-top: 0; color: #c62828;">エラーメッセージ一覧</h4>
+              <ul style="list-style-type: disc; padding-left: 20px;">
+                <li v-for="error in dbQueryErrors" :key="error" style="color: #c62828; word-wrap: break-word; white-space: pre-wrap;">{{ error }}</li>
+              </ul>
+            </div>
+          </div>
+        </div>
 
-                <!-- 上传区域 -->
-                <v-card flat class="mb-4" elevation="2" rounded="lg" outlined>
-                  <v-card-title class="text-subtitle-1">アップロード</v-card-title>
-                  <hr style="border: 1px solid #e0e0e0; margin: 0 0 16px 0;">
-                  <v-card-text>
-                    <DBQueryTab @files-added="addFiles2" />
-                    <v-list v-if="files2.length > 0" class="mt-4">
-                      <v-list-subheader>アップロードされたファイル</v-list-subheader>
-                      <v-list-item v-for="(file, index) in files2" :key="file.name + index">
-                        <v-list-item-title>{{ file.name }}</v-list-item-title>
-                        <template v-slot:append>
-                          <v-btn icon="mdi-close" size="small" @click="removeFile2(index)" color="error"></v-btn>
-                        </template>
-                      </v-list-item>
-                    </v-list>
-                    <div class="d-flex justify-end mt-4">
-                      <v-btn
-                        @click="generateCode2"
-                        color="primary"
-                        class="action-btn mr-2"
-                        :disabled="files2.length === 0"
-                      >
-                        コード生成
-                      </v-btn>
-                      <v-btn v-if="files2.length > 0" color="warning" class="action-btn" @click="clearFiles2">
-                        クリア
-                      </v-btn>
-                    </div>
-                  </v-card-text>
-                </v-card>
-
-                <!-- 结果区域 -->
-                <v-card v-if="result2 === 'parsing' || result2 === 'success'" flat class="mb-4" elevation="2" rounded="lg" outlined>
-                  <v-card-title class="text-subtitle-1">結果</v-card-title>
-                  <hr style="border: 1px solid #e0e0e0; margin: 0 0 16px 0;">
-                  <v-card-text>
-                    <v-card v-if="result2 === 'parsing'" class="mt-4" color="blue-lighten-5">
-                      <v-card-text class="text-center">
-                        <v-progress-circular indeterminate color="primary"></v-progress-circular>
-                        <div class="mt-2">解析中...</div>
-                      </v-card-text>
-                    </v-card>
-                    <v-card v-if="result2 === 'success'" class="mt-4" color="green-lighten-5">
-                      <v-card-text class="text-center">
-                        <v-icon color="green">mdi-check-circle</v-icon>
-                        <div class="mt-2">解析成功</div>
-                        <v-btn v-if="apiResponse && apiResponse.zipBase64" color="primary" @click="downloadZip" class="mt-2">
-                          <v-icon left>mdi-download</v-icon>
-                          SOURCE.ZIP をダウンロード
-                        </v-btn>
-                        <div v-else class="mt-2 text-gray-500">暂无可下载的文件</div>
-                      </v-card-text>
-                    </v-card>
-                  </v-card-text>
-                </v-card>
-
-                <!-- Error区域 -->
-                <v-card v-if="result2 === 'error'" flat class="mb-4" elevation="2" rounded="lg" outlined>
-                  <v-card-title class="text-subtitle-1">エラー</v-card-title>
-                  <hr style="border: 1px solid #e0e0e0; margin: 0 0 16px 0;">
-                  <v-card-text>
-                    <v-card color="red-lighten-5">
-                      <v-card-title class="text-error">エラーメッセージ一覧</v-card-title>
-                      <v-card-text>
-                        <v-list>
-                          <v-list-item v-for="error in errors2" :key="error">
-                            <v-list-item-icon>
-                              <v-icon color="error">mdi-alert-circle</v-icon>
-                            </v-list-item-icon>
-                            <v-list-item-title class="text-error" style="word-wrap: break-word; white-space: pre-wrap;">{{ error }}</v-list-item-title>
-                          </v-list-item>
-                        </v-list>
-                      </v-card-text>
-                    </v-card>
-                  </v-card-text>
-                </v-card>
-              </v-window-item>
-            </v-window>
-          </v-card-text>
-        </v-card>
-      </v-container>
-    </v-main>
-  </v-app>
+        <!-- テンプレートダウンロードタブ -->
+        <div v-if="tab === 2">
+          <!-- テンプレートダウンロード区域 -->
+          <div class="mb-4" style="border: 1px solid #e0e0e0; border-radius: 8px; padding: 16px;">
+            <h3 style="margin-top: 0; margin-bottom: 16px;">画面設計書</h3>
+            <hr style="border: 1px solid #e0e0e0; margin: 0 0 16px 0;">
+            <div style="display: flex; flex-wrap: wrap; gap: 20px;">
+              <div>
+                <a :href="`/templete/screen/${templateScreenName}`" download style="text-decoration: none; color: #1976d2;">
+                  {{ templateScreenName }}
+                </a>
+              </div>
+            </div>
+          </div>
+           <div class="mb-4" style="border: 1px solid #e0e0e0; border-radius: 8px; padding: 16px;">
+            <h3 style="margin-top: 0; margin-bottom: 16px;">DBQuery定義書</h3>
+            <hr style="border: 1px solid #e0e0e0; margin: 0 0 16px 0;">
+            <div style="display: flex; flex-wrap: wrap; gap: 20px;">
+              <div>
+                <a :href="`/templete/dbquery/${templateDBQueryName}`" download style="text-decoration: none; color: #1976d2;">
+                  {{ templateDBQueryName }}
+                </a>
+              </div>
+            </div>
+          </div>
+        </div>
+      </div>
+    </div>
+  </div>
 </template>
 
 <style scoped>

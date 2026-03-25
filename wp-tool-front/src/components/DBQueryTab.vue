@@ -1,6 +1,5 @@
 <template>
   <div class="upload-container">
-    <v-card-title class="text-h4 mb-4 text-center">DBQuery定义书</v-card-title>
     <v-card
       outlined
       class="upload-card pa-6"
@@ -12,8 +11,8 @@
         class="upload-area text-center py-12"
       >
         <v-icon size="64" color="primary" class="mb-4">mdi-cloud-upload</v-icon>
-        <div class="text-h5 mb-2">拖拽文件到这里上传</div>
-        <div class="text-subtitle-1 text-medium-emphasis mb-6">支持多个文件</div>
+        <div class="text-h5 mb-2">ファイルをここにドラッグしてアップロード</div>
+        <div class="text-subtitle-1 text-medium-emphasis mb-6">	複数のファイルに対応</div>
         <v-btn
           color="primary"
           variant="elevated"
@@ -22,7 +21,7 @@
           @click="$refs.fileInput.click()"
         >
           <v-icon left>mdi-file-plus</v-icon>
-          选择文件
+          ファイルを選択
         </v-btn>
         <input
           ref="fileInput"

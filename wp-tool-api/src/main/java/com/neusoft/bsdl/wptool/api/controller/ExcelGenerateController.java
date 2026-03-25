@@ -23,7 +23,7 @@ import org.springframework.web.server.ResponseStatusException;
 
 import com.neusoft.bsdl.wptool.api.dto.ApiResponse;
 import com.neusoft.bsdl.wptool.api.dto.GeneratedCodeZipResponse;
-import com.neusoft.bsdl.wptool.core.exception.WPParseExcelException;
+import com.neusoft.bsdl.wptool.core.exception.WPException;
 import com.neusoft.bsdl.wptool.core.io.FileSource;
 import com.neusoft.bsdl.wptool.core.model.DBQueryExcelContent;
 import com.neusoft.bsdl.wptool.core.model.DBQuerySheetContent;
@@ -57,7 +57,7 @@ public class ExcelGenerateController {
     @Operation(summary = "画面設計書ExcelからIOコード生成", description = "アップロードされた画面設計書Excelを解析し、生成したコードをZIP化してBase64文字列で返します。")
     public ResponseEntity<ApiResponse<GeneratedCodeZipResponse>> generateIoCode(
             @Parameter(description = "解析対象のExcelファイル(複数可)", required = true, content = @Content(schema = @Schema(type = "array"))) @RequestParam("ioFiles") MultipartFile[] ioFiles,
-            @Parameter(description = "関連するDBQuery設計書(複数可)", required = false, content = @Content(schema = @Schema(type = "array"))) @RequestParam("dbQueryFiles") MultipartFile[] dbQueryFiles) {
+            @Parameter(description = "関連するDBQuery設計書(複数可)", required = false, content = @Content(schema = @Schema(type = "array"))) @RequestParam(value = "dbQueryFiles", required = false) MultipartFile[] dbQueryFiles) {
         if (ioFiles == null || ioFiles.length == 0) {
             throw new ResponseStatusException(HttpStatus.BAD_REQUEST, "Uploaded files are empty");
         }
@@ -65,7 +65,7 @@ public class ExcelGenerateController {
         try {
             GeneratedCodeZipResponse responseData = generateIoZipBase64Response(ioFiles, dbQueryFiles);
             return ResponseEntity.ok(ApiResponse.success(responseData));
-        } catch (WPParseExcelException exception) {
+        } catch (WPException exception) {
             throw exception;
         } catch (Exception exception) {
             throw new ResponseStatusException(HttpStatus.BAD_REQUEST, "Failed to generate code from excel files", exception);
@@ -83,7 +83,7 @@ public class ExcelGenerateController {
         try {
             GeneratedCodeZipResponse responseData = generateDbQueryZipBase64Response(dbQueryFiles);
             return ResponseEntity.ok(ApiResponse.success(responseData));
-        } catch (WPParseExcelException exception) {
+        } catch (WPException exception) {
             throw exception;
         } catch (Exception exception) {
             throw new ResponseStatusException(HttpStatus.BAD_REQUEST, "Failed to generate code from excel files", exception);

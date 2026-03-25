@@ -10,7 +10,7 @@ import org.springframework.web.multipart.MultipartFile;
 import org.springframework.web.server.ResponseStatusException;
 
 import com.neusoft.bsdl.wptool.api.dto.ApiResponse;
-import com.neusoft.bsdl.wptool.core.exception.WPParseExcelException;
+import com.neusoft.bsdl.wptool.core.exception.WPException;
 import com.neusoft.bsdl.wptool.core.io.FileSource;
 import com.neusoft.bsdl.wptool.core.model.ScreenExcelContent;
 import com.neusoft.bsdl.wptool.core.service.ParseExcelUtils;
@@ -53,7 +53,7 @@ public class ExcelParseController {
             ScreenExcelContent parseExcelContent = ParseExcelUtils.parseScreenExcel(fileSource);
             ScreenExcelContent convertedContent = serializeSheetContentAsJsonString(parseExcelContent);
             return ResponseEntity.ok(ApiResponse.success(convertedContent));
-        } catch (WPParseExcelException exception) {
+        } catch (WPException exception) {
             throw exception;
         } catch (Exception exception) {
             throw new ResponseStatusException(HttpStatus.BAD_REQUEST, "Failed to parse excel file", exception);

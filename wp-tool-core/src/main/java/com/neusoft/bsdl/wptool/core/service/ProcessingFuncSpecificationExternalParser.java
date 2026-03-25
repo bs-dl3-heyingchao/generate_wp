@@ -56,7 +56,6 @@ public class ProcessingFuncSpecificationExternalParser {
 
 		// 仕様書の処理機能記述書のJSONコンテンツを取得する
 		String binaryCodeJsonStr = aiSupportApiResponse.getData().get(0).getBinaryCodeJson().toString();
-		log.info("binaryCodeJsonStr :{}", binaryCodeJsonStr);
 		
 		if (binaryCodeJsonStr == null || binaryCodeJsonStr.trim().isEmpty()) {
 			throw new IllegalStateException("binaryCodeJson is null or empty");

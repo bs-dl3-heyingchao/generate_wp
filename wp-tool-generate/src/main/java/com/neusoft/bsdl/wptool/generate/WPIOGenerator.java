@@ -213,7 +213,8 @@ public class WPIOGenerator extends WPAbstractGenerator<ScreenExcelContent> {
         return new String[] { "io" };
     }
 
-    private static final Pattern[] GM_ITEM_PATTERN_LIST = new Pattern[] { Pattern.compile("[\\S&&[^.]]+\\.[\\S&&[^.]]+"), Pattern.compile("[\\S&&[^-.,=><]]+\\.[\\S&&[^-.,=<>]]+"),
+    private static final Pattern[] GM_ITEM_PATTERN_LIST = new Pattern[] {Pattern.compile("[\\S&&[^.]]+\\.[^\\s.]+ +[^\\s.]+"),// TBOX ID
+            Pattern.compile("[\\S&&[^.]]+\\.[\\S&&[^.]]+"), Pattern.compile("[\\S&&[^-.,=><]]+\\.[\\S&&[^-.,=<>]]+"),
             Pattern.compile("[\\S&&[^-(.,=><]]+\\.[\\S&&[^-).,=<>]]+") };
 
     private String normalizeCondition(String condition, boolean removeLf) {
@@ -294,7 +295,7 @@ public class WPIOGenerator extends WPAbstractGenerator<ScreenExcelContent> {
             content = sb.toString();
         }
         replaceIndexMap.entrySet().stream().sorted(Map.Entry.comparingByKey()).forEach(entry -> {
-            writeWarnLog("GM表記 '{}' がコードに変換できませんでした。", entry.getValue());
+            writeErrorLog("GM表記 '{}' がコードに変換できませんでした。", entry.getValue());
         });
         return content;
     }
@@ -737,10 +738,10 @@ public class WPIOGenerator extends WPAbstractGenerator<ScreenExcelContent> {
                         } else if ("降順".equals(sortType)) {
                             ioItem.sort_type = "D";
                         } else {
-                            writeWarnLog("ソート順の形式が不正なソートタイプです:{}", sortType);
+                            writeErrorLog("ソート順の形式が不正なソートタイプです:{}", sortType);
                         }
                     } else {
-                        writeWarnLog("ソート順の形式が不正です:{}", itemBean.getSorted());
+                        writeErrorLog("ソート順の形式が不正です:{}", itemBean.getSorted());
                     }
                 }
 
@@ -964,20 +965,20 @@ public class WPIOGenerator extends WPAbstractGenerator<ScreenExcelContent> {
                 List<String> valueList = map.get("項目");
 
                 if (dmList == null || dmList.isEmpty()) {
-                    writeWarnLog("加工式の【DM】が見つかりません:{}", statement);
+                    writeErrorLog("加工式の[DM]が見つかりません:{}", statement);
                     return escapseXml(statement);
                 }
                 String dm = dmList.get(0);
 
                 TableBean findedTableItem = this.combinedTableSearchService.findTableByFullName(dm);
                 if (findedTableItem == null) {
-                    writeErrorLog("加工式の【DM】が見つかりません:{}", dm);
+                    writeErrorLog("加工式の[DM]が見つかりません:{}", dm);
                     return escapseXml(statement);
                 }
                 String dmCodeResult = findedTableItem.getTableName();
                 String conditionResult = "";
                 if (conditionList == null || conditionList.isEmpty()) {
-                    writeErrorLog("加工式の【条件】が見つかりません:{}", statement);
+                    writeErrorLog("加工式の[条件]が見つかりません:{}", statement);
                 } else {
                     StringBuilder sb = new StringBuilder();
                     for (String condition : conditionList) {
@@ -991,7 +992,7 @@ public class WPIOGenerator extends WPAbstractGenerator<ScreenExcelContent> {
                         String filedFullName = m.group(1).trim();
                         FieldBean fb = this.combinedTableSearchService.findFieldByFullName(findedTableItem.getTableFullName(), filedFullName);
                         if (fb == null) {
-                            writeErrorLog("加工式の【条件】が見つかりません:{}", filedFullName);
+                            writeErrorLog("加工式の[条件]が見つかりません:{}", filedFullName);
                             continue;
                         }
                         m.appendReplacement(sb, fb.getFieldName() + "=");
@@ -1002,12 +1003,12 @@ public class WPIOGenerator extends WPAbstractGenerator<ScreenExcelContent> {
                 conditionResult = convertGmName2Id(conditionResult);
                 String valueResult = "";
                 if (valueList == null || valueList.isEmpty()) {
-                    writeErrorLog("加工式の【値】が見つかりません:{}", statement);
+                    writeErrorLog("加工式の[項目]が見つかりません:{}", statement);
                 } else {
                     String value = valueList.get(0);
                     FieldBean fb = this.combinedTableSearchService.findFieldByFullName(findedTableItem.getTableFullName(), value);
                     if (fb == null) {
-                        writeErrorLog("加工式の【項目】が見つかりません:{}", value);
+                        writeErrorLog("加工式の[項目]が見つかりません:{}", value);
                     } else {
                         valueResult = fb.getFieldName();
                     }
@@ -1017,12 +1018,12 @@ public class WPIOGenerator extends WPAbstractGenerator<ScreenExcelContent> {
             } else if (map.containsKey("条件") && map.containsKey("設定値")) {
                 List<String> conditionList = map.get("条件");
                 if (conditionList == null || conditionList.isEmpty()) {
-                    writeErrorLog("加工式の【条件】が見つかりません：{}", statement);
+                    writeErrorLog("加工式の[条件]が見つかりません：{}", statement);
                     return escapseXml(statement);
                 }
                 List<String> setVals = map.get("設定値");
                 if (setVals == null || setVals.isEmpty()) {
-                    writeErrorLog("加工式の【設定値】が不正：{}", statement);
+                    writeErrorLog("加工式の[設定値]が不正：{}", statement);
                     return escapseXml(statement);
                 }
                 String trueVal = null;
@@ -1035,7 +1036,7 @@ public class WPIOGenerator extends WPAbstractGenerator<ScreenExcelContent> {
                     }
                 }
                 if (trueVal == null || falseVal == null) {
-                    writeErrorLog("加工式の【設定値】が不正：{}", statement);
+                    writeErrorLog("加工式の[設定値]が不正：{}", statement);
                     return escapseXml(statement);
                 }
                 Function<String, String> valConv = (s) -> {
@@ -1089,14 +1090,14 @@ public class WPIOGenerator extends WPAbstractGenerator<ScreenExcelContent> {
         List<String> labelList = map.get("名称");
         List<String> orderList = map.get("ソート順");
         if (dmList == null || dmList.isEmpty()) {
-            writeWarnLog("選択リストの【DM】が見つかりません", itemBean.getItemNo());
+            writeErrorLog("選択リストの[DM]が見つかりません", itemBean.getItemNo());
             return choiceInfo;
         }
         String dm = dmList.get(0);
 
         TableBean findedTableItem = this.combinedTableSearchService.findTableByFullName(dm);
         if (findedTableItem == null) {
-            writeErrorLog("選択リストの【DM】が見つかりません:{}", itemBean.getItemNo(), dm);
+            writeErrorLog("選択リストの[DM]が見つかりません:{}", itemBean.getItemNo(), dm);
             return choiceInfo;
         }
         if (choiceInfo == null) {
@@ -1104,7 +1105,7 @@ public class WPIOGenerator extends WPAbstractGenerator<ScreenExcelContent> {
         }
         choiceInfo.dmCode = findedTableItem.getTableName();
         if (conditionList == null || conditionList.isEmpty()) {
-            writeErrorLog("選択リストの【条件】が見つかりません", itemBean.getItemNo());
+            writeErrorLog("選択リストの[条件]が見つかりません", itemBean.getItemNo());
         } else {
             StringBuilder sb = new StringBuilder();
             for (String condition : conditionList) {
@@ -1117,7 +1118,7 @@ public class WPIOGenerator extends WPAbstractGenerator<ScreenExcelContent> {
                 String filedFullName = m.group(1).trim();
                 FieldBean fb = this.combinedTableSearchService.findFieldByFullName(findedTableItem.getTableFullName(), filedFullName);
                 if (fb == null) {
-                    writeErrorLog("選択リストの【条件】が見つかりません:{}", itemBean.getItemNo(), filedFullName);
+                    writeErrorLog("選択リストの[条件]が見つかりません:{}", itemBean.getItemNo(), filedFullName);
                     continue;
                 }
                 m.appendReplacement(sb, fb.getFieldName() + "=");
@@ -1126,36 +1127,36 @@ public class WPIOGenerator extends WPAbstractGenerator<ScreenExcelContent> {
             choiceInfo.condition = convertDoubleQuoteInCondition(sb.toString());
         }
         if (valueList == null || valueList.isEmpty()) {
-            writeErrorLog("選択リストの【値】が見つかりません", itemBean.getItemNo());
+            writeErrorLog("選択リストの[値]が見つかりません", itemBean.getItemNo());
         } else {
             String value = valueList.get(0);
             FieldBean fb = this.combinedTableSearchService.findFieldByFullName(findedTableItem.getTableFullName(), value);
             if (fb == null) {
-                writeErrorLog("選択リストの【値】が見つかりません:{}", itemBean.getItemNo(), value);
+                writeErrorLog("選択リストの[値]が見つかりません:{}", itemBean.getItemNo(), value);
             } else {
                 choiceInfo.valueDmItemCode = fb.getFieldName();
             }
         }
         if (labelList == null || labelList.isEmpty()) {
-            writeErrorLog("選択リストの【名称】が見つかりません", itemBean.getItemNo());
+            writeErrorLog("選択リストの[名称]が見つかりません", itemBean.getItemNo());
         } else {
             for (int i = 0; i < labelList.size(); i++) {
                 String label = labelList.get(i);
                 FieldBean fb = this.combinedTableSearchService.findFieldByFullName(findedTableItem.getTableFullName(), label);
                 if (fb == null) {
-                    writeErrorLog("選択リストの【名称】が見つかりません:{}", itemBean.getItemNo(), label);
+                    writeErrorLog("選択リストの[名称]が見つかりません:{}", itemBean.getItemNo(), label);
                 } else {
                     try {
                         BeanUtils.setProperty(choiceInfo, "nameDmItemCode" + (i + 1), fb.getFieldName());
                     } catch (Exception e) {
-                        writeErrorLog("選択リスの【名称】設定エラー", itemBean.getItemNo(), label, e);
+                        writeErrorLog("選択リスの[名称]設定エラー", itemBean.getItemNo(), label, e);
                     }
                 }
             }
         }
 
         if (orderList == null || orderList.isEmpty()) {
-            writeErrorLog("選択リストの【ソート順】が見つかりません", itemBean.getItemNo());
+            writeErrorLog("選択リストの[ソート順]が見つかりません", itemBean.getItemNo());
         } else {
             for (int i = 0; i < orderList.size(); i++) {
                 String order = orderList.get(i);
@@ -1168,17 +1169,17 @@ public class WPIOGenerator extends WPAbstractGenerator<ScreenExcelContent> {
                 String orderLabel = order.replace("（昇順）", "").replace("（降順）", "").trim();
                 FieldBean fb = this.combinedTableSearchService.findFieldByFullName(findedTableItem.getTableFullName(), orderLabel);
                 if (fb == null) {
-                    writeErrorLog("選択リストの【表示順】が見つかりません:{}", itemBean.getItemNo(), order);
+                    writeErrorLog("選択リストの[表示順]が見つかりません:{}", itemBean.getItemNo(), order);
                 } else {
                     try {
                         BeanUtils.setProperty(choiceInfo, "sortDmItemCode" + (i + 1), fb.getFieldName());
                     } catch (Exception e) {
-                        writeErrorLog("選択リストの【表示順】設定エラー", itemBean.getItemNo(), order, e);
+                        writeErrorLog("選択リストの[表示順]設定エラー", itemBean.getItemNo(), order, e);
                     }
                     try {
                         BeanUtils.setProperty(choiceInfo, "sortType" + (i + 1), orderType);
                     } catch (Exception e) {
-                        writeErrorLog("選択リストの【表示順】設定エラー", itemBean.getItemNo(), order, e);
+                        writeErrorLog("選択リストの[表示順]設定エラー", itemBean.getItemNo(), order, e);
                     }
                 }
             }

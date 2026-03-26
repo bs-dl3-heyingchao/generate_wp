@@ -30,13 +30,17 @@ import com.neusoft.bsdl.wptool.api.dto.ApiResponse;
 import com.neusoft.bsdl.wptool.api.dto.GeneratedCodeZipResponse;
 import com.neusoft.bsdl.wptool.core.exception.WPException;
 import com.neusoft.bsdl.wptool.core.io.FileSource;
+import com.neusoft.bsdl.wptool.core.model.CsvLayout;
 import com.neusoft.bsdl.wptool.core.model.DBQueryExcelContent;
 import com.neusoft.bsdl.wptool.core.model.DBQuerySheetContent;
+import com.neusoft.bsdl.wptool.core.model.ExcelSheetContent;
 import com.neusoft.bsdl.wptool.core.model.ScreenExcelContent;
 import com.neusoft.bsdl.wptool.core.service.ParseExcelUtils;
 import com.neusoft.bsdl.wptool.generate.WPDBQueryGenerator;
+import com.neusoft.bsdl.wptool.generate.WPIOExportGenerator;
 import com.neusoft.bsdl.wptool.generate.WPIOGenerator;
 import com.neusoft.bsdl.wptool.generate.context.WPGenerateContext;
+import com.neusoft.bsdl.wptool.generate.utils.GenerateUtils;
 
 import io.swagger.v3.oas.annotations.Operation;
 import io.swagger.v3.oas.annotations.Parameter;
@@ -146,6 +150,8 @@ public class ExcelGenerateController {
         List<String> errorLog = new ArrayList<>();
         List<String> warnLog = new ArrayList<>();
         List<ScreenExcelContent> parsedContents = new ArrayList<>();
+        List<ExcelSheetContent<CsvLayout>> csvLayoutList = new ArrayList<>();
+
         int savedIoCount = 0;
         for (MultipartFile file : ioFiles) {
             if (file == null || file.isEmpty()) {
@@ -157,6 +163,9 @@ public class ExcelGenerateController {
             FileSource fileSource = () -> Files.newInputStream(savedFile);
             ScreenExcelContent screenExcelContent = ParseExcelUtils.parseScreenExcel(fileSource);
             parsedContents.add(screenExcelContent);
+            
+            List<ExcelSheetContent<CsvLayout>> list = GenerateUtils.filterCsvLayoutSheetContents(screenExcelContent.getSheetList());
+            csvLayoutList.addAll(list);
         }
 
         List<DBQuerySheetContent> parsedDBQueryContents = new ArrayList<>();
@@ -179,6 +188,9 @@ public class ExcelGenerateController {
         errorLog.addAll(ioGenerator.getLogSnapshotError());
         warnLog.addAll(ioGenerator.getLogSnapshotWarn());
 
+        WPIOExportGenerator exportCodeGenerator = new WPIOExportGenerator(generateContext, csvLayoutList, parsedDBQueryContents);
+        exportCodeGenerator.generate(taskOutputDir.toFile());
+        
         writeTaskLogs(taskDir, errorLog, warnLog);
         byte[] zipBytes = zipDirectory(taskOutputDir);
         String zipBase64 = Base64.getEncoder().encodeToString(zipBytes);

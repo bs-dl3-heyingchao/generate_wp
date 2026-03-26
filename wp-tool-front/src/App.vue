@@ -51,7 +51,6 @@ const generateScreenWpCode= async () => {
     return
   }
 
-  
   screenResult.value = 'parsing'
   screenErrors.value = []
   apiScreenResponse.value = null
@@ -98,8 +97,48 @@ const generateScreenWpCode= async () => {
 /**
  * DBQuery定義書からWPコードを生成する
  */
-const generateDbQueryWpCode = () => {
-  alert('todo: download zip file')
+const generateDbQueryWpCode = async() => {
+  if (!confirm(MESSAGES.CONFIRMATION.GENERATE_CODE)) {
+    return
+  }
+
+  dbQueryResult.value = 'parsing'
+  dbQueryErrors.value = []
+  apiDbQueryResponse.value = null
+  
+  try {
+    const formData = new FormData()
+    
+    dbQueryFiles2.value.forEach(file => {
+      formData.append('dbQueryFiles', file)
+    })
+    const response = await fetch(API_CONFIG.ENDPOINTS.GENERATE_DB_QUERY_CODE, {
+      method: 'POST',
+      body: formData
+    })
+    
+     // Scroll to results area immediately after confirmation
+    const resultsSection = document.querySelector('.results-section')
+    if (resultsSection) {
+      resultsSection.scrollIntoView({ behavior: 'smooth', block: 'start' })
+    }
+
+    const result = await response.json()
+    
+    if (result.code === 200) {
+      screenResult.value = 'success'
+      apiScreenResponse.value = result.data
+    } else if (result.code === 400) {
+      screenResult.value = 'error'
+      screenErrors.value = [result.message]
+    } else {
+      screenResult.value = 'error'
+      screenErrors.value = ['予期しないエラーが発生しました']
+    }
+  } catch (error) {
+    screenResult.value = 'error'
+    screenErrors.value = ['API呼び出し中にエラーが発生しました']
+  }
 }
 
 const downloadZip = () => {
@@ -139,7 +178,10 @@ const templateScreenName = '（内部設計書サンプル_カード）画面設
 const templateDBQueryName = '（内部設計書サンプル_カード）dbQuery定義書.xlsx'
 
 const clearDbQueryFiles = () => {
-  dbQueryFiles.value = []
+  if (!confirm(MESSAGES.CONFIRMATION.CLEAR)) {
+    return
+  }
+  dbQueryFiles2.value = []
   dbQueryResult.value = 'idle'
   dbQueryErrors.value = []
 }

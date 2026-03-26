@@ -137,7 +137,6 @@ public class WPIOGenerator extends WPAbstractGenerator<ScreenExcelContent> {
         }
         List<ScreenExcelContent> mainContents = new ArrayList<>();
         ScreenDefinition mainScreenDefinition = null;
-        List<ScreenDefinitionPartInOut> inOutPartsWithSession = null;
         List<ScreenExcelContent> partContents = new ArrayList<>();
         for (ScreenExcelContent screenExcelContent : excelContents) {
             ExcelSheetContent<ScreenDefinition> screenExcelScreenDefinition = findSheetContent(screenExcelContent, "画面定義書", ScreenDefinition.class);
@@ -146,8 +145,8 @@ public class WPIOGenerator extends WPAbstractGenerator<ScreenExcelContent> {
             }
             List<ScreenDefinitionPartInOut> inOutParts = screenExcelScreenDefinition.getContent().getInOutParts();
             // 部分入出力の定義書であっても、部分入出力にセッションしか含まれていない場合は、メイン定義書とみなす
-            inOutPartsWithSession = inOutParts.stream().filter(part -> !SESSION_IO_ID.equals(part.getPartCode())).collect(Collectors.toList());
-            if (!inOutPartsWithSession.isEmpty()) {
+            List<ScreenDefinitionPartInOut> inOutPartsWithOutSession = removeCommonInOutParts(inOutParts);
+            if (!inOutPartsWithOutSession.isEmpty()) {
                 mainContents.add(screenExcelContent);
                 mainScreenDefinition = screenExcelScreenDefinition.getContent();
             } else {
@@ -174,10 +173,11 @@ public class WPIOGenerator extends WPAbstractGenerator<ScreenExcelContent> {
             if (mainContents.size() > 1) {
                 throw new WPException(String.format("部分入出力のメイン定義書は１本しか処理できません。メイン定義書が%d本見つかりました。", mainContents.size()));
             }
-            if (inOutPartsWithSession.size() != partContents.size()) {
+            List<ScreenDefinitionPartInOut> inOutPartsWithOutSession = removeCommonInOutParts(mainScreenDefinition.getInOutParts());
+            if (inOutPartsWithOutSession.size() != partContents.size()) {
                 StringBuilder errorMsg = new StringBuilder();
                 errorMsg.append(String.format("部分入出力の定義書の数と、メイン定義書に記載されている部分入出力の数が一致しません。メイン定義書の部分入出力の数：%d、部分入出力定義書の数：%d\n", mainScreenDefinition.getInOutParts().size(), partContents.size()));
-                for (ScreenDefinitionPartInOut part : inOutPartsWithSession) {
+                for (ScreenDefinitionPartInOut part : inOutPartsWithOutSession) {
                     boolean found = false;
                     for (ScreenExcelContent partContent : partContents) {
                         if (part.getPartCode().equals(partContent.getScreenId())) {
@@ -192,7 +192,7 @@ public class WPIOGenerator extends WPAbstractGenerator<ScreenExcelContent> {
                 }
                 for (ScreenExcelContent partContent : partContents) {
                     boolean found = false;
-                    for (ScreenDefinitionPartInOut part : inOutPartsWithSession) {
+                    for (ScreenDefinitionPartInOut part : inOutPartsWithOutSession) {
                         if (part.getPartCode().equals(partContent.getScreenId())) {
                             found = true;
                             break;
@@ -223,12 +223,16 @@ public class WPIOGenerator extends WPAbstractGenerator<ScreenExcelContent> {
         }
     }
 
+    private List<ScreenDefinitionPartInOut> removeCommonInOutParts(List<ScreenDefinitionPartInOut> inOutParts) {
+        return inOutParts.stream().filter(part -> !SESSION_IO_ID.equals(part.getPartCode())).collect(Collectors.toList());
+    }
+
     @Override
     public String[] getTemplateNames() {
         return new String[] { "io" };
     }
 
-    private static final Pattern[] GM_ITEM_PATTERN_LIST = new Pattern[] { Pattern.compile("[\\S&&[^.]]+\\.[^\\s.]+ +[^\\s.]+"), // TBOX ID
+    private static final Pattern[] GM_ITEM_PATTERN_LIST = new Pattern[] { Pattern.compile("[\\S&&[^.]]+\\.[^\\s.,]+ +[^\\s.,]+"), // TBOX ID
             Pattern.compile("[\\S&&[^.]]+\\.[\\S&&[^.]]+"), Pattern.compile("[\\S&&[^-.,=><]]+\\.[\\S&&[^-.,=<>]]+"), Pattern.compile("[\\S&&[^-(.,=><]]+\\.[\\S&&[^-).,=<>]]+") };
 
     private String normalizeCondition(String condition, boolean removeLf) {
@@ -837,6 +841,7 @@ public class WPIOGenerator extends WPAbstractGenerator<ScreenExcelContent> {
                 if (StringUtils.isNotEmpty(gmIoCondition)) {
                     gmIoCondition = normalizeCondition(gmIoCondition, false);
                     String gmIoConditionConvered = context.getSqlConverter().convert(gmIoCondition);
+                    gmIoConditionConvered = convertGmName2Id(gmIoConditionConvered);
                     replaceMap.put("gmIoCondition", escapseXml(gmIoConditionConvered));
                 }
             }

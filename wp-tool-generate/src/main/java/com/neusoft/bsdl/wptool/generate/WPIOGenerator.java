@@ -50,10 +50,6 @@ public class WPIOGenerator extends WPAbstractGenerator<ScreenExcelContent> {
 
     private static final String SESSION_IO_ID = "ZZZ001P01";
 
-    public enum IOType {
-        IO, EXPORT
-    }
-
     private static final Map<String, String> CHECK_KBN_MAP = new LinkedHashMap<String, String>() {
         private static final long serialVersionUID = 1L;
         {
@@ -543,17 +539,7 @@ public class WPIOGenerator extends WPAbstractGenerator<ScreenExcelContent> {
         if (excelSheetScreenItem == null) {
             throw new WPException("画面項目説明書シートが見つかりません");
         }
-        List<ScreenItemDescriptionResult> list = null;
-        IOType ioType = getIOType();
-        switch (ioType) {
-        case IO:
-            list = excelSheetScreenItem.getContent();
-            break;
-        case EXPORT:
-            throw new WPException("エクスポートIOの生成はまだ実装されていません");
-        default:
-            throw new WPException("不明なIOタイプ: " + ioType);
-        }
+        List<ScreenItemDescriptionResult> list = excelSheetScreenItem.getContent();
         this.logPrefix = String.format("[%s:%s %s]", screenExcelContent.getScreenId(), screenExcelContent.getScreenName(), excelSheetScreenItem.getSheetName());
         for (ScreenItemDescriptionResult itemGroup : list) {
             curGroupPrefix = "";
@@ -643,35 +629,18 @@ public class WPIOGenerator extends WPAbstractGenerator<ScreenExcelContent> {
 
     }
 
-    protected IOType getIOType() {
-        return IOType.IO;
-    }
-
     private void processExcelSheetScreenItem(ScreenExcelContent screenExcelContent, Map<String, Object> replaceMap, List<IOItem> ioItemList, List<IOParts> ioPartsList) {
-        String ioSuffix;
         boolean isInGroup = false;
         ExcelSheetContent<List<ScreenItemDescriptionResult>> excelSheetScreenItem = findSheetContentList(screenExcelContent, "画面項目説明書", ScreenItemDescriptionResult.class);
         if (excelSheetScreenItem == null) {
             throw new WPException("画面項目説明書シートが見つかりません");
         }
-        List<ScreenItemDescriptionResult> list = null;
-        IOType ioType = getIOType();
-        switch (ioType) {
-        case IO:
-            ioSuffix = "IO";
-            list = excelSheetScreenItem.getContent();
-            break;
-        case EXPORT:
-            ioSuffix = "EX";
-            throw new WPException("エクスポートIOの生成はまだ実装されていません");
-        default:
-            throw new WPException("不明なIOタイプ: " + ioType);
-        }
+        List<ScreenItemDescriptionResult> list = excelSheetScreenItem.getContent();
         this.logPrefix = String.format("[%s:%s %s]", screenExcelContent.getScreenId(), screenExcelContent.getScreenName(), excelSheetScreenItem.getSheetName());
 
-        replaceMap.put("io_type", ioType.name());
+        replaceMap.put("io_type", "IO");
         replaceMap.put("gmId", screenExcelContent.getScreenId());
-        replaceMap.put("gmIoId", screenExcelContent.getScreenId() + ioSuffix);
+        replaceMap.put("gmIoId", screenExcelContent.getScreenId());
         replaceMap.put("gmName", screenExcelContent.getScreenName());
 //        replaceMap.put("parentDir", screenExcelContent.getScreenId());
         // 前一个IoCode保持（部分入出力用）

@@ -1,8 +1,8 @@
 <script setup lang="ts">
-import { ref, computed } from 'vue'
+import { ref } from 'vue'
 import ScreenDesignTab from './components/ScreenDesignTab.vue'
 import DBQueryTab from './components/DBQueryTab.vue'
-import { API_CONFIG, getApiUrl } from './config/api'
+import { API_CONFIG } from './config/api'
 import { MESSAGES } from './config/messages'
 const tab = ref(0)
 
@@ -19,28 +19,105 @@ const dbQueryResult = ref<'idle' | 'parsing' | 'success' | 'error'>('idle')
 const dbQueryErrors = ref<string[]>([])
 const apiDbQueryResponse = ref<any>(null)
 
+// ローディング状態
+const isLoading = ref(false)
 
+//一つファイルサイズの上限は 20MB です
+const MAX_FILE_SIZE = 20 * 1024 * 1024 // 20MB (bytes)
+//１回処理の最大ファイルサイズは 100MB です
+const MAX_TOTAL_SIZE = 100 * 1024 * 1024 // 100MB (bytes)
+
+/**
+ * 画面仕様書を追加する
+ */
 const addScreenFiles = (newFiles: File[]) => {
   screenFiles.value = [...screenFiles.value, ...newFiles]
 }
-
+/**
+ * 画面仕様書タブのDBQuery定義書を追加する
+ */
 const addDbQueryFiles = (newFiles: File[]) => {
   dbQueryFiles.value = [...dbQueryFiles.value, ...newFiles]
 }
-
+/**
+ * DBQuery定義書タブのDBQuery定義書を追加する
+ */
 const addDbQueryFiles2 = (newFiles: File[]) => {
   dbQueryFiles2.value = [...dbQueryFiles2.value, ...newFiles]
 }
-
+/**
+ * 画面仕様書を削除する
+ */
 const removeScreenFiles = (index: number) => {
   screenFiles.value.splice(index, 1)
 }
-
+/**
+ * 画面仕様書タブのDBQuery定義書を削除する
+ */
 const removeDbQueryFiles = (index: number) => {
   dbQueryFiles.value.splice(index, 1)
 }
+/**
+ * DBQuery定義書タブのDBQuery定義書を削除する
+ */
 const removeDbQueryFiles2 = (index: number) => {
   dbQueryFiles2.value.splice(index, 1)
+}
+/**
+ * 画面仕様書をチェックする
+ */
+function validateScreenFiles(): boolean {
+  const allFiles = [...screenFiles.value, ...dbQueryFiles.value]
+
+  // 画面仕様書タブのファイルをチェック
+  if (allFiles.length === 0) {
+    alert('ファイルをアップロードしてください。')
+    return false
+  }
+
+  // 一つファイルサイズの上限を超えるかどうかをチェック'
+  const oversizedFile = allFiles.find(file => file.size > MAX_FILE_SIZE)
+  if (oversizedFile) {
+     alert('一つファイルサイズの上限は 20MB です。')
+    return false
+  }
+
+  // １回処理の最大ファイルサイズを超えるかどうかをチェック'
+  const totalSize = allFiles.reduce((sum, file) => sum + file.size, 0)
+  if (totalSize > MAX_TOTAL_SIZE) {
+     alert('１回処理の最大ファイルサイズは 100MB です。')
+    return false
+  }
+
+  return true 
+}
+/**
+ * DBQuery定義書をチェックする
+ */
+function validateDbQueryFiles(): boolean {
+  const allFiles = [...dbQueryFiles2.value]
+
+  // DBQuery定義書タブのファイルをチェック
+  if (allFiles.length === 0) {
+    alert('ファイルをアップロードしてください。')
+    return false
+  }
+
+  // 一つファイルサイズの上限を超えるかどうかをチェック'
+  const oversizedFile = allFiles.find(file => file.size > MAX_FILE_SIZE)
+  if (oversizedFile) {
+     alert('一つファイルサイズの上限は 20MB です。')
+    return false
+  }
+
+  // １回処理の最大ファイルサイズを超えるかどうかをチェック'
+  const totalSize = allFiles.reduce((sum, file) => sum + file.size, 0)
+  if (totalSize > MAX_TOTAL_SIZE) {
+     alert('１回処理の最大ファイルサイズは 100MB です。')
+    return false
+  }
+
+  return true 
 }
 
 /**
@@ -50,7 +127,12 @@ const generateScreenWpCode= async () => {
   if (!confirm(MESSAGES.CONFIRMATION.GENERATE_CODE)) {
     return
   }
+  
+  if (!validateScreenFiles()) {
+    return
+  }
 
+  isLoading.value = true
   screenResult.value = 'parsing'
   screenErrors.value = []
   apiScreenResponse.value = null
@@ -70,13 +152,13 @@ const generateScreenWpCode= async () => {
       body: formData
     })
     
-     // Scroll to results area immediately after confirmation
     const resultsSection = document.querySelector('.results-section')
     if (resultsSection) {
       resultsSection.scrollIntoView({ behavior: 'smooth', block: 'start' })
     }
 
     const result = await response.json()
+    console.log('Screen Response data:', result)
     
     if (result.code === 200) {
       screenResult.value = 'success'
@@ -91,6 +173,8 @@ const generateScreenWpCode= async () => {
   } catch (error) {
     screenResult.value = 'error'
     screenErrors.value = ['API呼び出し中にエラーが発生しました']
+  } finally {
+    isLoading.value = false
   }
 }
 
@@ -101,7 +185,11 @@ const generateDbQueryWpCode = async() => {
   if (!confirm(MESSAGES.CONFIRMATION.GENERATE_CODE)) {
     return
   }
-
+  
+  if (!validateDbQueryFiles()) {
+    return
+  }
+  isLoading.value = true
   dbQueryResult.value = 'parsing'
   dbQueryErrors.value = []
   apiDbQueryResponse.value = null
@@ -112,63 +200,91 @@ const generateDbQueryWpCode = async() => {
     dbQueryFiles2.value.forEach(file => {
       formData.append('dbQueryFiles', file)
     })
+    
     const response = await fetch(API_CONFIG.ENDPOINTS.GENERATE_DB_QUERY_CODE, {
       method: 'POST',
       body: formData
     })
     
-     // Scroll to results area immediately after confirmation
-    const resultsSection = document.querySelector('.results-section')
+    const resultsSection = document.querySelector('.dbquery-results-section')
     if (resultsSection) {
       resultsSection.scrollIntoView({ behavior: 'smooth', block: 'start' })
     }
 
     const result = await response.json()
+    console.log('DBQuery Response data:', result)
     
     if (result.code === 200) {
-      screenResult.value = 'success'
-      apiScreenResponse.value = result.data
+      dbQueryResult.value = 'success'
+      apiDbQueryResponse.value = result.data
     } else if (result.code === 400) {
-      screenResult.value = 'error'
-      screenErrors.value = [result.message]
+      dbQueryResult.value = 'error'
+      dbQueryErrors.value = [result.message]
     } else {
-      screenResult.value = 'error'
-      screenErrors.value = ['予期しないエラーが発生しました']
+      dbQueryResult.value = 'error'
+      dbQueryErrors.value = ['予期しないエラーが発生しました']
     }
   } catch (error) {
-    screenResult.value = 'error'
-    screenErrors.value = ['API呼び出し中にエラーが発生しました']
+    dbQueryResult.value = 'error'
+    dbQueryErrors.value = ['API呼び出し中にエラーが発生しました']
+  }finally {
+    isLoading.value = false
   }
 }
-
+/**
+ * ZIPファイルをダウンロードする
+ */
 const downloadZip = () => {
+  let binaryString = ''
+  let bytes = new Uint8Array(1024) 
+  let downloadFileName = ''
+
+  /**
+   * 画面仕様書から生成されたZIPファイルをダウンロードする
+   */
   if (apiScreenResponse.value && apiScreenResponse.value.zipBase64) {
-    const binaryString = atob(apiScreenResponse.value.zipBase64)
-    const bytes = new Uint8Array(binaryString.length)
-    for (let i = 0; i < binaryString.length; i++) {
-      bytes[i] = binaryString.charCodeAt(i)
-    }
-    const blob = new Blob([bytes], { type: 'application/zip' })
-    const url = URL.createObjectURL(blob)
-    const a = document.createElement('a')
-    a.href = url
-    a.download = `${apiScreenResponse.value.taskId}.zip`
-    document.body.appendChild(a)
-    a.click()
-    document.body.removeChild(a)
-    URL.revokeObjectURL(url)
+    binaryString = atob(apiScreenResponse.value.zipBase64)
+    bytes = new Uint8Array(binaryString.length) // 重新分配大小
+    downloadFileName = `${apiScreenResponse.value.taskId}.zip`
+  }
+  /**
+   * DBQuery定義書から生成されたZIPファイルをダウンロードする
+   */
+  if (apiDbQueryResponse.value && apiDbQueryResponse.value.zipBase64) {
+    binaryString = atob(apiDbQueryResponse.value.zipBase64)
+    bytes = new Uint8Array(binaryString.length)
+    downloadFileName = `${apiDbQueryResponse.value.taskId}.zip`
   }
 
-  if (apiDbQueryResponse.value && apiDbQueryResponse.value.zipBase64) {
-    alert('todo: download zip file')
+  /**
+   * 填充字节数组，準備ダウンロード
+   */
+  for (let i = 0; i < binaryString.length; i++) {
+    bytes[i] = binaryString.charCodeAt(i)
   }
+  /**
+   * 生成されたZIPファイルをダウンロードする
+   */
+  const blob = new Blob([bytes], { type: 'application/zip' })
+  const url = URL.createObjectURL(blob)
+  const a = document.createElement('a')
+  a.href = url
+  a.download = downloadFileName
+  document.body.appendChild(a)
+  a.click()
+  document.body.removeChild(a)
+  URL.revokeObjectURL(url)
 }
 
+/**
+ * 画面仕様書をクリアする
+ */
 const clearScreenFiles = () => {
   if (!confirm(MESSAGES.CONFIRMATION.CLEAR)) {
     return
   }
   screenFiles.value = []
+  dbQueryFiles.value = []
   screenResult.value = 'idle'
   screenErrors.value = []
   apiScreenResponse.value = null
@@ -176,7 +292,9 @@ const clearScreenFiles = () => {
 
 const templateScreenName = '（内部設計書サンプル_カード）画面設計書.xlsx'
 const templateDBQueryName = '（内部設計書サンプル_カード）dbQuery定義書.xlsx'
-
+/**
+ * DBQuery定義書をクリアする
+ */
 const clearDbQueryFiles = () => {
   if (!confirm(MESSAGES.CONFIRMATION.CLEAR)) {
     return
@@ -184,23 +302,28 @@ const clearDbQueryFiles = () => {
   dbQueryFiles2.value = []
   dbQueryResult.value = 'idle'
   dbQueryErrors.value = []
+  apiDbQueryResponse.value = null
 }
 
-const handleClear = () => {
-  if (confirm(MESSAGES.CONFIRMATION.CLEAR)) {
-    clearScreenFiles()
-    clearDbQueryFiles()
-  }
-}
 </script>
 
 <template>
   <div style="background-color: #f5f5f5; min-height: 100vh; padding: 0; margin: 0; font-family: Arial, sans-serif;">
+    <!-- ローディングオーバーレイ -->
+    <div v-if="isLoading" style="position: fixed; top: 0; left: 0; width: 100%; height: 100%; background-color: rgba(255, 255, 255, 0.8); display: flex; justify-content: center; align-items: center; z-index: 9999;">
+      <v-progress-circular
+        :size="32"
+        :width="4"
+        color="#8E2DE2"
+        indeterminate
+      ></v-progress-circular>
+    </div>
+
     <!-- メインコンテナ -->
     <div style="width: 75%; margin: 0 auto; background-color: white; box-shadow: 0 0 10px rgba(0,0,0,0.1); min-width: 900px;">
       <!-- ヘッダー -->
       <div style="background-color: #8E2DE2; color: white; padding: 20px;">
-        <h1 style="margin: 0; font-size: 20px;">WP内部設計仕様書解析ツール</h1>
+        <h1 style="margin: 0; font-size: 20px;">仕様書からWPコードを自動生成</h1>
       </div>
       
       <!-- タブ -->
@@ -208,22 +331,22 @@ const handleClear = () => {
         <div style="display: flex;">
           <div 
             @click="tab = 0" 
-            style="background-color: rgba(255, 255, 255, 0.2); color: white; margin-right: 10px; border-radius: 8px 8px 0 0; padding: 12px 24px; cursor: pointer; font-size: 16px;"
-            :style="{ backgroundColor: tab === 0 ? 'rgba(255, 255, 255, 0.35)' : 'rgba(255, 255, 255, 0.2)' }"
+            style="background-color: rgba(255, 255, 255, 0.2); color: white; margin-right: 10px; border-radius: 8px 8px 0 0; padding: 12px 24px; cursor: pointer; font-size: 16px; border-bottom: 3px solid transparent;"
+            :style="{ backgroundColor: tab === 0 ? 'rgba(255, 255, 255, 0.35)' : 'rgba(255, 255, 255, 0.2)', borderBottom: tab === 0 ? '2px solid white' : '3px solid transparent' }"
           >
             画面仕様書
           </div>
           <div 
             @click="tab = 1" 
-            style="background-color: rgba(255, 255, 255, 0.2); color: white; margin-right: 10px; border-radius: 8px 8px 0 0; padding: 12px 24px; cursor: pointer; font-size: 16px;"
-            :style="{ backgroundColor: tab === 1 ? 'rgba(255, 255, 255, 0.35)' : 'rgba(255, 255, 255, 0.2)' }"
+            style="background-color: rgba(255, 255, 255, 0.2); color: white; margin-right: 10px; border-radius: 8px 8px 0 0; padding: 12px 24px; cursor: pointer; font-size: 16px; border-bottom: 3px solid transparent;"
+            :style="{ backgroundColor: tab === 1 ? 'rgba(255, 255, 255, 0.35)' : 'rgba(255, 255, 255, 0.2)', borderBottom: tab === 1 ? '2px solid white' : '3px solid transparent' }"
           >
             DBQuery定義書
           </div>
           <div 
             @click="tab = 2" 
-            style="background-color: rgba(255, 255, 255, 0.2); color: white; margin-right: 10px; border-radius: 8px 8px 0 0; padding: 12px 24px; cursor: pointer; font-size: 16px;"
-            :style="{ backgroundColor: tab === 2 ? 'rgba(255, 255, 255, 0.35)' : 'rgba(255, 255, 255, 0.2)' }"
+            style="background-color: rgba(255, 255, 255, 0.2); color: white; margin-right: 10px; border-radius: 8px 8px 0 0; padding: 12px 24px; cursor: pointer; font-size: 16px; border-bottom: 3px solid transparent;"
+            :style="{ backgroundColor: tab === 2 ? 'rgba(255, 255, 255, 0.35)' : 'rgba(255, 255, 255, 0.2)', borderBottom: tab === 2 ? '2px solid white' : '3px solid transparent' }"
           >
             テンプレート
           </div>
@@ -290,13 +413,13 @@ const handleClear = () => {
               >
                 コード生成
               </button>
-              <button v-if="screenFiles.length > 0 || dbQueryFiles.length > 0" style="background-color: #ffc107; color: black; border: none; padding: 8px 16px; border-radius: 4px; cursor: pointer;" @click="handleClear">
+              <button v-if="screenFiles.length > 0 || dbQueryFiles.length > 0" style="background-color: #ffc107; color: black; border: none; padding: 8px 16px; border-radius: 4px; cursor: pointer;" @click="clearScreenFiles">
                 クリア
               </button>
             </div>
           </div>
 
-          <!-- 结果区域 -->
+          <!-- 画面設計書结果区域 -->
           <div v-if="screenResult === 'parsing' || screenResult === 'success'" class="mb-4 results-section" style="border: 1px solid #e0e0e0; border-radius: 8px; padding: 16px;">
             <h3 style="margin-top: 0; margin-bottom: 16px;">結果</h3>
             <hr style="border: 1px solid #e0e0e0; margin: 0 0 16px 0;">
@@ -373,9 +496,9 @@ const handleClear = () => {
             <hr style="border: 1px solid #e0e0e0; margin: 20px 0;">
             
             <div style="display: flex; justify-content: flex-end; gap: 10px;">
-              <button
+               <button
                 @click="generateDbQueryWpCode"
-                style="background-color: #1976d2; color: white; border: none; padding: 8px 16px; border-radius: 4px; cursor: pointer;"
+                :style="{ backgroundColor: dbQueryFiles2.length === 0 ? '#ccc' : '#1976d2', color: 'white', border: 'none', padding: '8px 16px', borderRadius: '4px', cursor: dbQueryFiles2.length === 0 ? 'not-allowed' : 'pointer' }"
                 :disabled="dbQueryFiles2.length === 0"
               >
                 コード生成
@@ -386,8 +509,8 @@ const handleClear = () => {
             </div>
           </div>
 
-          <!-- 结果区域 -->
-          <div v-if="dbQueryResult === 'parsing' || dbQueryResult === 'success'" class="mb-4" style="border: 1px solid #e0e0e0; border-radius: 8px; padding: 16px;">
+          <!-- DBQuery定義書结果区域 -->
+          <div v-if="dbQueryResult === 'parsing' || dbQueryResult === 'success'" class="mb-4 dbquery-results-section" style="border: 1px solid #e0e0e0; border-radius: 8px; padding: 16px;">
             <h3 style="margin-top: 0; margin-bottom: 16px;">結果</h3>
             <hr style="border: 1px solid #e0e0e0; margin: 0 0 16px 0;">
             
@@ -396,23 +519,41 @@ const handleClear = () => {
             </div>
             <div v-if="dbQueryResult === 'success'" style="background-color: #e8f5e8; padding: 16px; border-radius: 4px; text-align: center;">
               <div style="color: green; font-weight: bold;">解析成功</div>
-              <button v-if="apiScreenResponse && apiScreenResponse.zipBase64" style="background-color: #1976d2; color: white; border: none; padding: 8px 16px; border-radius: 4px; cursor: pointer; margin-top: 16px;" @click="downloadZip">
-                SOURCE.ZIP をダウンロード
+              <button v-if="apiDbQueryResponse && apiDbQueryResponse.taskId && apiDbQueryResponse.zipBase64" style="background-color: #1976d2; color: white; border: none; padding: 8px 16px; border-radius: 4px; cursor: pointer; margin-top: 16px;" @click="downloadZip">
+                {{ apiDbQueryResponse.taskId }}.ZIP をダウンロード
               </button>
               <div v-else style="margin-top: 16px; color: #666;">暂无可下载的文件</div>
             </div>
           </div>
 
           <!-- Error区域 -->
-          <div v-if="dbQueryResult === 'error'" class="mb-4" style="border: 1px solid #e0e0e0; border-radius: 8px; padding: 16px;">
+          <div v-if="dbQueryResult === 'error' || (dbQueryResult === 'success' && apiDbQueryResponse && (apiDbQueryResponse.errorLog && apiDbQueryResponse.errorLog.length > 0 || apiDbQueryResponse.warnLog && apiDbQueryResponse.warnLog.length > 0))" class="mb-4 dbquery-results-section" style="border: 1px solid #e0e0e0; border-radius: 8px; padding: 16px;">
             <h3 style="margin-top: 0; margin-bottom: 16px;">エラー</h3>
             <hr style="border: 1px solid #e0e0e0; margin: 0 0 16px 0;">
             
-            <div style="background-color: #ffebee; padding: 16px; border-radius: 4px;">
+            <div v-if="dbQueryResult === 'error'" style="background-color: #ffebee; padding: 16px; border-radius: 4px; margin-bottom: 16px;">
               <h4 style="margin-top: 0; color: #c62828;">エラーメッセージ一覧</h4>
               <ul style="list-style-type: disc; padding-left: 20px;">
                 <li v-for="error in dbQueryErrors" :key="error" style="color: #c62828; word-wrap: break-word; white-space: pre-wrap;">{{ error }}</li>
               </ul>
+            </div>
+            
+            <div v-if="apiDbQueryResponse && apiDbQueryResponse.errorLog && apiDbQueryResponse.errorLog.length > 0" style="background-color: #fff3e0; padding: 16px; border-radius: 4px; margin-bottom: 16px;">
+              <h4 style="margin-top: 0; color: #ef6c00;">エラーログ</h4>
+              <div style="max-height: 300px; overflow-y: auto;">
+                <ul style="list-style-type: disc; padding-left: 20px;">
+                  <li v-for="(log, index) in apiDbQueryResponse.errorLog" :key="'error-' + index" style="font-size: 14px; word-wrap: break-word; white-space: pre-wrap;">{{ log }}</li>
+                </ul>
+              </div>
+            </div>
+            
+            <div v-if="apiDbQueryResponse && apiDbQueryResponse.warnLog && apiDbQueryResponse.warnLog.length > 0" style="background-color: #fff8e1; padding: 16px; border-radius: 4px;">
+              <h4 style="margin-top: 0; color: #f57c00;">警告ログ</h4>
+              <div style="max-height: 300px; overflow-y: auto;">
+                <ul style="list-style-type: disc; padding-left: 20px;">
+                  <li v-for="(log, index) in apiDbQueryResponse.warnLog" :key="'warn-' + index" style="font-size: 14px; word-wrap: break-word; white-space: pre-wrap;">{{ log }}</li>
+                </ul>
+              </div>
             </div>
           </div>
         </div>

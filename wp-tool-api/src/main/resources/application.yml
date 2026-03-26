@@ -22,3 +22,5 @@ wp-tool:
 logging:
   file:
     path: ${APP_WORK_DIR:${user.dir}}/logs
+  level:
+    org.apache.poi.openxml4j.opc.PackageRelationshipCollection: OFF

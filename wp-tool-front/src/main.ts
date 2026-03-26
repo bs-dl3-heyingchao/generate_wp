@@ -10,5 +10,7 @@ const vuetify = createVuetify({
   components,
   directives,
 })
-
+/**
+ * Vueアプリケーションを起動する
+ */
 createApp(App).use(vuetify).mount('#app')

@@ -140,7 +140,7 @@ public class ParseExcelUtils {
 				excelSheetContent.setSheetName(sheetName);
 				excelSheetContent.setContent(contents);
 				sheetList.add(excelSheetContent);
-			} else if (sheetName.equals(CommonConstant.CSV_LAYOUT_SHEET.SHEET_NAME)) {
+			} else if (sheetName.indexOf(CommonConstant.CSV_LAYOUT_SHEET.SHEET_NAME) != -1) {
 				// CSVレイアウト
 				CsvLayoutParseExcel parseExcel = new CsvLayoutParseExcel();
 				CsvLayout contents = parseExcel.parseSpecSheet(source, sheetName, errors);

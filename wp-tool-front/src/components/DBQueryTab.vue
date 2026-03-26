@@ -27,6 +27,7 @@
           ref="fileInput"
           type="file"
           multiple
+          accept=".xlsx,.xls"
           style="display: none;"
           @change="onFileSelect"
         />
@@ -47,7 +48,14 @@ const fileInput = ref<HTMLInputElement>()
 const onDrop = (event: DragEvent) => {
   event.preventDefault()
   if (event.dataTransfer?.files) {
-    emit('filesAdded', Array.from(event.dataTransfer.files))
+    const files = Array.from(event.dataTransfer.files)
+    const excelFiles = files.filter(file => {
+      const fileName = file.name.toLowerCase()
+      return fileName.endsWith('.xlsx') || fileName.endsWith('.xls')
+    })
+    if (excelFiles.length > 0) {
+      emit('filesAdded', excelFiles)
+    }
   }
 }
 
@@ -58,7 +66,14 @@ const onDragOver = (event: DragEvent) => {
 const onFileSelect = (event: Event) => {
   const target = event.target as HTMLInputElement
   if (target.files) {
-    emit('filesAdded', Array.from(target.files))
+    const files = Array.from(target.files)
+    const excelFiles = files.filter(file => {
+      const fileName = file.name.toLowerCase()
+      return fileName.endsWith('.xlsx') || fileName.endsWith('.xls')
+    })
+    if (excelFiles.length > 0) {
+      emit('filesAdded', excelFiles)
+    }
     // Reset file input value to allow selecting the same file again
     target.value = ''
   }

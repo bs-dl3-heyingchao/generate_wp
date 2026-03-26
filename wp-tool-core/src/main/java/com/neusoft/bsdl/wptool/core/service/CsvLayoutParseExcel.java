@@ -189,7 +189,7 @@ public class CsvLayoutParseExcel extends AbstractParseTool {
 		if (row1 != null) {
 			layout.setFileNamingRule(getCellValue(row1, 6));    // G列
 			layout.setCharacterEncoding(getCellValue(row1, 46)); // AV列
-			layout.setLineEncoding(getCellValue(row1, 157));     // FC列（158列目）
+			layout.setLineEncoding(getCellValue(row1, 57));     // FC列（158列目）
 		}
 
 		Row row2 = sheet.getRow(CSV_LAYOUT_SHEET.START_POS_HEADER_INDEX + 2);

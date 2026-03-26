@@ -12,10 +12,10 @@ public class CsvSubLayout {
 	private String itemNo;
 
 	@ExcelProperty(value = "項目名", index = 1)
-	private String filedName;
+	private String itemName;
 
 	@ExcelProperty(value = "表示", index = 11)
-	private String validationName;
+	private String display;
 
 	@ExcelProperty(value = "属性(WP)", index = 13)
 	private String attributeWP;
@@ -30,7 +30,7 @@ public class CsvSubLayout {
 	private String length;
 	
 	@ExcelProperty(value = "固定値", index = 25)
-	private String f5Modify;
+	private String constValue;
 
 	@ExcelProperty(value = "表示順", index = 34)
 	private String sorted;
@@ -39,7 +39,7 @@ public class CsvSubLayout {
 	private String tableName;
 
 	@ExcelProperty(value = "項目名", index = 46)
-	private String itemName;
+	private String filedName;
 
 	@ExcelProperty(value = "備考", index = 56)
 	private String remarks;

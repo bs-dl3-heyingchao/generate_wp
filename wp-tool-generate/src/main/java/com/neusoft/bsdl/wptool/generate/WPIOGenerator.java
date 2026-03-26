@@ -17,7 +17,6 @@ import java.util.stream.Collectors;
 import org.apache.commons.beanutils.BeanUtils;
 
 import com.neusoft.bsdl.wptool.core.exception.WPException;
-import com.neusoft.bsdl.wptool.core.model.DBQueryEntity;
 import com.neusoft.bsdl.wptool.core.model.DBQuerySheetContent;
 import com.neusoft.bsdl.wptool.core.model.ExcelSheetContent;
 import com.neusoft.bsdl.wptool.core.model.ProcessingFuncSpecification;
@@ -30,29 +29,23 @@ import com.neusoft.bsdl.wptool.core.model.ScreenItemDescriptionResult;
 import com.neusoft.bsdl.wptool.core.model.ScreenValidation;
 import com.neusoft.bsdl.wptool.core.model.ScreenValidationAction;
 import com.neusoft.bsdl.wptool.core.service.IWPTableSearchService;
-import com.neusoft.bsdl.wptool.core.service.impl.WPCombinedTableSearchService;
-import com.neusoft.bsdl.wptool.core.service.impl.WPTableSearchService;
 import com.neusoft.bsdl.wptool.generate.context.WPGenerateContext;
 import com.neusoft.bsdl.wptool.generate.model.ChoiceBean;
 import com.neusoft.bsdl.wptool.generate.model.IOItem;
 import com.neusoft.bsdl.wptool.generate.model.IOParts;
 import com.neusoft.bsdl.wptool.generate.model.ItemProp;
 import com.neusoft.bsdl.wptool.generate.model.ItemPropMapping;
+import com.neusoft.bsdl.wptool.generate.utils.GenerateUtils;
 
 import cbai.util.StringUtils;
 import cbai.util.db.define.FieldBean;
 import cbai.util.db.define.TableBean;
-import cbai.util.db.define.TableBean.TABLE_TYPE;
 import lombok.extern.slf4j.Slf4j;
 
 @Slf4j
 public class WPIOGenerator extends WPAbstractGenerator<ScreenExcelContent> {
 
     private static final String SESSION_IO_ID = "ZZZ001P01";
-
-    public enum IOType {
-        IO, EXPORT
-    }
 
     private static final Map<String, String> CHECK_KBN_MAP = new LinkedHashMap<String, String>() {
         private static final long serialVersionUID = 1L;
@@ -88,47 +81,49 @@ public class WPIOGenerator extends WPAbstractGenerator<ScreenExcelContent> {
         prepareExcelContents();
     }
 
-    /**
-     * DBQueryシート定義をそのままテーブル検索サービスとして提供する。
-     */
-    private static class DBQueryTableSearchService extends WPTableSearchService {
-
-        public DBQueryTableSearchService(List<TableBean> tableBeans) {
-            for (TableBean tableBean : tableBeans) {
-                tableMap.put(tableBean.getTableFullName(), tableBean);
-            }
-        }
-
-        @Override
-        public void initialize() {
-        }
-    }
+//    /**
+//     * DBQueryシート定義をそのままテーブル検索サービスとして提供する。
+//     */
+//    private static class DBQueryTableSearchService extends WPTableSearchService {
+//
+//        public DBQueryTableSearchService(List<TableBean> tableBeans) {
+//            for (TableBean tableBean : tableBeans) {
+//                tableMap.put(tableBean.getTableFullName(), tableBean);
+//            }
+//        }
+//
+//        @Override
+//        public void initialize() {
+//        }
+//    }
 
     private void loadDBQuerySheetContents(List<DBQuerySheetContent> dbQuerySheetContents) {
-        if (dbQuerySheetContents != null && !dbQuerySheetContents.isEmpty()) {
-            List<TableBean> dbQueryTableBeans = new ArrayList<>();
-            for (DBQuerySheetContent dbQuerySheetContent : dbQuerySheetContents) {
-                String tableFullName = dbQuerySheetContent.getTableName();
-                String tableName = dbQuerySheetContent.getTableId();
-                TableBean tableBean = new TableBean();
-                tableBean.setTableFullName(tableFullName);
-                tableBean.setTableName(tableName);
-                tableBean.setTableType(TABLE_TYPE.VIEW);
-                List<FieldBean> fieldList = new ArrayList<>();
-                for (DBQueryEntity item : dbQuerySheetContent.getQueryEntities()) {
-                    FieldBean fieldBean = new FieldBean();
-                    fieldBean.setFieldName(item.getPhysicalName());
-                    fieldBean.setFieldFullName(item.getLogicalName());
-                    fieldList.add(fieldBean);
-                }
-                tableBean.setFieldList(fieldList);
-                dbQueryTableBeans.add(tableBean);
-            }
-            IWPTableSearchService dbQuerySearchService = new DBQueryTableSearchService(dbQueryTableBeans);
-            this.combinedTableSearchService = new WPCombinedTableSearchService(Arrays.asList(dbQuerySearchService, context.getTableSearchService()));
-        } else {
-            this.combinedTableSearchService = context.getTableSearchService();
-        }
+        IWPTableSearchService dbQuerySearchService = GenerateUtils.createDBQueryTableSearchService(dbQuerySheetContents);
+        this.combinedTableSearchService = GenerateUtils.createCombinedTableSearchService(dbQuerySearchService, context.getTableSearchService());
+//        if (dbQuerySheetContents != null && !dbQuerySheetContents.isEmpty()) {
+//            List<TableBean> dbQueryTableBeans = new ArrayList<>();
+//            for (DBQuerySheetContent dbQuerySheetContent : dbQuerySheetContents) {
+//                String tableFullName = dbQuerySheetContent.getTableName();
+//                String tableName = dbQuerySheetContent.getTableId();
+//                TableBean tableBean = new TableBean();
+//                tableBean.setTableFullName(tableFullName);
+//                tableBean.setTableName(tableName);
+//                tableBean.setTableType(TABLE_TYPE.VIEW);
+//                List<FieldBean> fieldList = new ArrayList<>();
+//                for (DBQueryEntity item : dbQuerySheetContent.getQueryEntities()) {
+//                    FieldBean fieldBean = new FieldBean();
+//                    fieldBean.setFieldName(item.getPhysicalName());
+//                    fieldBean.setFieldFullName(item.getLogicalName());
+//                    fieldList.add(fieldBean);
+//                }
+//                tableBean.setFieldList(fieldList);
+//                dbQueryTableBeans.add(tableBean);
+//            }
+//            IWPTableSearchService dbQuerySearchService = new DBQueryTableSearchService(dbQueryTableBeans);
+//            this.combinedTableSearchService = new WPCombinedTableSearchService(Arrays.asList(dbQuerySearchService, context.getTableSearchService()));
+//        } else {
+//            this.combinedTableSearchService = context.getTableSearchService();
+//        }
     }
 
     private void prepareExcelContents() {
@@ -318,27 +313,27 @@ public class WPIOGenerator extends WPAbstractGenerator<ScreenExcelContent> {
         return content;
     }
 
-    private String addAndGetUniqueCode(String baseCode, Set<String> codeSet) {
-        while (!codeSet.add(baseCode)) {
-//            writeWarnLog("コード '{}' は既に存在しています。ユニークなコードを生成します。", baseCode);
-            if (baseCode.matches(".*_\\d+$")) {
-                try {
-                    String part1 = baseCode.substring(0, baseCode.lastIndexOf("_"));
-                    String part2 = baseCode.substring(baseCode.lastIndexOf("_") + 1);
-                    int suffixLen = part2.length();
-                    int index = Integer.parseInt(part2);
-                    suffixLen = Math.max(suffixLen, String.valueOf(index + 1).length());
-                    baseCode = part1 + "_" + StringUtils.leftPad(String.valueOf((index + 1)), suffixLen, '0');
-                } catch (Exception e) {
-                    baseCode = baseCode + "_01";
-                }
-            } else {
-                baseCode = baseCode + "_01";
-            }
-            baseCode = baseCode.replaceAll("_+", "_");
-        }
-        return baseCode;
-    }
+//    private String addAndGetUniqueCode(String baseCode, Set<String> codeSet) {
+//        while (!codeSet.add(baseCode)) {
+////            writeWarnLog("コード '{}' は既に存在しています。ユニークなコードを生成します。", baseCode);
+//            if (baseCode.matches(".*_\\d+$")) {
+//                try {
+//                    String part1 = baseCode.substring(0, baseCode.lastIndexOf("_"));
+//                    String part2 = baseCode.substring(baseCode.lastIndexOf("_") + 1);
+//                    int suffixLen = part2.length();
+//                    int index = Integer.parseInt(part2);
+//                    suffixLen = Math.max(suffixLen, String.valueOf(index + 1).length());
+//                    baseCode = part1 + "_" + StringUtils.leftPad(String.valueOf((index + 1)), suffixLen, '0');
+//                } catch (Exception e) {
+//                    baseCode = baseCode + "_01";
+//                }
+//            } else {
+//                baseCode = baseCode + "_01";
+//            }
+//            baseCode = baseCode.replaceAll("_+", "_");
+//        }
+//        return baseCode;
+//    }
 
     @Override
     public Map<String, Object> getReplaceMap(ScreenExcelContent screenExcelContent) {
@@ -346,9 +341,6 @@ public class WPIOGenerator extends WPAbstractGenerator<ScreenExcelContent> {
         // 処理機能記述書
         // 画面定義書
         ScreenDefinition screenDefinition = processScreenExcelScreenDefinition(screenExcelContent, replaceMap);
-//        // 名称先作成
-//        processExcelSheetScreenItemCreateItemIdMap(screenExcelContent, itemIdMap);
-//        processExcelSheetScreenValidationCreateItemIdMap(screenExcelContent, itemIdMap);
 
         List<IOItem> ioItemList = new ArrayList<>();
         List<IOParts> ioPartsList = new ArrayList<>();
@@ -397,7 +389,7 @@ public class WPIOGenerator extends WPAbstractGenerator<ScreenExcelContent> {
                     baseCode = id;
                 }
 
-                String itemCode = addAndGetUniqueCode(codePrefix + baseCode, codeSet);
+                String itemCode = GenerateUtils.addAndGetUniqueCode(codePrefix + baseCode, codeSet);
                 IOItem ioItem = new IOItem();
                 ioItem.code = itemCode;
                 ioItem.name = checkItem.getValidationName();
@@ -543,17 +535,7 @@ public class WPIOGenerator extends WPAbstractGenerator<ScreenExcelContent> {
         if (excelSheetScreenItem == null) {
             throw new WPException("画面項目説明書シートが見つかりません");
         }
-        List<ScreenItemDescriptionResult> list = null;
-        IOType ioType = getIOType();
-        switch (ioType) {
-        case IO:
-            list = excelSheetScreenItem.getContent();
-            break;
-        case EXPORT:
-            throw new WPException("エクスポートIOの生成はまだ実装されていません");
-        default:
-            throw new WPException("不明なIOタイプ: " + ioType);
-        }
+        List<ScreenItemDescriptionResult> list = excelSheetScreenItem.getContent();
         this.logPrefix = String.format("[%s:%s %s]", screenExcelContent.getScreenId(), screenExcelContent.getScreenName(), excelSheetScreenItem.getSheetName());
         for (ScreenItemDescriptionResult itemGroup : list) {
             curGroupPrefix = "";
@@ -629,7 +611,7 @@ public class WPIOGenerator extends WPAbstractGenerator<ScreenExcelContent> {
                         codePrefix = codePrefix.replaceFirst("O_", "");
                     }
                 }
-                String itemCode = addAndGetUniqueCode(codePrefix + baseCode, codeSet);
+                String itemCode = GenerateUtils.addAndGetUniqueCode(codePrefix + baseCode, codeSet);
                 IOItem tmpIoItem = new IOItem();
                 tmpIoItem.code = itemCode;
                 tmpIoItem.name = itemBean.getItemName();
@@ -643,35 +625,18 @@ public class WPIOGenerator extends WPAbstractGenerator<ScreenExcelContent> {
 
     }
 
-    protected IOType getIOType() {
-        return IOType.IO;
-    }
-
     private void processExcelSheetScreenItem(ScreenExcelContent screenExcelContent, Map<String, Object> replaceMap, List<IOItem> ioItemList, List<IOParts> ioPartsList) {
-        String ioSuffix;
         boolean isInGroup = false;
         ExcelSheetContent<List<ScreenItemDescriptionResult>> excelSheetScreenItem = findSheetContentList(screenExcelContent, "画面項目説明書", ScreenItemDescriptionResult.class);
         if (excelSheetScreenItem == null) {
             throw new WPException("画面項目説明書シートが見つかりません");
         }
-        List<ScreenItemDescriptionResult> list = null;
-        IOType ioType = getIOType();
-        switch (ioType) {
-        case IO:
-            ioSuffix = "IO";
-            list = excelSheetScreenItem.getContent();
-            break;
-        case EXPORT:
-            ioSuffix = "EX";
-            throw new WPException("エクスポートIOの生成はまだ実装されていません");
-        default:
-            throw new WPException("不明なIOタイプ: " + ioType);
-        }
+        List<ScreenItemDescriptionResult> list = excelSheetScreenItem.getContent();
         this.logPrefix = String.format("[%s:%s %s]", screenExcelContent.getScreenId(), screenExcelContent.getScreenName(), excelSheetScreenItem.getSheetName());
 
-        replaceMap.put("io_type", ioType.name());
+        replaceMap.put("io_type", "IO");
         replaceMap.put("gmId", screenExcelContent.getScreenId());
-        replaceMap.put("gmIoId", screenExcelContent.getScreenId() + ioSuffix);
+        replaceMap.put("gmIoId", screenExcelContent.getScreenId());
         replaceMap.put("gmName", screenExcelContent.getScreenName());
 //        replaceMap.put("parentDir", screenExcelContent.getScreenId());
         // 前一个IoCode保持（部分入出力用）
@@ -700,9 +665,9 @@ public class WPIOGenerator extends WPAbstractGenerator<ScreenExcelContent> {
                 }
                 IOItem ioItem = new IOItem();
                 ioItem.code = preIoItem.code;
-                ioItem.name = itemBean.getItemName();// itemBean.getItemName();
+                ioItem.name = escapseXml(itemBean.getItemName());// itemBean.getItemName();
                 ioItem.io_code = screenExcelContent.getScreenId();
-                String display = itemBean.getDisplay();// itemBean.表示;
+                String display = itemBean.getDisplay(); // itemBean.表示;
                 lastIoCode = ioItem.code;
                 if (io.contains("I入力")) {
                     ioItem.item_type = "I";

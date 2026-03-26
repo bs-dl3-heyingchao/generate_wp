@@ -1,3 +1,6 @@
+/**
+ * APIの設定
+ */
 export const API_CONFIG = {
   BASE_URL: import.meta.env.VITE_API_BASE_URL || 'http://localhost:8080',
   ENDPOINTS: {
@@ -5,7 +8,11 @@ export const API_CONFIG = {
     GENERATE_DB_QUERY_CODE: import.meta.env.VITE_GENERATE_DB_QUERY_CODE || '/api/v1/excel/generate-dbquery-code',
   }
 }
-
+/**
+ * APIのURLを生成する
+ * @param endpoint APIのエンドポイント
+ * @returns APIのURL
+ */
 export const getApiUrl = (endpoint: string): string => {
   return `${API_CONFIG.BASE_URL}${endpoint}`
 }

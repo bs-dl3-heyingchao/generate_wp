@@ -1,9 +1,10 @@
 <script setup lang="ts">
-import { ref } from 'vue'
 import ScreenDesignTab from './components/ScreenDesignTab.vue'
 import DBQueryTab from './components/DBQueryTab.vue'
 import { API_CONFIG } from './config/api'
 import { MESSAGES } from './config/messages'
+import { ref, onMounted, onBeforeUnmount,computed } from 'vue'
+
 const tab = ref(0)
 
 //画面仕様書タブの変数
@@ -304,23 +305,24 @@ const clearDbQueryFiles = () => {
   dbQueryErrors.value = []
   apiDbQueryResponse.value = null
 }
-
 </script>
 
 <template>
   <div style="background-color: #f5f5f5; min-height: 100vh; padding: 0; margin: 0; font-family: Arial, sans-serif;">
     <!-- ローディングオーバーレイ -->
     <div v-if="isLoading" style="position: fixed; top: 0; left: 0; width: 100%; height: 100%; background-color: rgba(255, 255, 255, 0.8); display: flex; justify-content: center; align-items: center; z-index: 9999;">
-      <v-progress-circular
-        :size="32"
-        :width="4"
-        color="#8E2DE2"
-        indeterminate
-      ></v-progress-circular>
+       <v-progress-circular
+      indeterminate
+      color="deep-purple"
+      size="80"
+      width="4"
+    >
+    </v-progress-circular>
     </div>
 
     <!-- メインコンテナ -->
-    <div style="width: 75%; margin: 0 auto; background-color: white; box-shadow: 0 0 10px rgba(0,0,0,0.1); min-width: 900px;">
+     <!--<div style="position: absolute; left: 200px; min-width: 1550px;background-color: white; box-shadow: 0 0 10px rgba(0,0,0,0.1);">-->
+    <div style="margin: 0 auto; background-color: white; box-shadow: 0 0 10px rgba(0,0,0,0.1); min-width: 1300px;">
       <!-- ヘッダー -->
       <div style="background-color: #8E2DE2; color: white; padding: 20px;">
         <h1 style="margin: 0; font-size: 20px;">仕様書からWPコードを自動生成</h1>

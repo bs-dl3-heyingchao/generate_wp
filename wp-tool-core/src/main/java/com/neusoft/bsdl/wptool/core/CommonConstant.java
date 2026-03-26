@@ -54,6 +54,7 @@ public interface CommonConstant {
 		String STR_SIKAKU = "■";
 		String STR_METHOD_JUDGMENT_CONTAIN = "結合";
 		String STR_SHEET_NAME_MODIFY_HISTORY = "改版履歴";
+		String STR_SHEET_NAME_QUERY_LIST= "クエリ一覧";
 		String STR_SECTION_SUMMARY = "概要";
 		String STR_SECTION_QUERY_CONDITION = "dbQuery：検索条件";
 		String STR_SECTION_QUERY_AGGREGATE_CONDITION = "dbQueryAggregate：集計関数の検索条件";

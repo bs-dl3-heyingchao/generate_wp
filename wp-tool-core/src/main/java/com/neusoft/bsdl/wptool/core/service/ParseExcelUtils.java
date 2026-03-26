@@ -68,8 +68,9 @@ public class ParseExcelUtils {
 		List<ExcelParseError> errors = Lists.newArrayList();
 
 		for (String sheetName : sheetNames) {
-			// 改修履歴シートは解析対象外
-			if (CommonConstant.DBQUERY_SHEET.STR_SHEET_NAME_MODIFY_HISTORY.equals(sheetName)) {
+			// 改修履歴シート,クエリ一覧は解析対象外
+			if (CommonConstant.DBQUERY_SHEET.STR_SHEET_NAME_MODIFY_HISTORY.equals(sheetName)
+					|| CommonConstant.DBQUERY_SHEET.STR_SHEET_NAME_QUERY_LIST.equals(sheetName)) {
 				continue;
 			}
 			DBQueryParseExcel parseExcel = new DBQueryParseExcel();
@@ -159,7 +160,7 @@ public class ParseExcelUtils {
 			} else if (sheetName.equals(CommonConstant.PROCESSING_FUNCTION_SPECIFICATION_SHEET.SHEET_NAME)) {
 				// 処理機能記述書
 				ProcessingFuncSpecificationExternalParser parseExcel = new ProcessingFuncSpecificationExternalParser();
-				ProcessingFuncSpecification contents = parseExcel.exeternalParser(source,sheetName);
+				ProcessingFuncSpecification contents = parseExcel.exeternalParser(source, sheetName);
 				ExcelSheetContent<ProcessingFuncSpecification> excelSheetContent = new ExcelSheetContent<>();
 				excelSheetContent.setSheetName(sheetName);
 				excelSheetContent.setContent(contents);

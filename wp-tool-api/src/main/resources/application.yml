@@ -15,6 +15,7 @@ wp-tool:
     svn-base-dir: ${WP_TOOL_SVN_BASE_DIR:${APP_WORK_DIR:${user.dir}}/svn}
     svn-db-define-dir: ${WP_TOOL_SVN_DB_DEFINE_DIR:/SVN_CITS/documents/04_内部設計/02_作成ドキュメント/50_機能設計/80_DB設計書/02_テーブル定義/}
     svn-session-items-define-file: ${WP_TOOL_SVN_SESSION_ITEMS_DEFINE_FILE:/test/模版/副本04_50_45_01_09_【共通仕様】セッション管理項目一覧1.xlsx}
+    cache-dir: ${APP_WORK_DIR:${user.dir}}/temp/cache
     db-define-cachefile: ${APP_WORK_DIR:${user.dir}}/temp/cache/wp-db.cache
     ai-support-url: ${WP_TOOL_AI_SUPPORT_URL:https://devora.neusoft.work/backend/api/v1/projects/128SYIS25142/commands/69b892bc6fda971e8977a42b/file/invoke}
     ai-support-token: ${WP_TOOL_AI_SUPPORT_TOKEN:}

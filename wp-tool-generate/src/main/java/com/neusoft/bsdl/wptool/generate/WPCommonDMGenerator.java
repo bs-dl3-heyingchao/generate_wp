@@ -5,6 +5,8 @@ import java.util.HashMap;
 import java.util.List;
 import java.util.Map;
 
+import org.apache.commons.text.StringEscapeUtils;
+
 import com.neusoft.bsdl.wptool.generate.context.WPGenerateContext;
 import com.neusoft.bsdl.wptool.generate.model.DmItem;
 
@@ -23,6 +25,12 @@ public class WPCommonDMGenerator extends WPAbstractGenerator<TableBean> {
         Map<String, Object> replaceMap = new HashMap<>();
         replaceMap.put("dmId", tableBean.getTableName());
         replaceMap.put("dmName", escapseXml(tableBean.getTableFullName()));
+        List<DmItem> dmList = createDmItemList(tableBean);
+        replaceMap.put("dmItemList", dmList);
+        return replaceMap;
+    }
+
+    public static List<DmItem> createDmItemList(TableBean tableBean) {
         List<DmItem> dmList = new ArrayList<DmItem>();
         for (FieldBean fb : tableBean.getFieldList()) {
             DmItem dmItem = new DmItem();
@@ -42,16 +50,19 @@ public class WPCommonDMGenerator extends WPAbstractGenerator<TableBean> {
                 }
             }
             dmItem.code = fb.getFieldName();
-            dmItem.name = escapseXml(fb.getFieldFullName());
-            dmItem.length = fb.getLen();
+            dmItem.name = StringEscapeUtils.escapeXml11(fb.getFieldFullName());
+            if ("FILE".equals(dmItem.data_type) || "BOOL".equals(dmItem.data_type)) {
+                dmItem.length = "0";
+            } else {
+                dmItem.length = fb.getLen();
+            }
             dmItem.byteSize = "0";
             dmItem.scale = fb.getDotLen();
             dmItem.is_nullable = String.valueOf(!fb.isNotNull());
             dmItem.key_group = fb.isKey() ? "1" : "0";
             dmList.add(dmItem);
         }
-        replaceMap.put("dmItemList", dmList);
-        return replaceMap;
+        return dmList;
     }
 
     @Override

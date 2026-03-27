@@ -115,6 +115,7 @@ public class DbConfigItemDefinitionParseExcel extends AbstractParseTool {
 
 		DBConfigDefinition result = new DBConfigDefinition();
 		result.setProcessList(processList);
+		result.setSheetName(sheetName);
 		return result;
 	}
 

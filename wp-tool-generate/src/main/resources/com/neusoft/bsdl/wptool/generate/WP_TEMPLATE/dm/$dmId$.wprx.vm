@@ -25,6 +25,49 @@
       </dm-item>
 #end
     </dm-item-list>
+#if(${dmOpeList} && ${dmOpeList.size()} > 0)
+    <dm-ope-list>
+#foreach($dmOpe in $!{dmOpeList})
+      <dm-ope>
+        <dm-code>${dmId}</dm-code>
+        <code>$!{dmOpe.code}</code>
+        <name>$!{dmOpe.name}</name>
+        <type>$!{dmOpe.type}</type>
+        <is-commit>$!{dmOpe.is_commit}</is-commit>
+        <is-disable>$!{dmOpe.is_disable}</is-disable>
+        <creator>eclipse</creator>
+        <create-time>2026-04-01 00:00:00.0</create-time>
+        <dm-ope-logic-list>
+#foreach($dmLogic in $!{dmOpe.logicList})
+          <dm-ope-logic>
+            <dm-code>${dmId}</dm-code>
+            <dm-ope-code>$!{dmOpe.code}</dm-ope-code>
+            <dm-item-code>$!{dmLogic.item_code}</dm-item-code>
+            <statement>$!{dmLogic.statement}</statement>
+            <is-disable>$!{dmLogic.is_disable}</is-disable>
+            <is-disable>$!{dmLogic.description}</is-disable>
+            <creator>eclipse</creator>
+            <create-time>2026-04-01 00:00:00.0</create-time>
+          </dm-ope-logic>
+#end
+        </dm-ope-logic-list>
+      </dm-ope>
+#end
+    </dm-ope-list>
+#else
     <dm-ope-list/>
+#end
+#if(${dmPropList} && ${dmPropList.size()} > 0)
+    <dm-prop-list>
+#foreach($dmProp in $!{dmPropList})
+      <dm-prop>
+        <key>$!{dmProp.key}</key>
+        <value>$!{dmProp.value}</value>
+        <is-disable>$!{dmProp.is_disable}</is-disable>
+      </dm-prop>
+#end
+    </dm-prop-list>
+#else
     <dm-prop-list/>
+#end
   </dm>

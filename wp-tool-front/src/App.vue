@@ -6,6 +6,13 @@ import { MESSAGES } from './config/messages'
 import { ref } from 'vue'
 import { alert, confirm } from './dialog'
 
+/**
+ * ファイルサイズをMBに変換する
+ */
+const formatFileSize = (bytes: number): string => {
+  return (bytes / (1024 * 1024)).toFixed(2) + 'MB'
+}
+
 const tab = ref(0)
 
 //画面仕様書タブの変数
@@ -389,9 +396,12 @@ const clearDbQueryFiles = async() => {
                 <ScreenDesignTab @files-added="addScreenFiles" />
                 <div v-if="screenFiles.length > 0" class="mt-4">
                   <h5>アップロードされたファイル</h5>
-                  <div v-for="(file, index) in screenFiles" :key="file.name + index" style="display: flex; justify-content: space-between; padding: 8px; border-bottom: 1px solid #e0e0e0;">
+                  <div v-for="(file, index) in screenFiles" :key="file.name + index" style="display: flex; justify-content: space-between; align-items: center; padding: 8px; border-bottom: 1px solid #e0e0e0;">
                     <span>{{ file.name }}</span>
-                    <button @click="removeScreenFiles(index)" style="background: none; border: none; color: red; cursor: pointer;">×</button>
+                    <div style="display: flex; align-items: center; gap: 16px;">
+                      <span style="font-size: 12px; color: #666; min-width: 80px; text-align: right;">{{ formatFileSize(file.size) }}</span>
+                      <button @click="removeScreenFiles(index)" style="background: none; border: none; color: red; cursor: pointer;">×</button>
+                    </div>
                   </div>
                 </div>
               </div>
@@ -403,9 +413,12 @@ const clearDbQueryFiles = async() => {
                 <DBQueryTab @files-added="addDbQueryFiles" />
                 <div v-if="dbQueryFiles.length > 0" class="mt-4">
                   <h5>アップロードされたファイル</h5>
-                  <div v-for="(file, index) in dbQueryFiles" :key="file.name + index" style="display: flex; justify-content: space-between; padding: 8px; border-bottom: 1px solid #e0e0e0;">
+                  <div v-for="(file, index) in dbQueryFiles" :key="file.name + index" style="display: flex; justify-content: space-between; align-items: center; padding: 8px; border-bottom: 1px solid #e0e0e0;">
                     <span>{{ file.name }}</span>
-                    <button @click="removeDbQueryFiles(index)" style="background: none; border: none; color: red; cursor: pointer;">×</button>
+                    <div style="display: flex; align-items: center; gap: 16px;">
+                      <span style="font-size: 12px; color: #666; min-width: 80px; text-align: right;">{{ formatFileSize(file.size) }}</span>
+                      <button @click="removeDbQueryFiles(index)" style="background: none; border: none; color: red; cursor: pointer;">×</button>
+                    </div>
                   </div>
                 </div>
               </div>
@@ -493,12 +506,15 @@ const clearDbQueryFiles = async() => {
             <div style="display: flex; flex-direction: column; height: 100%;">
               <DBQueryTab @files-added="addDbQueryFiles2" />
               <div v-if="dbQueryFiles2.length > 0" class="mt-4">
-                <h5>アップロードされたファイル</h5>
-                <div v-for="(file, index) in dbQueryFiles2" :key="file.name + index" style="display: flex; justify-content: space-between; padding: 8px; border-bottom: 1px solid #e0e0e0;">
-                  <span>{{ file.name }}</span>
-                  <button @click="removeDbQueryFiles2(index)" style="background: none; border: none; color: red; cursor: pointer;">×</button>
+                  <h5>アップロードされたファイル</h5>
+                  <div v-for="(file, index) in dbQueryFiles2" :key="file.name + index" style="display: flex; justify-content: space-between; align-items: center; padding: 8px; border-bottom: 1px solid #e0e0e0;">
+                    <span>{{ file.name }}</span>
+                    <div style="display: flex; align-items: center; gap: 16px;">
+                      <span style="font-size: 12px; color: #666; min-width: 80px; text-align: right;">{{ formatFileSize(file.size) }}</span>
+                      <button @click="removeDbQueryFiles2(index)" style="background: none; border: none; color: red; cursor: pointer;">×</button>
+                    </div>
+                  </div>
                 </div>
-              </div>
             </div>
             
             <hr style="border: 1px solid #e0e0e0; margin: 20px 0;">

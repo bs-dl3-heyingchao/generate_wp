@@ -11,6 +11,7 @@ import lombok.Data;
  */
 @Data
 public class DBConfigDefinition {
+    private String sheetName;
     //一覧表示
     private List<DBConfigItemDefinition> processList = Lists.newArrayList();
 }

@@ -12,5 +12,5 @@ public class DmItem {
 	public String is_nullable;
 	public String key_group;
 	public String data_type;
-	public String is_disable;
+	public String is_disable = "false";
 }

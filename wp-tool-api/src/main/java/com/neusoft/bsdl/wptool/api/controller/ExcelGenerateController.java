@@ -31,11 +31,13 @@ import com.neusoft.bsdl.wptool.api.dto.GeneratedCodeZipResponse;
 import com.neusoft.bsdl.wptool.core.exception.WPException;
 import com.neusoft.bsdl.wptool.core.io.FileSource;
 import com.neusoft.bsdl.wptool.core.model.CsvLayout;
+import com.neusoft.bsdl.wptool.core.model.DBConfigDefinition;
 import com.neusoft.bsdl.wptool.core.model.DBQueryExcelContent;
 import com.neusoft.bsdl.wptool.core.model.DBQuerySheetContent;
 import com.neusoft.bsdl.wptool.core.model.ExcelSheetContent;
 import com.neusoft.bsdl.wptool.core.model.ScreenExcelContent;
 import com.neusoft.bsdl.wptool.core.service.ParseExcelUtils;
+import com.neusoft.bsdl.wptool.generate.WPDBConfigGenerator;
 import com.neusoft.bsdl.wptool.generate.WPDBQueryGenerator;
 import com.neusoft.bsdl.wptool.generate.WPIOExportGenerator;
 import com.neusoft.bsdl.wptool.generate.WPIOGenerator;
@@ -163,7 +165,7 @@ public class ExcelGenerateController {
             FileSource fileSource = () -> Files.newInputStream(savedFile);
             ScreenExcelContent screenExcelContent = ParseExcelUtils.parseScreenExcel(fileSource);
             parsedContents.add(screenExcelContent);
-            
+
             List<ExcelSheetContent<CsvLayout>> list = GenerateUtils.filterCsvLayoutSheetContents(screenExcelContent.getSheetList());
             csvLayoutList.addAll(list);
         }
@@ -183,14 +185,27 @@ public class ExcelGenerateController {
                 parsedDBQueryContents.addAll(queryExcelContent.getQuerySheetContents());
             }
         }
+        // 生成画面的IO
         WPIOGenerator ioGenerator = new WPIOGenerator(generateContext, parsedContents, parsedDBQueryContents);
         ioGenerator.generate(taskOutputDir.toFile());
         errorLog.addAll(ioGenerator.getLogSnapshotError());
         warnLog.addAll(ioGenerator.getLogSnapshotWarn());
 
+        // 生成画面中的CSVLayout
         WPIOExportGenerator exportCodeGenerator = new WPIOExportGenerator(generateContext, csvLayoutList, parsedDBQueryContents);
         exportCodeGenerator.generate(taskOutputDir.toFile());
-        
+        errorLog.addAll(exportCodeGenerator.getLogSnapshotError());
+        warnLog.addAll(exportCodeGenerator.getLogSnapshotWarn());
+
+        // 生成画画中的DB設定項目定義DM
+        List<ExcelSheetContent<DBConfigDefinition>> dbConfigSheetList = GenerateUtils.filterDBConfigSheetContents(parsedContents);
+        for (ExcelSheetContent<DBConfigDefinition> dbConfigSeet : dbConfigSheetList) {
+            WPDBConfigGenerator dbConfigGenerator = new WPDBConfigGenerator(generateContext, dbConfigSeet.getContent());
+            dbConfigGenerator.generate(taskOutputDir.toFile());
+            errorLog.addAll(dbConfigGenerator.getLogSnapshotError());
+            warnLog.addAll(dbConfigGenerator.getLogSnapshotWarn());
+        }
+
         writeTaskLogs(taskDir, errorLog, warnLog);
         byte[] zipBytes = zipDirectory(taskOutputDir);
         String zipBase64 = Base64.getEncoder().encodeToString(zipBytes);

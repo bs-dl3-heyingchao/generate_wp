@@ -8,9 +8,11 @@ import java.util.Map;
 import java.util.Set;
 
 import com.neusoft.bsdl.wptool.core.model.CsvLayout;
+import com.neusoft.bsdl.wptool.core.model.DBConfigDefinition;
 import com.neusoft.bsdl.wptool.core.model.DBQueryEntity;
 import com.neusoft.bsdl.wptool.core.model.DBQuerySheetContent;
 import com.neusoft.bsdl.wptool.core.model.ExcelSheetContent;
+import com.neusoft.bsdl.wptool.core.model.ScreenExcelContent;
 import com.neusoft.bsdl.wptool.core.service.IWPTableSearchService;
 import com.neusoft.bsdl.wptool.core.service.impl.WPCombinedTableSearchService;
 import com.neusoft.bsdl.wptool.core.service.impl.WPTableSearchService;
@@ -111,4 +113,20 @@ public class GenerateUtils {
         return csvLayoutSheetContents;
     }
 
+    public static List<ExcelSheetContent<DBConfigDefinition>> filterDBConfigSheetContents(List<ScreenExcelContent> excelContents) {
+        List<ExcelSheetContent<DBConfigDefinition>> list = new ArrayList<>();
+        for (var excelContent : excelContents) {
+            var sheetContents = excelContent.getSheetList();
+            if (sheetContents != null && !sheetContents.isEmpty()) {
+                for (ExcelSheetContent<?> sheetContent : sheetContents) {
+                    if (sheetContent.getContent() instanceof DBConfigDefinition) {
+                        @SuppressWarnings("unchecked")
+                        ExcelSheetContent<DBConfigDefinition> csvLayoutSheetContent = (ExcelSheetContent<DBConfigDefinition>) sheetContent;
+                        list.add(csvLayoutSheetContent);
+                    }
+                }
+            }
+        }
+        return list;
+    }
 }

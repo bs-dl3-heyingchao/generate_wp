@@ -2,7 +2,9 @@ package com.neusoft.bsdl.wptool.generate.utils;
 
 import java.util.ArrayList;
 import java.util.Arrays;
+import java.util.LinkedHashMap;
 import java.util.List;
+import java.util.Map;
 import java.util.Set;
 
 import com.neusoft.bsdl.wptool.core.model.CsvLayout;
@@ -24,11 +26,16 @@ public class GenerateUtils {
      * DBQueryシート定義をそのままテーブル検索サービスとして提供する。
      */
     private static class DBQueryTableSearchService extends WPTableSearchService {
+        private Map<String, TableBean> tableMap = new LinkedHashMap<>();
 
         public DBQueryTableSearchService(List<TableBean> tableBeans) {
             for (TableBean tableBean : tableBeans) {
                 tableMap.put(tableBean.getTableFullName(), tableBean);
             }
+        }
+
+        protected Map<String, TableBean> getTableMap() {
+            return tableMap;
         }
 
         @Override

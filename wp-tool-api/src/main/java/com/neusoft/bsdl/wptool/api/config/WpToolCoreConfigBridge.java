@@ -13,9 +13,9 @@ public class WpToolCoreConfigBridge {
 
     @Value("${wp-tool.core-config.svn-db-define-dir:}")
     private String svnDbDefineDir;
-
-    @Value("${wp-tool.core-config.db-define-cachefile:}")
-    private String dbDefineCachefile;
+    
+    @Value("${wp-tool.core-config.cache-dir:}")
+    private String cacheeDir;
 
     @Value("${wp-tool.core-config.svn-session-items-define-file:}")
     private String svnSessionItemsDefineFile;
@@ -30,7 +30,7 @@ public class WpToolCoreConfigBridge {
     public void applyOverrides() {
         applyIfPresent("wp-tool.svn.base-dir", svnBaseDir);
         applyIfPresent("wp-tool.svn.db-define.dir", svnDbDefineDir);
-        applyIfPresent("wp-tool.db.db-define.cachefile", dbDefineCachefile);
+        applyIfPresent("wp-tool.cache-dir", cacheeDir);
         applyIfPresent("wp-tool.svn.session-items-define.file", svnSessionItemsDefineFile);
         applyIfPresent("wp-tool.ai.support.url", aiSupportUrl);
         applyIfPresent("wp-tool.ai.support.token", aiSupportToken);

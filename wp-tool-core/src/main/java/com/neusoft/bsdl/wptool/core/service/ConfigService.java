@@ -72,4 +72,12 @@ public class ConfigService {
     public static File getSvnSessionItemDefineFile() {
         return getSvnFullPath(getConfig("wp-tool.svn.session-items-define.file"));
     }
+    
+    public static File getCacheDir() {
+        File dir = new File(getConfig("wp-tool.cache-dir"));
+        if (!dir.exists()) {
+            dir.mkdirs();
+        }
+        return dir;
+    }
 }

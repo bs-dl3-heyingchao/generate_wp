@@ -13,7 +13,9 @@ export const MESSAGES = {
     '一つファイルサイズの上限は 20MB です、１回処理の最大ファイルサイズは 100MB です。'
   ],
   CONFIRMATION: {
-    GENERATE_CODE: 'WPのファイルを生成しますか？',
-    CLEAR: '全ファイルをクリアしますか？'
+    GENERATE_CODE_CONFIRM: 'WPソースコードの生成',
+    GENERATE_CODE: 'WPのソースコードを生成してもよろしいですか？',
+    CLEAR_CONFIRM: 'ファイルのクリア',
+    CLEAR: '選択されたファイルをクリアしてもよろしいですか？'
   }
 }

@@ -28,6 +28,7 @@ import org.springframework.web.server.ResponseStatusException;
 
 import com.neusoft.bsdl.wptool.api.dto.ApiResponse;
 import com.neusoft.bsdl.wptool.api.dto.GeneratedCodeZipResponse;
+import com.neusoft.bsdl.wptool.core.exception.WPCheckException;
 import com.neusoft.bsdl.wptool.core.exception.WPException;
 import com.neusoft.bsdl.wptool.core.io.FileSource;
 import com.neusoft.bsdl.wptool.core.model.CsvLayout;
@@ -43,6 +44,7 @@ import com.neusoft.bsdl.wptool.generate.WPIOExportGenerator;
 import com.neusoft.bsdl.wptool.generate.WPIOGenerator;
 import com.neusoft.bsdl.wptool.generate.context.WPGenerateContext;
 import com.neusoft.bsdl.wptool.generate.utils.GenerateUtils;
+import com.neusoft.bsdl.wptool.validator.WPScreenValidator;
 
 import io.swagger.v3.oas.annotations.Operation;
 import io.swagger.v3.oas.annotations.Parameter;
@@ -169,7 +171,14 @@ public class ExcelGenerateController {
             List<ExcelSheetContent<CsvLayout>> list = GenerateUtils.filterCsvLayoutSheetContents(screenExcelContent.getSheetList());
             csvLayoutList.addAll(list);
         }
-
+        WPScreenValidator screenValidator = new WPScreenValidator(generateContext);
+        for (ScreenExcelContent content : parsedContents) {
+            try {
+                screenValidator.validateParseContent(content);
+            } catch (WPCheckException e) {
+                errorLog.addAll(e.getErrors());
+            }
+        }
         List<DBQuerySheetContent> parsedDBQueryContents = new ArrayList<>();
         int savedDbQueryCount = 0;
         if (dbQueryFiles != null) {

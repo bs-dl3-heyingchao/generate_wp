@@ -133,7 +133,7 @@ public class ExcelGenerateController {
                 warnLog.addAll(ioGenerator.getLogSnapshotWarn());
             }
         }
-        writeTaskLogs(taskDir, errorLog, warnLog);
+        writeTaskLogs(taskDir, errorLog, warnLog, null);
         byte[] zipBytes = zipDirectory(taskOutputDir);
         String zipBase64 = Base64.getEncoder().encodeToString(zipBytes);
         LOG.info("Finish generateDbQueryZipBase64Response taskId={}, savedFiles={}, errors={}, warns={}", taskId, savedCount, errorLog.size(), warnLog.size());
@@ -216,7 +216,7 @@ public class ExcelGenerateController {
             warnLog.addAll(dbConfigGenerator.getLogSnapshotWarn());
         }
 
-        writeTaskLogs(taskDir, errorLog, warnLog);
+        writeTaskLogs(taskDir, errorLog, warnLog, checkLog);
         byte[] zipBytes = zipDirectory(taskOutputDir);
         String zipBase64 = Base64.getEncoder().encodeToString(zipBytes);
         LOG.info("Finish generateIoZipBase64Response taskId={}, savedIoFiles={}, savedDbQueryFiles={}, errors={}, warns={}", taskId, savedIoCount, savedDbQueryCount, errorLog.size(), warnLog.size());
@@ -248,10 +248,17 @@ public class ExcelGenerateController {
         return byteArrayOutputStream.toByteArray();
     }
 
-    private void writeTaskLogs(Path taskDir, List<String> errorLog, List<String> warnLog) throws Exception {
+    private void writeTaskLogs(Path taskDir, List<String> errorLog, List<String> warnLog, List<String> checkLog) throws Exception {
         Path logDir = taskDir.resolve("log");
         Files.createDirectories(logDir);
-        Files.write(logDir.resolve("errorLog.txt"), errorLog, StandardCharsets.UTF_8);
-        Files.write(logDir.resolve("warnLog.txt"), warnLog, StandardCharsets.UTF_8);
+        if (errorLog != null && !errorLog.isEmpty()) {
+            Files.write(logDir.resolve("errorLog.txt"), errorLog, StandardCharsets.UTF_8);
+        }
+        if (warnLog != null && !warnLog.isEmpty()) {
+            Files.write(logDir.resolve("warnLog.txt"), warnLog, StandardCharsets.UTF_8);
+        }
+        if (checkLog != null && !checkLog.isEmpty()) {
+            Files.write(logDir.resolve("checkLog.txt"), checkLog, StandardCharsets.UTF_8);
+        }
     }
 }

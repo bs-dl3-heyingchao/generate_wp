@@ -172,14 +172,6 @@ public class ExcelGenerateController {
             List<ExcelSheetContent<CsvLayout>> list = GenerateUtils.filterCsvLayoutSheetContents(screenExcelContent.getSheetList());
             csvLayoutList.addAll(list);
         }
-        WPScreenValidator screenValidator = new WPScreenValidator(generateContext);
-        for (ScreenExcelContent content : parsedContents) {
-            try {
-                screenValidator.validateParseContent(content);
-            } catch (WPCheckException e) {
-                checkLog.addAll(e.getErrors());
-            }
-        }
         List<DBQuerySheetContent> parsedDBQueryContents = new ArrayList<>();
         int savedDbQueryCount = 0;
         if (dbQueryFiles != null) {
@@ -193,6 +185,14 @@ public class ExcelGenerateController {
                 FileSource fileSource = () -> Files.newInputStream(savedFile);
                 DBQueryExcelContent queryExcelContent = ParseExcelUtils.parseDBQueryExcel(fileSource);
                 parsedDBQueryContents.addAll(queryExcelContent.getQuerySheetContents());
+            }
+        }
+        WPScreenValidator screenValidator = new WPScreenValidator(generateContext, parsedDBQueryContents);
+        for (ScreenExcelContent content : parsedContents) {
+            try {
+                screenValidator.validateParseContent(content);
+            } catch (WPCheckException e) {
+                checkLog.addAll(e.getErrors());
             }
         }
         // 生成画面的IO

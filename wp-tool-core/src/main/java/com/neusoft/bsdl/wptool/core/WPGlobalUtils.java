@@ -1,7 +1,7 @@
 package com.neusoft.bsdl.wptool.core;
 
 import com.neusoft.bsdl.wptool.core.cache.ShardedCache;
-import com.neusoft.bsdl.wptool.core.cache.SimpleShardedCache;
+import com.neusoft.bsdl.wptool.core.cache.impl.SimpleShardedCache;
 import com.neusoft.bsdl.wptool.core.service.ConfigService;
 
 public class WPGlobalUtils {

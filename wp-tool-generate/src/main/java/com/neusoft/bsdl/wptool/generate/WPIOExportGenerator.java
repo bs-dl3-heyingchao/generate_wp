@@ -12,6 +12,7 @@ import com.neusoft.bsdl.wptool.core.model.CsvSubLayout;
 import com.neusoft.bsdl.wptool.core.model.DBQuerySheetContent;
 import com.neusoft.bsdl.wptool.core.model.ExcelSheetContent;
 import com.neusoft.bsdl.wptool.core.service.IWPTableSearchService;
+import com.neusoft.bsdl.wptool.core.service.impl.WPTableSearchUtils;
 import com.neusoft.bsdl.wptool.generate.context.WPGenerateContext;
 import com.neusoft.bsdl.wptool.generate.model.IOItem;
 import com.neusoft.bsdl.wptool.generate.utils.GenerateUtils;
@@ -35,8 +36,8 @@ public class WPIOExportGenerator extends WPAbstractGenerator<ExcelSheetContent<C
     }
 
     private void loadDBQuerySheetContents(List<DBQuerySheetContent> dbQuerySheetContents) {
-        IWPTableSearchService dbQuerySearchService = GenerateUtils.createDBQueryTableSearchService(dbQuerySheetContents);
-        this.combinedTableSearchService = GenerateUtils.createCombinedTableSearchService(dbQuerySearchService, context.getTableSearchService());
+        IWPTableSearchService dbQuerySearchService = WPTableSearchUtils.createDBQueryTableSearchService(dbQuerySheetContents);
+        this.combinedTableSearchService = WPTableSearchUtils.createCombinedTableSearchService(dbQuerySearchService, context.getTableSearchService());
     }
 
     @Override

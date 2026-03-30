@@ -60,8 +60,7 @@ public class WPScreenValidator {
 	 * @param screenExcelContent 解析済みの画面Excelコンテンツ
 	 * @throws WPCheckException チェックエラーが発生した場合
 	 */
-	public void validateParseContent(ScreenExcelContent screenExcelContent,
-			List<DBQuerySheetContent> dbQuerySheetContents) throws WPCheckException {
+	public void validateParseContent(ScreenExcelContent screenExcelContent) throws WPCheckException {
 		List<String> errors = new ArrayList<>();
 		// 画面定義情報
 		ScreenDefinition screenDefinitionValidObj = null;

@@ -15,7 +15,7 @@ class WPScreenValidatorTest {
         DBQueryExcelContent queryExcelContent = ParseExcelUtils.parseDBQueryExcel(source);
         WPScreenValidator screenChecker = new WPScreenValidator(context,queryExcelContent.getQuerySheetContents());
         ScreenExcelContent screenExcelContent = ParseExcelUtils.parseScreenExcel(source);
-        screenChecker.validateParseContent(screenExcelContent,queryExcelContent.getQuerySheetContents());
+        screenChecker.validateParseContent(screenExcelContent);
     }
 
 }

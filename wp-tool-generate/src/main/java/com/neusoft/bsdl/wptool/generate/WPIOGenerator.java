@@ -20,6 +20,7 @@ import com.neusoft.bsdl.wptool.core.exception.WPException;
 import com.neusoft.bsdl.wptool.core.model.DBQuerySheetContent;
 import com.neusoft.bsdl.wptool.core.model.ExcelSheetContent;
 import com.neusoft.bsdl.wptool.core.model.ProcessingFuncSpecification;
+import com.neusoft.bsdl.wptool.core.model.ProcessingFuncSpecificationBtnOperation;
 import com.neusoft.bsdl.wptool.core.model.ProcessingFuncSpecificationParam;
 import com.neusoft.bsdl.wptool.core.model.ScreenDefinition;
 import com.neusoft.bsdl.wptool.core.model.ScreenDefinitionPartInOut;
@@ -67,6 +68,7 @@ public class WPIOGenerator extends WPAbstractGenerator<ScreenExcelContent> {
         }
     };
     private Map<String, String> paramNameToCodeMap;
+    private Map<String, String> searchNameToSortIdMap;
     private Map<String, IOItem> itemIdMap;
     private Set<String> codeSet;
     private int groupIndex = 0;
@@ -152,6 +154,7 @@ public class WPIOGenerator extends WPAbstractGenerator<ScreenExcelContent> {
         this.codeSet = new HashSet<String>();
         this.itemIdMap = new HashMap<String, IOItem>();
         this.paramNameToCodeMap = new HashMap<String, String>();
+        this.searchNameToSortIdMap = new HashMap<String, String>();
         this.groupIndex = 0;
 
         // 不包含部分入出力的主设计书，按普通设计书处理
@@ -161,8 +164,14 @@ public class WPIOGenerator extends WPAbstractGenerator<ScreenExcelContent> {
             }
             // 只有一个定义书，且没有部分入出力定义，直接当作主定义书处理
             // 処理機能記述書
-            Map<String, String> paramNameToCodeMap = processScreenExcelSpecification(partContents.get(0));
-            this.paramNameToCodeMap.putAll(paramNameToCodeMap);
+            Map<String, String> paramNameToCodeMap = loadParamNameToCodeMap(partContents.get(0));
+            if (paramNameToCodeMap != null) {
+                this.paramNameToCodeMap.putAll(paramNameToCodeMap);
+            }
+            Map<String, String> searchNameToSortIdMap = loadSearchNameToSortIdMap(partContents.get(0));
+            if (searchNameToSortIdMap != null) {
+                this.searchNameToSortIdMap.putAll(searchNameToSortIdMap);
+            }
         }
         // 包含部分入出力的主设计书（只能有1本），且部分入出力的定义书数量必须和主设计书中部分入出力的数量一致，否则报错
         else {
@@ -206,9 +215,15 @@ public class WPIOGenerator extends WPAbstractGenerator<ScreenExcelContent> {
             excelContents.addAll(partContents);
             // 部分入出力的参数只用主设计书的
             // 処理機能記述書
-            Map<String, String> paramNameToCodeMap = processScreenExcelSpecification(mainContents.get(0));
-            if (mainScreenDefinition.getInOutParts() != null && mainScreenDefinition.getInOutParts().size() > 0) {
-                this.paramNameToCodeMap.putAll(paramNameToCodeMap);
+            if (mainScreenDefinition.getInOutParts() != null && inOutPartsWithOutSession.size() > 0) {
+                Map<String, String> paramNameToCodeMap = loadParamNameToCodeMap(mainContents.get(0));
+                if (paramNameToCodeMap != null) {
+                    this.paramNameToCodeMap.putAll(paramNameToCodeMap);
+                }
+                Map<String, String> searchNameToSortIdMap = loadSearchNameToSortIdMap(mainContents.get(0));
+                if (searchNameToSortIdMap != null) {
+                    this.searchNameToSortIdMap.putAll(searchNameToSortIdMap);
+                }
             }
         }
         // 生成所有关联设计书中的项目ID
@@ -555,12 +570,24 @@ public class WPIOGenerator extends WPAbstractGenerator<ScreenExcelContent> {
                     writeWarnLog("項目のIO区分が空です。項目名: '{}'", itemBean.getItemName());
                     continue;
                 }
+                boolean isSearchCondition = false;
+                if (this.searchNameToSortIdMap.containsKey("画面." + itemBean.getItemName()) || this.searchNameToSortIdMap.containsKey("画面．" + itemBean.getItemName())) {
+                    isSearchCondition = true;
+                }
                 if (io.contains("I入力")) {
                     itemType = "I";
-                    codePrefix = "I_";
+                    if (isSearchCondition) {
+                        codePrefix = "S_";
+                    } else {
+                        codePrefix = "I_";
+                    }
                 } else if (io.contains("IO入出力")) {
                     itemType = "IO";
-                    codePrefix = "I_";
+                    if (isSearchCondition) {
+                        codePrefix = "S_";
+                    } else {
+                        codePrefix = "I_";
+                    }
                 } else if (io.contains("O出力")) {
                     itemType = "O";
                     codePrefix = "O_";
@@ -780,10 +807,10 @@ public class WPIOGenerator extends WPAbstractGenerator<ScreenExcelContent> {
         }
     }
 
-    private Map<String, String> processScreenExcelSpecification(ScreenExcelContent screenExcelContent) {
+    private Map<String, String> loadParamNameToCodeMap(ScreenExcelContent screenExcelContent) {
         ExcelSheetContent<ProcessingFuncSpecification> screenExcelSpecification = findSheetContent(screenExcelContent, "処理機能記述書", ProcessingFuncSpecification.class);
         List<ProcessingFuncSpecificationParam> screenInputParams = null;
-        if (screenExcelSpecification != null) {
+        if (screenExcelSpecification != null && screenExcelSpecification.getContent() != null) {
             Map<String, String> paramNameToCodeMap = new HashMap<String, String>();
             screenInputParams = screenExcelSpecification.getContent().getParams();
             screenInputParams.forEach((k) -> {
@@ -792,6 +819,24 @@ public class WPIOGenerator extends WPAbstractGenerator<ScreenExcelContent> {
             return paramNameToCodeMap;
         }
         return null;
+    }
+
+    private Map<String, String> loadSearchNameToSortIdMap(ScreenExcelContent screenExcelContent) {
+        ExcelSheetContent<ProcessingFuncSpecification> screenExcelSpecification = findSheetContent(screenExcelContent, "処理機能記述書", ProcessingFuncSpecification.class);
+        if (screenExcelSpecification == null || screenExcelSpecification.getContent() == null) {
+            return null;
+        }
+        Map<String, String> map = new HashMap<String, String>();
+        List<ProcessingFuncSpecificationBtnOperation> btnOpertions = screenExcelSpecification.getContent().getBtnOpertions();
+        for (ProcessingFuncSpecificationBtnOperation btnOperation : btnOpertions) {
+            if (!btnOperation.getOpertionName().contains("「検索」")) {
+                continue;
+            }
+            btnOperation.getScreenFoward().getInOutParams().forEach((k) -> {
+                map.put(k.getLogicName(), k.getSort());
+            });
+        }
+        return map;
     }
 
     private ScreenDefinition processScreenExcelScreenDefinition(ScreenExcelContent screenExcelContent, Map<String, Object> replaceMap) {
@@ -1125,6 +1170,14 @@ public class WPIOGenerator extends WPAbstractGenerator<ScreenExcelContent> {
         if (labelList == null || labelList.isEmpty()) {
             writeErrorLog("選択リストの[名称]が見つかりません", itemBean.getItemNo());
         } else {
+            // 汎用名 || 汎用区分1 || 汎用区分2 の形式に対応
+            if (labelList.size() == 1 && labelList.get(0).contains("||")) {
+                String[] labels = labelList.get(0).split("\\|\\|");
+                labelList.clear();
+                for (String label : labels) {
+                    labelList.add(label.trim());
+                }
+            }
             for (int i = 0; i < labelList.size(); i++) {
                 String label = labelList.get(i);
                 FieldBean fb = this.combinedTableSearchService.findFieldByFullName(findedTableItem.getTableFullName(), label);

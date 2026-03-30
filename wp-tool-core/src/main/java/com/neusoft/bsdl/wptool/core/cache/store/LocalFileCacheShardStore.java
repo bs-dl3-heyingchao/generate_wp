@@ -12,7 +12,7 @@ import java.util.Map;
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
 
-import com.neusoft.bsdl.wptool.core.cache.entry.CacheEntry;
+import com.neusoft.bsdl.wptool.core.cache.CacheEntry;
 
 /**
  * 基于本地文件系统的分片缓存持久化实现。

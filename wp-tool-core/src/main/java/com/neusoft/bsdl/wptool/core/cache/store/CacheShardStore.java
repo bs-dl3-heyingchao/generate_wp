@@ -3,7 +3,7 @@ package com.neusoft.bsdl.wptool.core.cache.store;
 import java.io.IOException;
 import java.util.Map;
 
-import com.neusoft.bsdl.wptool.core.cache.entry.CacheEntry;
+import com.neusoft.bsdl.wptool.core.cache.CacheEntry;
 
 /**
  * 分片缓存持久化后端接口，可替换为本地文件、数据库、对象存储等实现。

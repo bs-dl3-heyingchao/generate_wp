@@ -29,6 +29,7 @@ import com.neusoft.bsdl.wptool.core.model.ScreenItemDescriptionResult;
 import com.neusoft.bsdl.wptool.core.model.ScreenValidation;
 import com.neusoft.bsdl.wptool.core.model.ScreenValidationAction;
 import com.neusoft.bsdl.wptool.core.service.IWPTableSearchService;
+import com.neusoft.bsdl.wptool.core.service.impl.WPTableSearchUtils;
 import com.neusoft.bsdl.wptool.generate.context.WPGenerateContext;
 import com.neusoft.bsdl.wptool.generate.model.ChoiceBean;
 import com.neusoft.bsdl.wptool.generate.model.IOItem;
@@ -98,8 +99,8 @@ public class WPIOGenerator extends WPAbstractGenerator<ScreenExcelContent> {
 //    }
 
     private void loadDBQuerySheetContents(List<DBQuerySheetContent> dbQuerySheetContents) {
-        IWPTableSearchService dbQuerySearchService = GenerateUtils.createDBQueryTableSearchService(dbQuerySheetContents);
-        this.combinedTableSearchService = GenerateUtils.createCombinedTableSearchService(dbQuerySearchService, context.getTableSearchService());
+        IWPTableSearchService dbQuerySearchService = WPTableSearchUtils.createDBQueryTableSearchService(dbQuerySheetContents);
+        this.combinedTableSearchService = WPTableSearchUtils.createCombinedTableSearchService(dbQuerySearchService, context.getTableSearchService());
 //        if (dbQuerySheetContents != null && !dbQuerySheetContents.isEmpty()) {
 //            List<TableBean> dbQueryTableBeans = new ArrayList<>();
 //            for (DBQuerySheetContent dbQuerySheetContent : dbQuerySheetContents) {

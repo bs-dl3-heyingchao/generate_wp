@@ -17,9 +17,9 @@ import java.util.concurrent.TimeUnit;
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
 
+import com.neusoft.bsdl.wptool.core.cache.CacheEntry;
 import com.neusoft.bsdl.wptool.core.cache.CacheStoreMode;
 import com.neusoft.bsdl.wptool.core.cache.ShardedCache;
-import com.neusoft.bsdl.wptool.core.cache.entry.CacheEntry;
 
 /**
  * 高性能分片持久化缓存 (支持异步写入 + 定时同步)

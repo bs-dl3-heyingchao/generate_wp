@@ -17,7 +17,6 @@ import java.util.concurrent.TimeUnit;
 
 import org.junit.jupiter.api.Test;
 
-import com.neusoft.bsdl.wptool.core.cache.entry.CacheEntry;
 import com.neusoft.bsdl.wptool.core.cache.impl.SimpleShardedCache;
 import com.neusoft.bsdl.wptool.core.cache.store.CacheShardStore;
 

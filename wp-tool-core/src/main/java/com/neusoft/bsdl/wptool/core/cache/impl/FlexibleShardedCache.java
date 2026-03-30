@@ -1,4 +1,4 @@
-package com.neusoft.bsdl.wptool.core.cache;
+package com.neusoft.bsdl.wptool.core.cache.impl;
 
 import java.io.File;
 import java.io.FileInputStream;
@@ -16,6 +16,10 @@ import java.util.concurrent.TimeUnit;
 
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
+
+import com.neusoft.bsdl.wptool.core.cache.CacheStoreMode;
+import com.neusoft.bsdl.wptool.core.cache.ShardedCache;
+import com.neusoft.bsdl.wptool.core.cache.entry.CacheEntry;
 
 /**
  * 高性能分片持久化缓存 (支持异步写入 + 定时同步)
@@ -72,6 +76,12 @@ public class FlexibleShardedCache implements ShardedCache {
     }
 
     @Override
+    public <T> void put(String key, T value, CacheStoreMode mode) {
+        // 当前实现暂未拆分多后端，先保持旧行为兼容。
+        put(key, value, defaultTtlMillis, TimeUnit.MILLISECONDS);
+    }
+
+    @Override
     public <T> void put(String key, T value, long ttl, TimeUnit timeUnit) {
         if (value == null) {
             remove(key);
@@ -80,6 +90,12 @@ public class FlexibleShardedCache implements ShardedCache {
         long expireTime = System.currentTimeMillis() + timeUnit.toMillis(ttl);
         memoryMap.put(key, new CacheEntry(value, expireTime));
         flushShardAsync(key);
+    }
+
+    @Override
+    public <T> void put(String key, T value, long ttl, TimeUnit timeUnit, CacheStoreMode mode) {
+        // 当前实现暂未拆分多后端，先保持旧行为兼容。
+        put(key, value, ttl, timeUnit);
     }
 
     @Override

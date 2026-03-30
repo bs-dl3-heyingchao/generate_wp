@@ -1,4 +1,4 @@
-package com.neusoft.bsdl.wptool.core.cache;
+package com.neusoft.bsdl.wptool.core.cache.entry;
 
 import java.io.Serializable;
 

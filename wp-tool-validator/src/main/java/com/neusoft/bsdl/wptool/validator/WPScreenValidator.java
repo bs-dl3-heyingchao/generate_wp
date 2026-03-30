@@ -21,8 +21,10 @@ import com.neusoft.bsdl.wptool.core.model.ScreenDefinitionTargetData;
 import com.neusoft.bsdl.wptool.core.model.ScreenExcelContent;
 import com.neusoft.bsdl.wptool.core.model.ScreenItemDescriptionResult;
 import com.neusoft.bsdl.wptool.core.model.ScreenValidation;
+import com.neusoft.bsdl.wptool.core.service.IWPTableSearchService;
 import com.neusoft.bsdl.wptool.core.service.impl.WPMessageLoaderService;
 import com.neusoft.bsdl.wptool.core.service.impl.WPTableSearchService;
+import com.neusoft.bsdl.wptool.core.service.impl.WPTableSearchUtils;
 import com.neusoft.bsdl.wptool.validator.CommonConstant.SCREEN_DEFINITION_SHEET;
 import com.neusoft.bsdl.wptool.validator.CommonConstant.SCREEN_ITEM_DESCRIPTION_SHEET;
 import com.neusoft.bsdl.wptool.validator.CommonConstant.SCREEN_VALIDATION_SHEET;
@@ -37,9 +39,14 @@ import lombok.extern.slf4j.Slf4j;
 public class WPScreenValidator {
 	public static final String STR_KORON = ":";
 	private WPContext context;
+	private IWPTableSearchService combinedTableSearchService;
 
-	public WPScreenValidator(WPContext context) {
+	public WPScreenValidator(WPContext context, List<DBQuerySheetContent> dbQuerySheetContents) {
 		this.context = context;
+		IWPTableSearchService dbQuerySearchService = WPTableSearchUtils
+				.createDBQueryTableSearchService(dbQuerySheetContents);
+		this.combinedTableSearchService = WPTableSearchUtils.createCombinedTableSearchService(dbQuerySearchService,
+				context.getTableSearchService());
 	}
 
 	/**
@@ -48,7 +55,8 @@ public class WPScreenValidator {
 	 * @param screenExcelContent 解析済みの画面Excelコンテンツ
 	 * @throws WPCheckException チェックエラーが発生した場合
 	 */
-	public void validateParseContent(ScreenExcelContent screenExcelContent,List<DBQuerySheetContent> dbQuerySheetContents) throws WPCheckException {
+	public void validateParseContent(ScreenExcelContent screenExcelContent,
+			List<DBQuerySheetContent> dbQuerySheetContents) throws WPCheckException {
 		List<String> errors = new ArrayList<>();
 		// 画面定義情報
 		ScreenDefinition screenDefinitionValidObj = null;
@@ -190,9 +198,8 @@ public class WPScreenValidator {
 			List<String> errors) {
 		// 画面定義書の対象データモデルの「論理名称」は、テーブル定義書の「論理名称」と一致していること。
 		screenDefinitionValidObj.getTargetModels().forEach(item -> {
-			WPTableSearchService service = (WPTableSearchService) context.getTableSearchService();
 			// データモデル名でテーブル定義書のコンテンツを取得
-			TableBean tableContent = service.findTableByFullName(item.getLogicalName());
+			TableBean tableContent = combinedTableSearchService.findTableByFullName(item.getLogicalName());
 			// テーブル定義が存在しない場合、エラーとする
 			if (Objects.isNull(tableContent)) {
 				errors.add(errorPrex + CommonConstant.MESSAGE_KUGIRI

@@ -34,6 +34,7 @@ import lombok.extern.slf4j.Slf4j;
 
 @Slf4j
 public class WPScreenValidator {
+	public static final String STR_KORON = ":";
 	private WPContext context;
 
 	public WPScreenValidator(WPContext context) {
@@ -49,29 +50,34 @@ public class WPScreenValidator {
 	public void validateParseContent(ScreenExcelContent screenExcelContent) throws WPCheckException {
 		List<String> errors = new ArrayList<>();
 		// 画面定義書
-		ScreenDefinition ScreenDefinitionValidObj = null;
+		ScreenDefinition screenDefinitionValidObj = null;
+		String errorPrex1 = "[" + screenExcelContent.getScreenId() + STR_KORON + screenExcelContent.getScreenName()
+				+ " ";
+
 		for (ExcelSheetContent<?> sheet : screenExcelContent.getSheetList()) {
 			String sheetName = sheet.getSheetName();
+			// [画面ID+:+画面名称 シート名称] 例[KHT004P01:総合結果一覧検索結果部分入出力 画面項目説明書]
+			String errorPrex = errorPrex1 + sheetName + "] ";
 			if (CommonConstant.PARSE_SHEET_NAME.SCREEN_DEFINITION_SHEET.equals(sheetName)) {
-				ScreenDefinitionValidObj = (ScreenDefinition) sheet.getContent();
+				screenDefinitionValidObj = (ScreenDefinition) sheet.getContent();
 				// 画面定義書のバリデーションチェックを実施する
-				validateScreenDefinition(sheetName, ScreenDefinitionValidObj, errors);
+				validateScreenDefinition(errorPrex, screenDefinitionValidObj, errors);
 			} else if (sheetName.indexOf(CommonConstant.PARSE_SHEET_NAME.SCREEN_ITEM_DESCRIPTION_SHEET) != -1) {
 				// 画面項目説明書
 				List<ScreenItemDescriptionResult> validList = (List<ScreenItemDescriptionResult>) sheet.getContent();
 				// 画面項目説明書のバリデーションチェックを実施する
-				validateScreenItemDescription(sheetName, validList, ScreenDefinitionValidObj, errors);
+				validateScreenItemDescription(errorPrex, validList, screenDefinitionValidObj, errors);
 			} else if (CommonConstant.PARSE_SHEET_NAME.SCREEN_VALIDATION_SHEET.equals(sheetName)) {
 				// 画面バリデーション定義書
 				List<ScreenValidation> validList = (List<ScreenValidation>) sheet.getContent();
 				// 画面バリデーション定義書のバリデーションチェックを実施する
-				validateScreenValidation(sheetName, validList, errors);
+				validateScreenValidation(errorPrex, validList, errors);
 			} else if (CommonConstant.PARSE_SHEET_NAME.BP_SHEET.equals(sheetName)) {
 				// BP定義書
 			} else if (sheetName.indexOf(CommonConstant.PARSE_SHEET_NAME.DB_CONFIG_SHEET) != -1) {
 				// DB設定定義書
 				DBConfigDefinition validObj = (DBConfigDefinition) sheet.getContent();
-				validateDBConfigDefinition(sheetName, validObj, errors);
+				validateDBConfigDefinition(errorPrex, validObj, errors);
 			}
 		}
 		// エラーが存在する場合、例外をスローする
@@ -83,30 +89,30 @@ public class WPScreenValidator {
 	/**
 	 * DB設定定義書のバリデーションチェックを実施する
 	 * 
-	 * @param sheetName
+	 * @param errorPrex
 	 * 
 	 * @param validObj
 	 * @param errors
 	 */
-	private void validateDBConfigDefinition(String sheetName, DBConfigDefinition validObj, List<String> errors) {
+	private void validateDBConfigDefinition(String errorPrex, DBConfigDefinition validObj, List<String> errors) {
 		// 登録、更新をするテーブル単位でシートを作成していること。
 		// [操作]登録、更新の何れかを記載していること。
 		validObj.getProcessList().forEach(item -> {
 			if (!CommonConstant.DB_CONFIG_SHEET.STR_DB_OPERATION_INSERT_NAME.equals(item.getOperation())
 					&& !CommonConstant.DB_CONFIG_SHEET.STR_DB_OPERATION_UPD_NAME.equals(item.getOperation())) {
-				errors.add(sheetName + CommonConstant.MESSAGE_KUGIRI
+				errors.add(errorPrex + CommonConstant.MESSAGE_KUGIRI
 						+ MessageService.getMessage("error.db.config.operation").replace("{0}", item.getOperation()));
 			}
 
 			// TODO:[操作コード]WPネーミング規約にそった名称を記載していること。
 			if (!isValidCode(item.getOperationCode(), item.getOperation())) {
-				errors.add(sheetName + CommonConstant.MESSAGE_KUGIRI + MessageService
+				errors.add(errorPrex + CommonConstant.MESSAGE_KUGIRI + MessageService
 						.getMessage("error.db.config.operationCode").replace("{0}", item.getOperation()));
 			}
 
 			// TODO:[名前]WPネーミング規約にそった名称を記載していること。
 			if (!isValidName(item.getTableName())) {
-				errors.add(sheetName + CommonConstant.MESSAGE_KUGIRI + MessageService
+				errors.add(errorPrex + CommonConstant.MESSAGE_KUGIRI + MessageService
 						.getMessage("error.db.config.operationTableName").replace("{0}", item.getTableName()));
 			}
 			// [項目]テーブル定義に存在する項目が記載されていること。
@@ -119,14 +125,14 @@ public class WPScreenValidator {
 					if (!ｔableContent.getFieldList().stream().anyMatch(
 							column -> StringUtils.equals(column.getFieldFullName(), detail.getLogicalName()))) {
 						// テーブル定義書の該当項目が存在しない場合、エラーとする
-						errors.add(sheetName + CommonConstant.MESSAGE_KUGIRI
+						errors.add(errorPrex + CommonConstant.MESSAGE_KUGIRI
 								+ MessageService.getMessage("error.db.config.logicalName.exits")
 										.replace("{0}", detail.getLogicalName()).replace("{1}", item.getDataModel()));
 					}
 				});
 			} else {
 				// テーブル定義書の該当項目が存在しない場合、エラーとする
-				errors.add(sheetName + CommonConstant.MESSAGE_KUGIRI
+				errors.add(errorPrex + CommonConstant.MESSAGE_KUGIRI
 						+ MessageService.getMessage("error.db.config.table.exits").replace("{0}", item.getDataModel()));
 			}
 
@@ -176,12 +182,13 @@ public class WPScreenValidator {
 	/**
 	 * 画面定義書のバリデーションチェックを実施する
 	 * 
+	 * @param screenInfoPrex
 	 * @param sheetName
 	 * 
 	 * @param screenDefinitionValidObj 画面定義書の解析内容
 	 * @param errors                   エラーリスト
 	 */
-	private void validateScreenDefinition(String sheetName, ScreenDefinition screenDefinitionValidObj,
+	private void validateScreenDefinition(String errorPrex, ScreenDefinition screenDefinitionValidObj,
 			List<String> errors) {
 		// 画面定義書の対象データモデルの「論理名称」は、テーブル定義書の「論理名称」と一致していること。
 		screenDefinitionValidObj.getTargetModels().forEach(item -> {
@@ -191,7 +198,7 @@ public class WPScreenValidator {
 			// テーブル定義書のコンテンツを取得する
 			if (Objects.isNull(ｔableContent)) {
 				// テーブル定義書の該当項目が存在しない場合、エラーとする
-				errors.add(sheetName + CommonConstant.MESSAGE_KUGIRI
+				errors.add(errorPrex + CommonConstant.MESSAGE_KUGIRI
 						+ MessageService.getMessage("error.screen.definition.model.logicname.exits").replace("{0}",
 								item.getLogicalName()));
 			}
@@ -201,7 +208,7 @@ public class WPScreenValidator {
 		// @NAMEDPARAMは存在しない場合、ANDなどの形式で表示する
 		String targetCondition = screenDefinitionValidObj.getTargetCondition();
 		if (!isValidCondition(targetCondition)) {
-			errors.add(sheetName + CommonConstant.MESSAGE_KUGIRI + MessageService
+			errors.add(errorPrex + CommonConstant.MESSAGE_KUGIRI + MessageService
 					.getMessage("error.screen.definition.condition.format").replace("{0}", targetCondition));
 		}
 	}
@@ -245,12 +252,12 @@ public class WPScreenValidator {
 	/**
 	 * 画面バリデーション定義書のバリデーションチェックを実施する
 	 * 
-	 * @param sheetName
+	 * @param errorPrex
 	 * 
 	 * @param validList バリデーションチェック対象
 	 * @param errors    エラーリスト
 	 */
-	private void validateScreenValidation(String sheetName, List<ScreenValidation> validList, List<String> errors) {
+	private void validateScreenValidation(String errorPrex, List<ScreenValidation> validList, List<String> errors) {
 		for (ScreenValidation screenValidation : validList) {
 			// [メッセージID／メッセージ内容／パラメータ]
 			// 種別「エラー」の場合、
@@ -260,7 +267,7 @@ public class WPScreenValidator {
 			if (SCREEN_VALIDATION_SHEET.STR_ERROR.equals(screenValidation.getType())) {
 				if (StringUtils.isEmpty(screenValidation.getMessageId())
 						|| StringUtils.isEmpty(screenValidation.getMessageContent())) {
-					errors.add(sheetName + CommonConstant.MESSAGE_KUGIRI
+					errors.add(errorPrex + CommonConstant.MESSAGE_KUGIRI
 							+ MessageService.getMessage("error.screen.validation.msg.required").replace("{0}",
 									screenValidation.getItemNo()));
 					continue;
@@ -271,14 +278,14 @@ public class WPScreenValidator {
 				MessageDefinition messageObj = service.findMessageById(screenValidation.getMessageId());
 				// メッセージIDとメッセージ内容を記載してない場合、エラーリストにエラーメッセージを追加する
 				if (Objects.isNull(messageObj)) {
-					errors.add(sheetName + CommonConstant.MESSAGE_KUGIRI
+					errors.add(errorPrex + CommonConstant.MESSAGE_KUGIRI
 							+ MessageService.getMessage("error.screen.validation.error.message").replace("{0}",
 									screenValidation.getItemNo()));
 				}
 				// メッセージID:「{0}」のメッセージ内容が、メッセージ一覧の内容と一致していない場合、エラーリストにエラーメッセージを追加する
 				if (!Objects.isNull(messageObj)
 						&& !StringUtils.equals(messageObj.getMessageText(), screenValidation.getMessageContent())) {
-					errors.add(sheetName + CommonConstant.MESSAGE_KUGIRI
+					errors.add(errorPrex + CommonConstant.MESSAGE_KUGIRI
 							+ MessageService.getMessage("error.screen.validation.error.message.mismatch")
 									.replace("{0}", screenValidation.getItemNo())
 									.replace("{1}", messageObj.getMessageText()));
@@ -292,7 +299,7 @@ public class WPScreenValidator {
 			// ※記載方法は、設計書サンプルを参照。
 			if (SCREEN_VALIDATION_SHEET.STR_WARNING.equals(screenValidation.getType())) {
 				if (!StringUtils.isEmpty(screenValidation.getMessageId())) {
-					errors.add(sheetName + CommonConstant.MESSAGE_KUGIRI
+					errors.add(errorPrex + CommonConstant.MESSAGE_KUGIRI
 							+ MessageService.getMessage("warning.screen.validation.msgId.not.required").replace("{0}",
 									screenValidation.getItemNo()));
 					continue;
@@ -311,13 +318,13 @@ public class WPScreenValidator {
 	 * @param screenDefinitionValidObj 画面定義書の解析内容（対象データモデル情報のチェックに使用）
 	 * @param errors                   エラーリスト
 	 */
-	private void validateScreenItemDescription(String sheetName, List<ScreenItemDescriptionResult> validList,
+	private void validateScreenItemDescription(String errorPrex, List<ScreenItemDescriptionResult> validList,
 			ScreenDefinition screenDefinitionValidObj, List<String> errors) {
 		for (ScreenItemDescriptionResult screenItemDescription : validList) {
 			screenItemDescription.getItems().forEach(item -> {
 				// 画面項目説明書の「IO」列には「I（入力）」「O（出力）」「A（アクション）」「G（グループ）」「IO（入出力）」以外の値を記載することはできません
 				if (!ItemDescriptionIOEnum.getAllDisplayNames().contains(item.getIo())) {
-					errors.add(sheetName + CommonConstant.MESSAGE_KUGIRI + MessageService
+					errors.add(errorPrex + CommonConstant.MESSAGE_KUGIRI + MessageService
 							.getMessage("error.screen.item.description.io").replace("{0}", item.getItemNo()));
 				}
 				// [属性(WP)／桁数(WP)]:
@@ -327,7 +334,7 @@ public class WPScreenValidator {
 						&& (!Arrays.asList(SCREEN_ITEM_DESCRIPTION_SHEET.ARR_HAIHUN).contains(item.getAttributeWP())
 								|| !Arrays.asList(SCREEN_ITEM_DESCRIPTION_SHEET.ARR_HAIHUN)
 										.contains(item.getLengthWP()))) {
-					errors.add(sheetName + CommonConstant.MESSAGE_KUGIRI + MessageService
+					errors.add(errorPrex + CommonConstant.MESSAGE_KUGIRI + MessageService
 							.getMessage("error.screen.item.description.wp").replace("{0}", item.getItemNo()));
 				}
 
@@ -345,7 +352,7 @@ public class WPScreenValidator {
 										.contains(item.getModelName())
 										&& (!StringUtils.equals(item.getAttribute(), item.getAttributeWP())
 												|| StringUtils.equals(item.getLength(), item.getLengthWP()))))) {
-					errors.add(sheetName + CommonConstant.MESSAGE_KUGIRI + MessageService
+					errors.add(errorPrex + CommonConstant.MESSAGE_KUGIRI + MessageService
 							.getMessage("error.screen.item.description.wp").replace("{0}", item.getItemNo()));
 				}
 
@@ -358,7 +365,7 @@ public class WPScreenValidator {
 						.collect(Collectors.toSet());
 				if (!Arrays.asList(SCREEN_ITEM_DESCRIPTION_SHEET.ARR_OUTSIDE_SCOPE).contains(item.getModelName())
 						&& !logicalNames.contains(item.getModelName())) {
-					errors.add(sheetName + CommonConstant.MESSAGE_KUGIRI
+					errors.add(errorPrex + CommonConstant.MESSAGE_KUGIRI
 							+ MessageService.getMessage("error.screen.item.description.modelName.exits")
 									.replace("{0}", item.getModelName()).replace("{1}", item.getItemNo()));
 				}
@@ -368,7 +375,7 @@ public class WPScreenValidator {
 				if (!SCREEN_ITEM_DESCRIPTION_SHEET.STR_NO_DISPLAY.equals(item.getDisplay())
 						&& Arrays.asList(SCREEN_ITEM_DESCRIPTION_SHEET.ARR_DATA_TYPE).contains(item.getAttribute())
 						&& (Objects.isNull(item.getFormat()) || item.getFormat().isEmpty())) {
-					errors.add(sheetName + CommonConstant.MESSAGE_KUGIRI + MessageService
+					errors.add(errorPrex + CommonConstant.MESSAGE_KUGIRI + MessageService
 							.getMessage("error.screen.item.description.format").replace("{0}", item.getItemNo()));
 				}
 
@@ -379,7 +386,7 @@ public class WPScreenValidator {
 						|| item.getItemName().indexOf(SCREEN_ITEM_DESCRIPTION_SHEET.STR_DUPLICATE_CHECKBOX) > 0) {
 					// 選択リストの内容は空白の場合、エラーメッセージを出力する
 					if (StringUtils.isEmpty(item.getSelectList())) {
-						errors.add(sheetName + CommonConstant.MESSAGE_KUGIRI
+						errors.add(errorPrex + CommonConstant.MESSAGE_KUGIRI
 								+ MessageService.getMessage("error.screen.item.description.selectlist").replace("{0}",
 										item.getItemNo()));
 					}
@@ -387,7 +394,7 @@ public class WPScreenValidator {
 					if (!StringUtils.isEmpty(item.getSelectList())
 							&& !CommonUtils.containsAllRequiredTags(item.getSelectList(),
 									CommonConstant.SCREEN_ITEM_DESCRIPTION_SHEET.ARR_SELECT_LIST)) {
-						errors.add(sheetName + CommonConstant.MESSAGE_KUGIRI
+						errors.add(errorPrex + CommonConstant.MESSAGE_KUGIRI
 								+ MessageService.getMessage("error.screen.item.description.selectlist.format")
 										.replace("{0}", item.getItemNo()));
 					}
@@ -403,7 +410,7 @@ public class WPScreenValidator {
 							|| (i.getSorted().indexOf(SCREEN_ITEM_DESCRIPTION_SHEET.STR_SORT_ASC)) < 0
 									&& i.getSorted().indexOf(SCREEN_ITEM_DESCRIPTION_SHEET.STR_SORT_DESC) < 0)) {
 						// 一覧の場合、必ずソート順を設定していること。順番と昇順／降順を記載していること。
-						errors.add(sheetName + CommonConstant.MESSAGE_KUGIRI
+						errors.add(errorPrex + CommonConstant.MESSAGE_KUGIRI
 								+ MessageService.getMessage("error.screen.item.description.sort"));
 					}
 				});

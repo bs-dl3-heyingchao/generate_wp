@@ -478,11 +478,20 @@ const clearDbQueryFiles = async() => {
               </div>
             </div>
             
-            <div v-if="apiScreenResponse && apiScreenResponse.warnLog && apiScreenResponse.warnLog.length > 0" style="background-color: #fff8e1; padding: 16px; border-radius: 4px;">
+            <div v-if="apiScreenResponse && apiScreenResponse.warnLog && apiScreenResponse.warnLog.length > 0" style="background-color: #fff8e1; padding: 16px; border-radius: 4px; margin-bottom: 16px;">
               <h4 style="margin-top: 0; color: #f57c00;">警告ログ</h4>
               <div style="max-height: 300px; overflow-y: auto;">
                 <ul style="list-style-type: disc; padding-left: 20px;">
                   <li v-for="(log, index) in apiScreenResponse.warnLog" :key="'warn-' + index" style="font-size: 14px; word-wrap: break-word; white-space: pre-wrap;">{{ log }}</li>
+                </ul>
+              </div>
+            </div>
+
+             <div v-if="apiScreenResponse && apiScreenResponse.checkLog && apiScreenResponse.checkLog.length > 0" style="background-color: #fff5e6; padding: 16px; border-radius: 4px; margin-bottom: 16px;">
+              <h4 style="margin-top: 0; color: #f57c00;">チェックログ</h4>
+              <div style="max-height: 300px; overflow-y: auto;">
+                <ul style="list-style-type: disc; padding-left: 20px;">
+                  <li v-for="(log, index) in apiScreenResponse.checkLog" :key="'check-' + index" style="font-size: 14px; word-wrap: break-word; white-space: pre-wrap;">{{ log }}</li>
                 </ul>
               </div>
             </div>
@@ -571,11 +580,20 @@ const clearDbQueryFiles = async() => {
               </div>
             </div>
             
-            <div v-if="apiDbQueryResponse && apiDbQueryResponse.warnLog && apiDbQueryResponse.warnLog.length > 0" style="background-color: #fff8e1; padding: 16px; border-radius: 4px;">
+            <div v-if="apiDbQueryResponse && apiDbQueryResponse.warnLog && apiDbQueryResponse.warnLog.length > 0" style="background-color: #fff8e1; padding: 16px; border-radius: 4px; margin-bottom: 16px;">
               <h4 style="margin-top: 0; color: #f57c00;">警告ログ</h4>
               <div style="max-height: 300px; overflow-y: auto;">
                 <ul style="list-style-type: disc; padding-left: 20px;">
                   <li v-for="(log, index) in apiDbQueryResponse.warnLog" :key="'warn-' + index" style="font-size: 14px; word-wrap: break-word; white-space: pre-wrap;">{{ log }}</li>
+                </ul>
+              </div>
+            </div>
+
+            <div v-if="apiDbQueryResponse && apiDbQueryResponse.checkLog && apiDbQueryResponse.checkLog.length > 0" style="background-color: #fff8e1; padding: 16px; border-radius: 4px; margin-bottom: 16px;">
+              <h4 style="margin-top: 0; color: #f57c00;">チェックログ</h4>
+              <div style="max-height: 300px; overflow-y: auto;">
+                <ul style="list-style-type: disc; padding-left: 20px;">
+                  <li v-for="(log, index) in apiDbQueryResponse.checkLog" :key="'check-' + index" style="font-size: 14px; word-wrap: break-word; white-space: pre-wrap;">{{ log }}</li>
                 </ul>
               </div>
             </div>

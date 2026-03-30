@@ -248,9 +248,14 @@ public class WPScreenValidator {
 	/**
 	 * 画面バリデーション定義書のバリデーションチェックを実施する。
 	 * 
+	 * <<<<<<< HEAD
+	 * 
 	 * @param errorPrex エラーメッセージのプレフィックス
 	 * @param validList バリデーション対象リスト
-	 * @param errors    エラーリスト
+	 * @param errors    エラーリスト =======
+	 * @param errorPrex エラーメッセージのプレフィックス
+	 * @param validList バリデーション対象リスト
+	 * @param errors    エラーリスト >>>>>>> b07c7bcda8bc7400f991c69c74b5c994cde3d2e1
 	 */
 	private void validateScreenValidation(String errorPrex, List<ScreenValidation> validList, List<String> errors) {
 		for (ScreenValidation screenValidation : validList) {
@@ -337,19 +342,14 @@ public class WPScreenValidator {
 				}
 
 				// [属性(WP)／桁数(WP)]:
-				// TODO: IOが「IO（入出力）」または「O（出力）」の場合：
+				// IOが「IO（入出力）」または「O（出力）」の場合：
 				// - 対象データモデル情報が記載されている場合、「DM」を記載すること。
-				// - 対象データモデル情報が記載されていない場合、属性・桁数は主属性・主桁数と一致すること。
 				if ((ItemDescriptionIOEnum.IO.getDisplayName().equals(item.getIo())
 						|| ItemDescriptionIOEnum.OUTPUT.getDisplayName().equals(item.getIo()))
 						&& (((!Arrays.asList(SCREEN_ITEM_DESCRIPTION_SHEET.ARR_OUTSIDE_SCOPE)
 								.contains(item.getModelName()))
 								&& (!SCREEN_ITEM_DESCRIPTION_SHEET.STR_DM.equals(item.getAttributeWP())
-										|| !SCREEN_ITEM_DESCRIPTION_SHEET.STR_DM.equals(item.getLengthWP())))
-								|| (Arrays.asList(SCREEN_ITEM_DESCRIPTION_SHEET.ARR_OUTSIDE_SCOPE)
-										.contains(item.getModelName())
-										&& (!StringUtils.equals(item.getAttribute(), item.getAttributeWP())
-												|| !StringUtils.equals(item.getLength(), item.getLengthWP()))))) {
+										|| !SCREEN_ITEM_DESCRIPTION_SHEET.STR_DM.equals(item.getLengthWP()))))) {
 					errors.add(errorPrex + CommonConstant.MESSAGE_KUGIRI + MessageService
 							.getMessage("error.screen.item.description.wp").replace("{0}", item.getItemNo()));
 				}

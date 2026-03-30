@@ -137,7 +137,7 @@ public class ExcelGenerateController {
         byte[] zipBytes = zipDirectory(taskOutputDir);
         String zipBase64 = Base64.getEncoder().encodeToString(zipBytes);
         LOG.info("Finish generateDbQueryZipBase64Response taskId={}, savedFiles={}, errors={}, warns={}", taskId, savedCount, errorLog.size(), warnLog.size());
-        return new GeneratedCodeZipResponse(zipBase64, taskId, errorLog, warnLog);
+        return new GeneratedCodeZipResponse(zipBase64, taskId, errorLog, warnLog, null);
     }
 
     private GeneratedCodeZipResponse generateIoZipBase64Response(MultipartFile[] ioFiles, MultipartFile[] dbQueryFiles) throws Exception {
@@ -151,6 +151,7 @@ public class ExcelGenerateController {
         Files.createDirectories(taskOutputDir);
         LOG.info("Start generateIoZipBase64Response taskId={}, inputDir={}, outputDir={}", taskId, taskIoInputDir.getParent(), taskOutputDir);
 
+        List<String> checkLog = new ArrayList<>();
         List<String> errorLog = new ArrayList<>();
         List<String> warnLog = new ArrayList<>();
         List<ScreenExcelContent> parsedContents = new ArrayList<>();
@@ -176,7 +177,7 @@ public class ExcelGenerateController {
             try {
                 screenValidator.validateParseContent(content);
             } catch (WPCheckException e) {
-                errorLog.addAll(e.getErrors());
+                checkLog.addAll(e.getErrors());
             }
         }
         List<DBQuerySheetContent> parsedDBQueryContents = new ArrayList<>();
@@ -219,7 +220,7 @@ public class ExcelGenerateController {
         byte[] zipBytes = zipDirectory(taskOutputDir);
         String zipBase64 = Base64.getEncoder().encodeToString(zipBytes);
         LOG.info("Finish generateIoZipBase64Response taskId={}, savedIoFiles={}, savedDbQueryFiles={}, errors={}, warns={}", taskId, savedIoCount, savedDbQueryCount, errorLog.size(), warnLog.size());
-        return new GeneratedCodeZipResponse(zipBase64, taskId, errorLog, warnLog);
+        return new GeneratedCodeZipResponse(zipBase64, taskId, errorLog, warnLog, checkLog);
     }
 
     private Path saveMultipartFile(Path targetDir, MultipartFile multipartFile, int fileIndex) throws Exception {

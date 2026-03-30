@@ -13,6 +13,7 @@ import org.apache.commons.lang3.StringUtils;
 import com.neusoft.bsdl.wptool.core.context.WPContext;
 import com.neusoft.bsdl.wptool.core.exception.WPCheckException;
 import com.neusoft.bsdl.wptool.core.model.DBConfigDefinition;
+import com.neusoft.bsdl.wptool.core.model.DBQuerySheetContent;
 import com.neusoft.bsdl.wptool.core.model.ExcelSheetContent;
 import com.neusoft.bsdl.wptool.core.model.MessageDefinition;
 import com.neusoft.bsdl.wptool.core.model.ScreenDefinition;
@@ -47,7 +48,7 @@ public class WPScreenValidator {
 	 * @param screenExcelContent 解析済みの画面Excelコンテンツ
 	 * @throws WPCheckException チェックエラーが発生した場合
 	 */
-	public void validateParseContent(ScreenExcelContent screenExcelContent) throws WPCheckException {
+	public void validateParseContent(ScreenExcelContent screenExcelContent,List<DBQuerySheetContent> dbQuerySheetContents) throws WPCheckException {
 		List<String> errors = new ArrayList<>();
 		// 画面定義情報
 		ScreenDefinition screenDefinitionValidObj = null;

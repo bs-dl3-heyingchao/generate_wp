@@ -91,17 +91,26 @@
 #if($item.choiceInfo.nameDmItemCode2)
           <name-dm-item-code2>$!{item.choiceInfo.nameDmItemCode2}</name-dm-item-code2>
 #end
+#if($item.choiceInfo.nameDmItemCode3)
+          <name-dm-item-code3>$!{item.choiceInfo.nameDmItemCode3}</name-dm-item-code3>
+#end
 #if($item.choiceInfo.sortDmItemCode1)
           <sort-dm-item-code1>$!{item.choiceInfo.sortDmItemCode1}</sort-dm-item-code1>
 #end
 #if($item.choiceInfo.sortDmItemCode2)
           <sort-dm-item-code2>$!{item.choiceInfo.sortDmItemCode2}</sort-dm-item-code2>
 #end
+#if($item.choiceInfo.sortDmItemCode3)
+          <sort-dm-item-code3>$!{item.choiceInfo.sortDmItemCode3}</sort-dm-item-code3>
+#end
 #if($item.choiceInfo.sortType1)
           <sort-type1>$!{item.choiceInfo.sortType1}</sort-type1>
 #end
 #if($item.choiceInfo.sortType2)
           <sort-type2>$!{item.choiceInfo.sortType2}</sort-type2>
+#end
+#if($item.choiceInfo.sortType3)
+          <sort-type3>$!{item.choiceInfo.sortType3}</sort-type3>
 #end
         </choice-list>
 #end

@@ -34,14 +34,20 @@ public class FlexibleShardedCache implements ShardedCache {
     private final ScheduledExecutorService scheduler;
     private final long defaultTtlMillis;
 
+    private static final long INFINITE_TTL_MILLIS = Long.MAX_VALUE;
+
     public FlexibleShardedCache(File baseDir) {
-        this(baseDir, 60, 16);
+        this(baseDir, INFINITE_TTL_MILLIS, 16);
     }
 
     public FlexibleShardedCache(File baseDir, int defaultTtlMinutes, int shardCount) {
+        this(baseDir, TimeUnit.MINUTES.toMillis(defaultTtlMinutes), shardCount);
+    }
+
+    public FlexibleShardedCache(File baseDir, long defaultTtlMillis, int shardCount) {
         this.baseDir = baseDir;
         this.shardCount = shardCount;
-        this.defaultTtlMillis = TimeUnit.MINUTES.toMillis(defaultTtlMinutes);
+        this.defaultTtlMillis = normalizeTtlMillis(defaultTtlMillis);
         this.memoryMap = new ConcurrentHashMap<>();
 
         if (!baseDir.exists() && !baseDir.mkdirs()) {
@@ -52,17 +58,32 @@ public class FlexibleShardedCache implements ShardedCache {
         loadAllShards();
         // 定时同步
         this.scheduler.scheduleAtFixedRate(this::flushAllShards, 5, 5, TimeUnit.MINUTES);
-        logger.info("FlexibleShardedCache initialized. BaseDir: {}, Shards: {}, DefaultTTL: {} mins", baseDir, shardCount, defaultTtlMinutes);
+        logger.info("FlexibleShardedCache initialized. BaseDir: {}, Shards: {}, DefaultTTL(ms): {}", baseDir, shardCount, this.defaultTtlMillis);
     }
 
     @Override
     public <T> T get(String key) {
+        return getInternal(key, null, false);
+    }
+
+    @Override
+    public <T> T get(String key, String latestTag) {
+        if (latestTag == null) {
+            return getInternal(key, null, false);
+        }
+        return getInternal(key, latestTag, true);
+    }
+
+    private <T> T getInternal(String key, String latestTag, boolean checkTag) {
         CacheEntry entry = memoryMap.get(key);
         if (entry == null)
             return null;
         if (entry.isExpired()) {
             memoryMap.remove(key);
             flushShardAsync(key);
+            return null;
+        }
+        if (checkTag && !latestTag.equals(entry.getTag())) {
             return null;
         }
         @SuppressWarnings("unchecked")
@@ -72,30 +93,48 @@ public class FlexibleShardedCache implements ShardedCache {
 
     @Override
     public <T> void put(String key, T value) {
-        put(key, value, defaultTtlMillis, TimeUnit.MILLISECONDS);
+        putInternal(key, value, defaultTtlMillis, TimeUnit.MILLISECONDS, null);
+    }
+
+    @Override
+    public <T> void put(String key, T value, String cacheTag) {
+        putInternal(key, value, defaultTtlMillis, TimeUnit.MILLISECONDS, cacheTag);
     }
 
     @Override
     public <T> void put(String key, T value, CacheStoreMode mode) {
         // 当前实现暂未拆分多后端，先保持旧行为兼容。
-        put(key, value, defaultTtlMillis, TimeUnit.MILLISECONDS);
+        putInternal(key, value, defaultTtlMillis, TimeUnit.MILLISECONDS, null);
+    }
+
+    @Override
+    public <T> void put(String key, T value, CacheStoreMode mode, String cacheTag) {
+        // 当前实现暂未拆分多后端，先保持旧行为兼容。
+        putInternal(key, value, defaultTtlMillis, TimeUnit.MILLISECONDS, cacheTag);
     }
 
     @Override
     public <T> void put(String key, T value, long ttl, TimeUnit timeUnit) {
+        putInternal(key, value, ttl, timeUnit, null);
+    }
+
+    private <T> void putInternal(String key, T value, long ttl, TimeUnit timeUnit, String cacheTag) {
         if (value == null) {
             remove(key);
             return;
         }
-        long expireTime = System.currentTimeMillis() + timeUnit.toMillis(ttl);
-        memoryMap.put(key, new CacheEntry(value, expireTime));
+        if (timeUnit == null) {
+            throw new IllegalArgumentException("TimeUnit must not be null");
+        }
+        long expireTime = calculateExpireTime(ttl, timeUnit, cacheTag);
+        memoryMap.put(key, new CacheEntry(value, expireTime, cacheTag));
         flushShardAsync(key);
     }
 
     @Override
     public <T> void put(String key, T value, long ttl, TimeUnit timeUnit, CacheStoreMode mode) {
         // 当前实现暂未拆分多后端，先保持旧行为兼容。
-        put(key, value, ttl, timeUnit);
+        putInternal(key, value, ttl, timeUnit, null);
     }
 
     @Override
@@ -196,5 +235,30 @@ public class FlexibleShardedCache implements ShardedCache {
             Thread.currentThread().interrupt();
         }
         logger.info("FlexibleShardedCache closed.");
+    }
+
+    private long normalizeTtlMillis(long ttlMillis) {
+        if (ttlMillis >= INFINITE_TTL_MILLIS) {
+            return INFINITE_TTL_MILLIS;
+        }
+        return ttlMillis;
+    }
+
+    private long calculateExpireTime(long ttl, TimeUnit timeUnit, String cacheTag) {
+        if (cacheTag != null) {
+            return Long.MAX_VALUE;
+        }
+        if (ttl == Long.MAX_VALUE) {
+            return Long.MAX_VALUE;
+        }
+        long ttlMillis = timeUnit.toMillis(ttl);
+        if (ttlMillis >= Long.MAX_VALUE) {
+            return Long.MAX_VALUE;
+        }
+        long now = System.currentTimeMillis();
+        if (ttlMillis > 0 && now > Long.MAX_VALUE - ttlMillis) {
+            return Long.MAX_VALUE;
+        }
+        return now + ttlMillis;
     }
 }

@@ -16,12 +16,34 @@ public interface ShardedCache extends AutoCloseable {
     <T> T get(String key);
 
     /**
+     * 获取缓存值，并根据最新标识字符串进行一致性校验。
+     *
+     * @param key       键
+     * @param latestTag 最新标识字符串（如 MD5）；为 null 时按旧行为直接返回缓存
+     * @return 值，如果不存在、过期或标识不一致则返回 null
+     */
+    default <T> T get(String key, String latestTag) {
+        return get(key);
+    }
+
+    /**
      * 放入缓存，使用默认 TTL
      * 
      * @param key   键
      * @param value 值 (null 会触发删除操作)
      */
     <T> void put(String key, T value);
+
+    /**
+     * 放入缓存，使用默认 TTL，并附带自定义标识字符串。
+     *
+     * @param key      键
+     * @param value    值 (null 会触发删除操作)
+     * @param cacheTag 自定义标识字符串（如 MD5）
+     */
+    default <T> void put(String key, T value, String cacheTag) {
+        put(key, value);
+    }
 
     /**
      * 放入缓存，使用默认 TTL，并指定存储模式
@@ -31,6 +53,18 @@ public interface ShardedCache extends AutoCloseable {
      * @param mode  存储模式
      */
     <T> void put(String key, T value, CacheStoreMode mode);
+
+    /**
+     * 放入缓存，使用默认 TTL，并指定存储模式和自定义标识字符串。
+     *
+     * @param key      键
+     * @param value    值 (null 会触发删除操作)
+     * @param mode     存储模式
+     * @param cacheTag 自定义标识字符串（如 MD5）
+     */
+    default <T> void put(String key, T value, CacheStoreMode mode, String cacheTag) {
+        put(key, value, mode);
+    }
 
     /**
      * 放入缓存，使用自定义 TTL

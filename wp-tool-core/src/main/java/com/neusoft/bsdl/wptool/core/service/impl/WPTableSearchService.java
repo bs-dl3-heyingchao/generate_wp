@@ -17,11 +17,11 @@ import cbai.util.db.define.FieldBean;
 import cbai.util.db.define.TableBean;
 import cbai.util.db.define.reader.ITableBeanReader;
 import lombok.extern.slf4j.Slf4j;
+import static com.neusoft.bsdl.wptool.core.cache.CacheKeyConst.DB_DEFINE_TABLE_MAP_CACHE_KEY;
 
 @Slf4j
 public class WPTableSearchService implements IWPTableSearchService {
 
-    private static final String DB_DEFINE_TABLE_MAP_CACHE_KEY = "db.cache.table_map";
 
     public WPTableSearchService() {
     }

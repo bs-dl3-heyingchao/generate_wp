@@ -1,9 +1,12 @@
 package com.neusoft.bsdl.wptool.core.model;
 
+import java.io.Serializable;
+
 import lombok.Data;
 
 @Data
-public class DBQueryEntity {
+public class DBQueryEntity implements Serializable {
+	private static final long serialVersionUID = 1L;
 	/**項番*/
 	private String itemNo;
 	/**カラム名:物理名*/

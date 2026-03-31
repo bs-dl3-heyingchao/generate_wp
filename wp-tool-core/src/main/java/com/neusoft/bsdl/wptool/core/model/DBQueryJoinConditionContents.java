@@ -1,12 +1,15 @@
 package com.neusoft.bsdl.wptool.core.model;
 
+import java.io.Serializable;
+
 import lombok.Data;
 
 /**
  * DBQuery定義書の結合条件の備考を保持するクラス
  */
 @Data
-public class DBQueryJoinConditionContents {
+public class DBQueryJoinConditionContents implements Serializable {
+	private static final long serialVersionUID = 1L;
 	/**テーブル名*/
 	private String tableName;
 	

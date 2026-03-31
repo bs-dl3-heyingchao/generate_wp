@@ -1,5 +1,6 @@
 package com.neusoft.bsdl.wptool.core.model;
 
+import java.io.Serializable;
 import java.util.List;
 import java.util.Map;
 
@@ -9,7 +10,8 @@ import lombok.Data;
  * 画面定義書の解析内容
  */
 @Data
-public class ScreenDefinition {
+public class ScreenDefinition implements Serializable {
+    private static final long serialVersionUID = 1L;
 	/** 対象データモデル */
 	private List<ScreenDefinitionTargetData> targetModels;
 	/** 処理対象データモデル */

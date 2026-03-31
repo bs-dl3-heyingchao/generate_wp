@@ -1,5 +1,6 @@
 package com.neusoft.bsdl.wptool.core.model;
 
+import java.io.Serializable;
 import java.util.ArrayList;
 import java.util.List;
 
@@ -11,7 +12,8 @@ import lombok.Data;
  * 画面チェック仕様書のコラム定義
  */
 @Data
-public class ScreenValidation {
+public class ScreenValidation implements Serializable {
+	private static final long serialVersionUID = 1L;
 	@ExcelProperty(value = "項番", index = 0)
 	private String itemNo;
 

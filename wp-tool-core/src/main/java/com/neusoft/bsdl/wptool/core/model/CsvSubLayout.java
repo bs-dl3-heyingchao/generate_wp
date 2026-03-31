@@ -1,5 +1,7 @@
 package com.neusoft.bsdl.wptool.core.model;
 
+import java.io.Serializable;
+
 import com.alibaba.excel.annotation.ExcelProperty;
 import lombok.Data;
 
@@ -7,7 +9,8 @@ import lombok.Data;
  * CSVレイアウトの一覧の解析内容
  */
 @Data
-public class CsvSubLayout {
+public class CsvSubLayout implements Serializable {
+	private static final long serialVersionUID = 1L;
 	@ExcelProperty(value = "項番", index = 0)
 	private String itemNo;
 

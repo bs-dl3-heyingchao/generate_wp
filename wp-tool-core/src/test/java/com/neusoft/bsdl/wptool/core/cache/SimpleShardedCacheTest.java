@@ -78,6 +78,9 @@ class SimpleShardedCacheTest {
             cache.put("k4", "v4", -1, TimeUnit.MILLISECONDS);
             assertNull(cache.get("k4"));
 
+            cache.put("k4_tag", "v4_tag", -1, TimeUnit.MILLISECONDS, "md5-expired");
+            assertNull(cache.get("k4_tag", "md5-expired"));
+
             cache.put("k5", null, CacheStoreMode.MEMORY_AND_DISK);
             assertNull(cache.get("k5"));
 

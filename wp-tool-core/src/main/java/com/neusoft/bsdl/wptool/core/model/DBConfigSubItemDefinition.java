@@ -1,5 +1,7 @@
 package com.neusoft.bsdl.wptool.core.model;
 
+import java.io.Serializable;
+
 import com.alibaba.excel.annotation.ExcelProperty;
 
 import lombok.Data;
@@ -8,7 +10,8 @@ import lombok.Data;
  * DB設定項目定義の一覧の解析内容
  */
 @Data
-public class DBConfigSubItemDefinition {
+public class DBConfigSubItemDefinition implements Serializable {
+	private static final long serialVersionUID = 1L;
 	@ExcelProperty(value = "項目", index = 0)
 	private String logicalName;
 	@ExcelProperty(value = "", index = 11)

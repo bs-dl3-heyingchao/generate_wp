@@ -1,12 +1,15 @@
 package com.neusoft.bsdl.wptool.core.model;
 
 
+import java.io.Serializable;
+
 import com.alibaba.excel.annotation.ExcelProperty;
 
 import lombok.Data;
 
 @Data
-public class ScreenMetadata {
+public class ScreenMetadata  implements Serializable {
+    private static final long serialVersionUID = 1L;
     @ExcelProperty("システム")
     private String system;
 

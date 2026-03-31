@@ -1,11 +1,14 @@
 package com.neusoft.bsdl.wptool.core.model;
 
+import java.io.Serializable;
+
 import com.alibaba.excel.annotation.ExcelProperty;
 
 import lombok.Data;
 
 @Data
-public class SessionManagementSystemField {
+public class SessionManagementSystemField implements Serializable {
+	private static final long serialVersionUID = 1L;
 	/** 分類 */
 	@ExcelProperty(index = 0)
 	private String category;

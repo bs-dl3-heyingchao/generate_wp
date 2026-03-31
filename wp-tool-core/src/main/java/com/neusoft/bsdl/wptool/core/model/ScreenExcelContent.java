@@ -1,5 +1,6 @@
 package com.neusoft.bsdl.wptool.core.model;
 
+import java.io.Serializable;
 import java.util.List;
 
 import lombok.Data;
@@ -8,7 +9,8 @@ import lombok.Data;
  * 解析仕様書のコンテンツ
  */
 @Data
-public class ScreenExcelContent{
+public class ScreenExcelContent implements Serializable {
+	private static final long serialVersionUID = 1L;
 	//システム
 	private String system;
 	//サブシステム

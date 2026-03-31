@@ -1,5 +1,7 @@
 package com.neusoft.bsdl.wptool.core.model;
 
+import java.io.Serializable;
+
 import com.alibaba.excel.annotation.ExcelProperty;
 import lombok.Data;
 
@@ -7,7 +9,8 @@ import lombok.Data;
  * 画面項目説明書のコラム定義
  */
 @Data
-public class ScreenItemDescription{
+public class ScreenItemDescription implements Serializable {
+    private static final long serialVersionUID = 1L;
 	@ExcelProperty(value = "項目番号", index = 0)
     private String itemNo;
 	

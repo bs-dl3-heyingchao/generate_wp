@@ -1,12 +1,15 @@
 package com.neusoft.bsdl.wptool.core.model;
 
+import java.io.Serializable;
+
 import lombok.Data;
 
 /**
  * チェックアクションのコラム定義
  */
 @Data
-public class ScreenValidationAction {
+public class ScreenValidationAction implements Serializable {
+    private static final long serialVersionUID = 1L;
     /**
      * アクション名
      */

@@ -1,12 +1,15 @@
 package com.neusoft.bsdl.wptool.core.model;
 
+import java.io.Serializable;
+
 import lombok.Data;
 
 /**
  * TODO:メッセージ定義クラス
  */
 @Data
-public class MessageDefinition {
+public class MessageDefinition implements Serializable {
+    private static final long serialVersionUID = 1L;
 	/**メッセージID*/
 	private String messageId;
 	/**メッセージ内容*/

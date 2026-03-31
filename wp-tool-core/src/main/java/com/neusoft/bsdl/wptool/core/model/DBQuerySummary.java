@@ -1,12 +1,15 @@
 package com.neusoft.bsdl.wptool.core.model;
 
+import java.io.Serializable;
+
 import lombok.Data;
 
 /**
  * DBQuery定義書の概要を保持するクラス
  */
 @Data
-public class DBQuerySummary {
+public class DBQuerySummary implements Serializable {
+	private static final long serialVersionUID = 1L;
 	/**1．対象テーブル*/
 	private String targetTable;
 	

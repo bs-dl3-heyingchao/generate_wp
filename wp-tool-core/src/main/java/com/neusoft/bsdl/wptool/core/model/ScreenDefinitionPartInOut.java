@@ -1,5 +1,7 @@
 package com.neusoft.bsdl.wptool.core.model;
 
+import java.io.Serializable;
+
 import lombok.AllArgsConstructor;
 import lombok.Data;
 
@@ -8,7 +10,8 @@ import lombok.Data;
  */
 @Data
 @AllArgsConstructor
-public class ScreenDefinitionPartInOut {
+public class ScreenDefinitionPartInOut implements Serializable {
+    private static final long serialVersionUID = 1L;
 	/**部分入出力コード*/
 	private String partCode;
 	/**部分入出力名称*/

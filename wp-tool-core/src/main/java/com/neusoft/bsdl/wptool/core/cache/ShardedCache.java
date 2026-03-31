@@ -77,6 +77,19 @@ public interface ShardedCache extends AutoCloseable {
     <T> void put(String key, T value, long ttl, TimeUnit timeUnit);
 
     /**
+     * 放入缓存，使用自定义 TTL，并附带自定义标识字符串。
+     *
+     * @param key      键
+     * @param value    值
+     * @param ttl      有效期时长
+     * @param timeUnit 时间单位
+     * @param cacheTag 自定义标识字符串（如 MD5）
+     */
+    default <T> void put(String key, T value, long ttl, TimeUnit timeUnit, String cacheTag) {
+        put(key, value, ttl, timeUnit);
+    }
+
+    /**
      * 放入缓存，使用自定义 TTL，并指定存储模式
      *
      * @param key      键
@@ -86,6 +99,20 @@ public interface ShardedCache extends AutoCloseable {
      * @param mode     存储模式
      */
     <T> void put(String key, T value, long ttl, TimeUnit timeUnit, CacheStoreMode mode);
+
+    /**
+     * 放入缓存，使用自定义 TTL，并指定存储模式和自定义标识字符串。
+     *
+     * @param key      键
+     * @param value    值
+     * @param ttl      有效期时长
+     * @param timeUnit 时间单位
+     * @param mode     存储模式
+     * @param cacheTag 自定义标识字符串（如 MD5）
+     */
+    default <T> void put(String key, T value, long ttl, TimeUnit timeUnit, CacheStoreMode mode, String cacheTag) {
+        put(key, value, ttl, timeUnit, mode);
+    }
 
     /**
      * 移除缓存

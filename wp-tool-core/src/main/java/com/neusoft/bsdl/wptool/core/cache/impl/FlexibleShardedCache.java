@@ -118,6 +118,23 @@ public class FlexibleShardedCache implements ShardedCache {
         putInternal(key, value, ttl, timeUnit, null);
     }
 
+    @Override
+    public <T> void put(String key, T value, long ttl, TimeUnit timeUnit, String cacheTag) {
+        putInternal(key, value, ttl, timeUnit, cacheTag);
+    }
+
+    @Override
+    public <T> void put(String key, T value, long ttl, TimeUnit timeUnit, CacheStoreMode mode) {
+        // 当前实现暂未拆分多后端，先保持旧行为兼容。
+        putInternal(key, value, ttl, timeUnit, null);
+    }
+
+    @Override
+    public <T> void put(String key, T value, long ttl, TimeUnit timeUnit, CacheStoreMode mode, String cacheTag) {
+        // 当前实现暂未拆分多后端，先保持旧行为兼容。
+        putInternal(key, value, ttl, timeUnit, cacheTag);
+    }
+
     private <T> void putInternal(String key, T value, long ttl, TimeUnit timeUnit, String cacheTag) {
         if (value == null) {
             remove(key);
@@ -126,15 +143,9 @@ public class FlexibleShardedCache implements ShardedCache {
         if (timeUnit == null) {
             throw new IllegalArgumentException("TimeUnit must not be null");
         }
-        long expireTime = calculateExpireTime(ttl, timeUnit, cacheTag);
+        long expireTime = calculateExpireTime(ttl, timeUnit);
         memoryMap.put(key, new CacheEntry(value, expireTime, cacheTag));
         flushShardAsync(key);
-    }
-
-    @Override
-    public <T> void put(String key, T value, long ttl, TimeUnit timeUnit, CacheStoreMode mode) {
-        // 当前实现暂未拆分多后端，先保持旧行为兼容。
-        putInternal(key, value, ttl, timeUnit, null);
     }
 
     @Override
@@ -244,10 +255,7 @@ public class FlexibleShardedCache implements ShardedCache {
         return ttlMillis;
     }
 
-    private long calculateExpireTime(long ttl, TimeUnit timeUnit, String cacheTag) {
-        if (cacheTag != null) {
-            return Long.MAX_VALUE;
-        }
+    private long calculateExpireTime(long ttl, TimeUnit timeUnit) {
         if (ttl == Long.MAX_VALUE) {
             return Long.MAX_VALUE;
         }

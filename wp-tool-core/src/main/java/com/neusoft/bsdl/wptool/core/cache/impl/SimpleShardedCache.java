@@ -168,9 +168,23 @@ public class SimpleShardedCache implements ShardedCache {
     }
 
     @Override
+    public <T> void put(String key, T value, long ttl, TimeUnit timeUnit, String cacheTag) {
+        synchronized (cacheLock) {
+            putInternal(key, value, ttl, timeUnit, CacheStoreMode.MEMORY_AND_DISK, cacheTag);
+        }
+    }
+
+    @Override
     public <T> void put(String key, T value, long ttl, TimeUnit timeUnit, CacheStoreMode mode) {
         synchronized (cacheLock) {
             putInternal(key, value, ttl, timeUnit, mode, null);
+        }
+    }
+
+    @Override
+    public <T> void put(String key, T value, long ttl, TimeUnit timeUnit, CacheStoreMode mode, String cacheTag) {
+        synchronized (cacheLock) {
+            putInternal(key, value, ttl, timeUnit, mode, cacheTag);
         }
     }
 
@@ -186,7 +200,7 @@ public class SimpleShardedCache implements ShardedCache {
             return;
         }
 
-        long expireTime = calculateExpireTime(ttl, timeUnit, cacheTag);
+        long expireTime = calculateExpireTime(ttl, timeUnit);
         CacheEntry cacheEntry = new CacheEntry(value, expireTime, cacheTag);
         keyModeMap.put(key, mode);
 
@@ -334,10 +348,7 @@ public class SimpleShardedCache implements ShardedCache {
         return ttlMillis;
     }
 
-    private long calculateExpireTime(long ttl, TimeUnit timeUnit, String cacheTag) {
-        if (cacheTag != null) {
-            return Long.MAX_VALUE;
-        }
+    private long calculateExpireTime(long ttl, TimeUnit timeUnit) {
         if (ttl == Long.MAX_VALUE) {
             return Long.MAX_VALUE;
         }

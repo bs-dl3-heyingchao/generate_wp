@@ -37,7 +37,7 @@ import com.neusoft.bsdl.wptool.core.model.DBQueryExcelContent;
 import com.neusoft.bsdl.wptool.core.model.DBQuerySheetContent;
 import com.neusoft.bsdl.wptool.core.model.ExcelSheetContent;
 import com.neusoft.bsdl.wptool.core.model.ScreenExcelContent;
-import com.neusoft.bsdl.wptool.core.service.ParseExcelUtils;
+import com.neusoft.bsdl.wptool.core.service.ParseExcelUtilsCacheWrapper;
 import com.neusoft.bsdl.wptool.generate.WPDBConfigGenerator;
 import com.neusoft.bsdl.wptool.generate.WPDBQueryGenerator;
 import com.neusoft.bsdl.wptool.generate.WPIOExportGenerator;
@@ -125,7 +125,7 @@ public class ExcelGenerateController {
             Path savedFile = saveMultipartFile(taskInputDir, file, savedCount);
 
             FileSource fileSource = () -> Files.newInputStream(savedFile);
-            DBQueryExcelContent queryExcelContent = ParseExcelUtils.parseDBQueryExcel(fileSource);
+            DBQueryExcelContent queryExcelContent = ParseExcelUtilsCacheWrapper.parseDBQueryExcel(fileSource);
             for (DBQuerySheetContent sheetContent : queryExcelContent.getQuerySheetContents()) {
                 WPDBQueryGenerator ioGenerator = new WPDBQueryGenerator(generateContext, sheetContent);
                 ioGenerator.generate(taskOutputDir.toFile());
@@ -166,7 +166,7 @@ public class ExcelGenerateController {
             savedIoCount++;
             Path savedFile = saveMultipartFile(taskIoInputDir, file, savedIoCount);
             FileSource fileSource = () -> Files.newInputStream(savedFile);
-            ScreenExcelContent screenExcelContent = ParseExcelUtils.parseScreenExcel(fileSource);
+            ScreenExcelContent screenExcelContent = ParseExcelUtilsCacheWrapper.parseScreenExcel(fileSource);
             parsedContents.add(screenExcelContent);
 
             List<ExcelSheetContent<CsvLayout>> list = GenerateUtils.filterCsvLayoutSheetContents(screenExcelContent.getSheetList());
@@ -183,7 +183,7 @@ public class ExcelGenerateController {
                 savedDbQueryCount++;
                 Path savedFile = saveMultipartFile(taskDbQueryInputDir, file, savedDbQueryCount);
                 FileSource fileSource = () -> Files.newInputStream(savedFile);
-                DBQueryExcelContent queryExcelContent = ParseExcelUtils.parseDBQueryExcel(fileSource);
+                DBQueryExcelContent queryExcelContent = ParseExcelUtilsCacheWrapper.parseDBQueryExcel(fileSource);
                 parsedDBQueryContents.addAll(queryExcelContent.getQuerySheetContents());
             }
         }

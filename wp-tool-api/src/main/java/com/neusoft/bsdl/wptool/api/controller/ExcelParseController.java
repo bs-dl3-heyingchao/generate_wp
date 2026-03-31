@@ -13,7 +13,7 @@ import com.neusoft.bsdl.wptool.api.dto.ApiResponse;
 import com.neusoft.bsdl.wptool.core.exception.WPException;
 import com.neusoft.bsdl.wptool.core.io.FileSource;
 import com.neusoft.bsdl.wptool.core.model.ScreenExcelContent;
-import com.neusoft.bsdl.wptool.core.service.ParseExcelUtils;
+import com.neusoft.bsdl.wptool.core.service.ParseExcelUtilsCacheWrapper;
 
 import io.swagger.v3.oas.annotations.Operation;
 import io.swagger.v3.oas.annotations.Parameter;
@@ -50,7 +50,7 @@ public class ExcelParseController {
 
         FileSource fileSource = file::getInputStream;
         try {
-            ScreenExcelContent parseExcelContent = ParseExcelUtils.parseScreenExcel(fileSource);
+            ScreenExcelContent parseExcelContent = ParseExcelUtilsCacheWrapper.parseScreenExcel(fileSource);
             ScreenExcelContent convertedContent = serializeSheetContentAsJsonString(parseExcelContent);
             return ResponseEntity.ok(ApiResponse.success(convertedContent));
         } catch (WPException exception) {

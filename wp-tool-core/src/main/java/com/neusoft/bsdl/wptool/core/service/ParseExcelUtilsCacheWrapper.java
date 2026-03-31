@@ -11,6 +11,7 @@ import org.slf4j.LoggerFactory;
 
 import com.neusoft.bsdl.wptool.core.WPGlobalUtils;
 import com.neusoft.bsdl.wptool.core.cache.CacheStoreMode;
+import com.neusoft.bsdl.wptool.core.cache.ShardedCacheKind;
 import com.neusoft.bsdl.wptool.core.cache.ShardedCache;
 import com.neusoft.bsdl.wptool.core.io.FileSource;
 import com.neusoft.bsdl.wptool.core.model.DBQueryExcelContent;
@@ -20,6 +21,7 @@ public final class ParseExcelUtilsCacheWrapper {
 
     private static final Logger LOG = LoggerFactory.getLogger(ParseExcelUtilsCacheWrapper.class);
     private static final long CACHE_TTL_DAYS = 1L;
+    private static final ShardedCacheKind CACHE_KIND = ShardedCacheKind.PARSE_EXCEL;
     private static final String SCREEN_CACHE_KEY_PREFIX = "parse-excel:screen:";
     private static final String DBQUERY_CACHE_KEY_PREFIX = "parse-excel:dbquery:";
 
@@ -39,7 +41,7 @@ public final class ParseExcelUtilsCacheWrapper {
         String md5 = WPGlobalUtils.calculateMd5(new ByteArrayInputStream(inputBytes));
         String cacheKey = cacheKeyPrefix + md5;
 
-        ShardedCache cache = WPGlobalUtils.getShardedCache();
+        ShardedCache cache = WPGlobalUtils.getShardedCache(CACHE_KIND);
         T cachedValue = cache.get(cacheKey, md5);
         if (cachedValue != null) {
             LOG.info("ParseExcel cache hit, key={}", cacheKey);

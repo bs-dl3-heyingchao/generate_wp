@@ -33,7 +33,7 @@ public class SimpleShardedCache implements ShardedCache {
     private static final long INFINITE_TTL_MILLIS = Long.MAX_VALUE;
 
     public SimpleShardedCache(File baseDir) {
-        this(new LocalFileCacheShardStore(baseDir), INFINITE_TTL_MILLIS, 16);
+        this(new LocalFileCacheShardStore(baseDir), INFINITE_TTL_MILLIS, 1024);
     }
 
     public SimpleShardedCache(File baseDir, int defaultTtlMinutes, int shardCount) {
@@ -45,7 +45,7 @@ public class SimpleShardedCache implements ShardedCache {
     }
 
     public SimpleShardedCache(CacheShardStore shardStore) {
-        this(shardStore, INFINITE_TTL_MILLIS, 16);
+        this(shardStore, INFINITE_TTL_MILLIS, 1024);
     }
 
     public SimpleShardedCache(CacheShardStore shardStore, int defaultTtlMinutes, int shardCount) {

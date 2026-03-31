@@ -7,7 +7,9 @@ import java.util.Map;
 import java.util.concurrent.TimeUnit;
 
 import com.neusoft.bsdl.wptool.core.WPGlobalUtils;
+import com.neusoft.bsdl.wptool.core.cache.CacheStoreMode;
 import com.neusoft.bsdl.wptool.core.cache.ShardedCache;
+import com.neusoft.bsdl.wptool.core.cache.ShardedCacheKind;
 import com.neusoft.bsdl.wptool.core.exception.WPException;
 import com.neusoft.bsdl.wptool.core.reader.WPTableBeanReader;
 import com.neusoft.bsdl.wptool.core.service.ConfigService;
@@ -21,6 +23,7 @@ import static com.neusoft.bsdl.wptool.core.cache.CacheKeyConst.DB_DEFINE_TABLE_M
 
 @Slf4j
 public class WPTableSearchService implements IWPTableSearchService {
+    private static final ShardedCacheKind CACHE_KIND = ShardedCacheKind.DB;
 
 
     public WPTableSearchService() {
@@ -38,7 +41,7 @@ public class WPTableSearchService implements IWPTableSearchService {
         for (TableBean tableBean : list) {
             tableMap.put(tableBean.getTableFullName(), tableBean);
         }
-        WPGlobalUtils.getShardedCache().put(DB_DEFINE_TABLE_MAP_CACHE_KEY, tableMap, 1, TimeUnit.DAYS);
+        WPGlobalUtils.getShardedCache(CACHE_KIND).put(DB_DEFINE_TABLE_MAP_CACHE_KEY, tableMap, 30, TimeUnit.MINUTES, CacheStoreMode.MEMORY_ONLY);
         log.info("DB定義Excelからテーブル定義を読み込みました。テーブル数: {}", tableMap.size());
     }
 
@@ -47,7 +50,7 @@ public class WPTableSearchService implements IWPTableSearchService {
     }
 
     protected Map<String, TableBean> getTableMap() {
-        ShardedCache sharedCache = WPGlobalUtils.getShardedCache();
+        ShardedCache sharedCache = WPGlobalUtils.getShardedCache(CACHE_KIND);
         Map<String, TableBean> cachedTableMap = sharedCache.get(DB_DEFINE_TABLE_MAP_CACHE_KEY);
         if (cachedTableMap == null) {
             synchronized (this) {

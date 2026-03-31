@@ -6,35 +6,37 @@ import java.io.IOException;
 import java.io.InputStream;
 import java.security.MessageDigest;
 import java.security.NoSuchAlgorithmException;
+import java.util.Map;
+import java.util.concurrent.ConcurrentHashMap;
 
 import com.neusoft.bsdl.wptool.core.cache.ShardedCache;
+import com.neusoft.bsdl.wptool.core.cache.ShardedCacheKind;
 import com.neusoft.bsdl.wptool.core.cache.impl.SimpleShardedCache;
 import com.neusoft.bsdl.wptool.core.service.ConfigService;
 
 public class WPGlobalUtils {
-    private static ShardedCache shardedCache = null;
+    private static final Map<String, ShardedCache> shardedCacheMap = new ConcurrentHashMap<>();
 
     private WPGlobalUtils() {
     }
 
-    public static synchronized void setShardedCache(ShardedCache cache) {
-        if (shardedCache != null) {
-            try {
-                shardedCache.close();
-            } catch (Exception e) {
-                e.printStackTrace();
-            }
+    public static void setShardedCache(ShardedCacheKind kind, ShardedCache cache) {
+        String cacheKind = normalizeKind(kind);
+        if (cache == null) {
+            ShardedCache existing = shardedCacheMap.remove(cacheKind);
+            closeQuietly(existing);
+            return;
         }
-        shardedCache = cache;
 
+        ShardedCache previous = shardedCacheMap.put(cacheKind, cache);
+        if (previous != null && previous != cache) {
+            closeQuietly(previous);
+        }
     }
 
-    public static synchronized ShardedCache getShardedCache() {
-        if (shardedCache != null) {
-            return shardedCache;
-        }
-        shardedCache = new SimpleShardedCache(ConfigService.getCacheDir());
-        return shardedCache;
+    public static ShardedCache getShardedCache(ShardedCacheKind kind) {
+        String cacheKind = normalizeKind(kind);
+        return shardedCacheMap.computeIfAbsent(cacheKind, WPGlobalUtils::createShardedCache);
 
     }
 
@@ -70,6 +72,29 @@ public class WPGlobalUtils {
         }
         try (InputStream inputStream = new FileInputStream(file)) {
             return calculateMd5(inputStream);
+        }
+    }
+
+    private static ShardedCache createShardedCache(String kind) {
+        File cacheDir = new File(ConfigService.getCacheDir(), kind);
+        if (!cacheDir.exists()) {
+            cacheDir.mkdirs();
+        }
+        return new SimpleShardedCache(cacheDir);
+    }
+
+    private static String normalizeKind(ShardedCacheKind kind) {
+        return kind.getDirName();
+    }
+
+    private static void closeQuietly(ShardedCache cache) {
+        if (cache == null) {
+            return;
+        }
+        try {
+            cache.close();
+        } catch (Exception e) {
+            e.printStackTrace();
         }
     }
 }

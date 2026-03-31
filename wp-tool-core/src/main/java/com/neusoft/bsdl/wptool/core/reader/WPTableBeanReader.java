@@ -1,5 +1,7 @@
 package com.neusoft.bsdl.wptool.core.reader;
 
+import java.io.File;
+import java.io.IOException;
 import java.util.ArrayList;
 import java.util.Arrays;
 import java.util.HashMap;
@@ -7,6 +9,11 @@ import java.util.List;
 import java.util.Map;
 
 import org.apache.poi.ss.usermodel.Sheet;
+
+import com.neusoft.bsdl.wptool.core.WPGlobalUtils;
+import com.neusoft.bsdl.wptool.core.cache.CacheStoreMode;
+import com.neusoft.bsdl.wptool.core.cache.ShardedCache;
+import com.neusoft.bsdl.wptool.core.cache.ShardedCacheKind;
 
 import cbai.util.StringUtils;
 import cbai.util.db.define.FieldBean;
@@ -20,6 +27,25 @@ public class WPTableBeanReader extends AbstractExcelTableBeanReader {
 
     public WPTableBeanReader(String excelPath) {
         super(excelPath);
+    }
+
+    @Override
+    protected List<TableBean> readExcel(File file) {
+        try {
+            ShardedCache shardedCache = WPGlobalUtils.getShardedCache(ShardedCacheKind.DB);
+            String md5 = WPGlobalUtils.calculateMd5(file);
+            String cacheKey = file.getAbsolutePath();
+            List<TableBean> cacheTableBeans = shardedCache.get(cacheKey, md5);
+            if (cacheTableBeans != null) {
+                log.debug("cache hit for file: " + file.getAbsolutePath());
+                return cacheTableBeans;
+            }
+            List<TableBean> tableBeanList = super.readExcel(file);
+            shardedCache.put(cacheKey, tableBeanList, CacheStoreMode.DISK_ONLY, md5);
+            return tableBeanList;
+        } catch (IOException e) {
+            throw new RuntimeException(e);
+        }
     }
 
     @Override

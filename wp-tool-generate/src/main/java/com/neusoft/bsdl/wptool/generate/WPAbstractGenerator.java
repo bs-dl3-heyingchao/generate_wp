@@ -103,20 +103,12 @@ public abstract class WPAbstractGenerator<T> {
     }
 
     protected void writeErrorLog(String format, Object... arguments) {
-        if(logPrefix.startsWith("[ZZZ")) {
-            // 共通部分の生成コードのログは出力しない
-            return;
-        }
         String rendered = String.format("%s %s ", logPrefix, logSubPrefix) + MessageFormatter.arrayFormat(format, arguments).getMessage();
         log.error(rendered);
         errorLog.add(rendered);
     }
 
     protected void writeWarnLog(String format, Object... arguments) {
-        if(logPrefix.startsWith("[ZZZ")) {
-            // 共通部分の生成コードのログは出力しない
-            return;
-        }
         String rendered = String.format("%s %s ", logPrefix, logSubPrefix) + MessageFormatter.arrayFormat(format, arguments).getMessage();
         log.warn(rendered);
         warnLog.add(rendered);

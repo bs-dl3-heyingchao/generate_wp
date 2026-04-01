@@ -136,7 +136,9 @@ public class ExcelGenerateController {
         writeTaskLogs(taskDir, errorLog, warnLog, null);
         byte[] zipBytes = zipDirectory(taskOutputDir);
         String zipBase64 = Base64.getEncoder().encodeToString(zipBytes);
-        LOG.info("Finish generateDbQueryZipBase64Response taskId={}, savedFiles={}, errors={}, warns={}", taskId, savedCount, errorLog.size(), warnLog.size());
+        LOG.info("Finish generateDbQueryZipBase64Response taskId={}, savedFiles={}, errors={}, warns={}", taskId, savedCount, errorLog.size(), warnLog.size());        
+        filterLog(errorLog);
+        filterLog(warnLog);
         return new GeneratedCodeZipResponse(zipBase64, taskId, errorLog, warnLog, null);
     }
 
@@ -220,6 +222,10 @@ public class ExcelGenerateController {
         byte[] zipBytes = zipDirectory(taskOutputDir);
         String zipBase64 = Base64.getEncoder().encodeToString(zipBytes);
         LOG.info("Finish generateIoZipBase64Response taskId={}, savedIoFiles={}, savedDbQueryFiles={}, errors={}, warns={}", taskId, savedIoCount, savedDbQueryCount, errorLog.size(), warnLog.size());
+        
+        filterLog(errorLog);
+        filterLog(warnLog);
+        filterLog(checkLog);
         return new GeneratedCodeZipResponse(zipBase64, taskId, errorLog, warnLog, checkLog);
     }
 
@@ -232,6 +238,10 @@ public class ExcelGenerateController {
             Files.copy(inputStream, targetFile, StandardCopyOption.REPLACE_EXISTING);
         }
         return targetFile;
+    }
+
+    private void filterLog(List<String> list) {
+        list.removeIf(log -> log.startsWith("[ZZZ"));
     }
 
     private byte[] zipDirectory(Path sourceDir) throws Exception {
